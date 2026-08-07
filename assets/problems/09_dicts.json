@@ -1,0 +1,148 @@
+[
+  {
+    "id": 901,
+    "title": "字典取值",
+    "difficulty": "easy",
+    "description": "给定字典 d = {'name': 'Alice', 'age': 20, 'city': 'Beijing'}，读入一个键，输出它对应的值。",
+    "input_format": "一行，一个键字符串。",
+    "output_format": "输出该键对应的值。",
+    "sample_input": "name",
+    "sample_output": "Alice",
+    "test_cases": [
+      {
+        "input": "name",
+        "output": "Alice"
+      },
+      {
+        "input": "age",
+        "output": "20"
+      }
+    ],
+    "hints": [
+      "d[key] 取对应值。",
+      "若键不存在会报 KeyError，本题给的键都在字典里。"
+    ],
+    "solution": "# 字典按键取值 d[key]\nd = {'name': 'Alice', 'age': 20, 'city': 'Beijing'}\nkey = input()\nprint(d[key])"
+  },
+  {
+    "id": 902,
+    "title": "添加与修改",
+    "difficulty": "easy",
+    "description": "给定字典 d = {'a': 1, 'b': 2}，读入两个整数 x 和 y，把键 'c' 设置为 x，把键 'a' 的值改为 y，然后输出整个字典。",
+    "input_format": "一行，两个整数 x 和 y，空格分隔。",
+    "output_format": "输出修改后的字典。",
+    "sample_input": "3 10",
+    "sample_output": "{'a': 10, 'b': 2, 'c': 3}",
+    "test_cases": [
+      {
+        "input": "3 10",
+        "output": "{'a': 10, 'b': 2, 'c': 3}"
+      },
+      {
+        "input": "0 5",
+        "output": "{'a': 5, 'b': 2, 'c': 0}"
+      }
+    ],
+    "hints": [
+      "d['c'] = x 添加新键。",
+      "d['a'] = y 覆盖原值。",
+      "print(d) 输出字典。"
+    ],
+    "solution": "# 设置新键和修改已有键的值\n# 给 d['c'] 赋值即新增;给已有键赋值即覆盖旧值\nd = {'a': 1, 'b': 2}\nx, y = map(int, input().split())\nd['c'] = x\nd['a'] = y\nprint(d)"
+  },
+  {
+    "id": 903,
+    "title": "遍历字典",
+    "difficulty": "easy",
+    "description": "给定字典 d = {'apple': 3, 'banana': 5, 'cherry': 2}，按 键:值 的格式一行一个输出。",
+    "input_format": "无输入。",
+    "output_format": "每行一个键值对，格式为 'apple:3'（键和值之间用英文冒号，无空格）。",
+    "sample_input": "",
+    "sample_output": "apple:3\nbanana:5\ncherry:2",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "apple:3\nbanana:5\ncherry:2"
+      }
+    ],
+    "hints": [
+      "for k, v in d.items():",
+      "print(f'{k}:{v}') 格式化输出。",
+      "dict 在 Python 3.7+ 保持插入顺序。"
+    ],
+    "solution": "# 遍历字典:items() 同时拿到键和值\nd = {'apple': 3, 'banana': 5, 'cherry': 2}\nfor k, v in d.items():\n    print(f\"{k}:{v}\")"
+  },
+  {
+    "id": 904,
+    "title": "统计出现次数",
+    "difficulty": "medium",
+    "description": "读入一行，包含若干单词（空格分隔），统计每个单词出现的次数，按第一次出现的顺序，每行输出 '单词 次数'。",
+    "input_format": "一行，若干单词，空格分隔。",
+    "output_format": "每行一个 '单词 次数'，按单词第一次出现顺序。",
+    "sample_input": "apple banana apple",
+    "sample_output": "apple 2\nbanana 1",
+    "test_cases": [
+      {
+        "input": "apple banana apple",
+        "output": "apple 2\nbanana 1"
+      },
+      {
+        "input": "a b a c",
+        "output": "a 2\nb 1\nc 1"
+      }
+    ],
+    "hints": [
+      "用字典 count = {} 记录次数。",
+      "第一次遇到某单词时，把它的出现顺序也记下来，最后按顺序输出。",
+      "for word in words: count[word] = count.get(word, 0) + 1"
+    ],
+    "solution": "# 统计单词出现次数:用字典存 单词->次数\nwords = input().split()\ncount = {}\nfor w in words:\n    count[w] = count.get(w, 0) + 1\n# 按第一次出现顺序输出\nseen = set()\nfor w in words:\n    if w not in seen:\n        seen.add(w)\n        print(w, count[w])"
+  },
+  {
+    "id": 905,
+    "title": "合并字典",
+    "difficulty": "medium",
+    "description": "给定两个字典 d1 = {'a': 1, 'b': 2} 和 d2 = {'b': 3, 'c': 4}，合并成一个字典并输出（重复键以 d2 的值为准）。",
+    "input_format": "无输入。",
+    "output_format": "输出合并后的字典。",
+    "sample_input": "",
+    "sample_output": "{'a': 1, 'b': 3, 'c': 4}",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "{'a': 1, 'b': 3, 'c': 4}"
+      }
+    ],
+    "hints": [
+      "Python 3.9+ 用 d1 | d2 合并，后者覆盖前者。",
+      "或 d1.update(d2)。"
+    ],
+    "solution": "# 合并字典:update() 会用 d2 覆盖同名键\nd1 = {'a': 1, 'b': 2}\nd2 = {'b': 3, 'c': 4}\n# 把 d2 合并进 d1,重复键 b 以 d2 的 3 为准\nres = dict(d1)\nres.update(d2)\nprint(res)"
+  },
+  {
+    "id": 906,
+    "title": "查找最大值的键",
+    "difficulty": "hard",
+    "description": "输入若干行，每行一个 '键 值'（键是字符串，值是整数），读入直到输入结束。找出值最大的键并输出（若有多个相同最大值，输出最先出现的）。",
+    "input_format": "若干行，每行 '键 值'，值整数。输入可能有多行。",
+    "output_format": "输出值最大的那个键。",
+    "sample_input": "alice 90\nbob 85\ncarol 90",
+    "sample_output": "alice",
+    "test_cases": [
+      {
+        "input": "alice 90\nbob 85\ncarol 90",
+        "output": "alice"
+      },
+      {
+        "input": "x 1\ny 5\nz 3",
+        "output": "y"
+      }
+    ],
+    "hints": [
+      "多行输入：用 sys.stdin 循环读，或用 try/except 捕获 EOFError。",
+      "逐个比较值，记录当前最大值对应的键，相等时不更新（保持最先出现）。",
+      "max_value = -1; 遇到更大的才更新。"
+    ],
+    "solution": "# 读多行 '键 值',找值最大的键(同值取最先出现)\n# 用 sys.stdin 逐行读,直到输入结束\nimport sys\nbest_key = None\nbest_val = -1\nfor line in sys.stdin:\n    line = line.strip()\n    if not line:\n        continue\n    k, v = line.split()\n    v = int(v)\n    # 严格大于才更新,保住最先出现的最大值\n    if v > best_val:\n        best_val = v\n        best_key = k\nprint(best_key)"
+  }
+]

@@ -1,0 +1,164 @@
+[
+  {
+    "id": 1001,
+    "title": "定义第一个函数",
+    "difficulty": "easy",
+    "description": "定义一个函数 greet(name)，让它输出 'Hello, {name}!'。读入一个名字并调用它。",
+    "input_format": "一行，一个名字字符串。",
+    "output_format": "输出 'Hello, {名字}!'。",
+    "sample_input": "Alice",
+    "sample_output": "Hello, Alice!",
+    "test_cases": [
+      {
+        "input": "Alice",
+        "output": "Hello, Alice!"
+      },
+      {
+        "input": "Tom",
+        "output": "Hello, Tom!"
+      }
+    ],
+    "hints": [
+      "def greet(name): 后面用 print。",
+      "调用：greet(input()) 或先读再传。",
+      "f'Hello, {name}!' 格式化。"
+    ],
+    "solution": "# 定义函数:def 函数名(参数):\ndef greet(name):\n    print(f\"Hello, {name}!\")\n\nname = input()\ngreet(name)"
+  },
+  {
+    "id": 1002,
+    "title": "求和函数",
+    "difficulty": "easy",
+    "description": "定义一个函数 add(a, b)，返回 a + b 的结果。读入两个整数并输出函数返回值。",
+    "input_format": "一行，两个整数，空格分隔。",
+    "output_format": "输出 add(a, b) 的结果。",
+    "sample_input": "3 5",
+    "sample_output": "8",
+    "test_cases": [
+      {
+        "input": "3 5",
+        "output": "8"
+      },
+      {
+        "input": "-2 10",
+        "output": "8"
+      }
+    ],
+    "hints": [
+      "def add(a, b): return a + b",
+      "用 return 而不是 print。",
+      "print(add(a, b)) 输出。"
+    ],
+    "solution": "# 函数用 return 返回结果\ndef add(a, b):\n    return a + b\n\na, b = map(int, input().split())\nprint(add(a, b))"
+  },
+  {
+    "id": 1003,
+    "title": "判断奇偶函数",
+    "difficulty": "easy",
+    "description": "定义一个函数 is_even(n)，若 n 是偶数返回 True，否则返回 False。读入一个整数并输出结果。",
+    "input_format": "一行，一个整数 n。",
+    "output_format": "输出 is_even(n) 的结果（True 或 False）。",
+    "sample_input": "4",
+    "sample_output": "True",
+    "test_cases": [
+      {
+        "input": "4",
+        "output": "True"
+      },
+      {
+        "input": "7",
+        "output": "False"
+      },
+      {
+        "input": "0",
+        "output": "True"
+      }
+    ],
+    "hints": [
+      "偶数能被 2 整除：n % 2 == 0。",
+      "return n % 2 == 0 直接返回布尔值。"
+    ],
+    "solution": "# 偶数判断:n % 2 == 0\ndef is_even(n):\n    return n % 2 == 0\n\nn = int(input())\nprint(is_even(n))"
+  },
+  {
+    "id": 1004,
+    "title": "默认参数",
+    "difficulty": "medium",
+    "description": "定义函数 repeat(text, times=2)，返回 text 重复 times 次的字符串。读入一个字符串，调用 repeat 时不给 times 参数，输出结果。",
+    "input_format": "一行，一个字符串 s。",
+    "output_format": "输出 s 重复 2 次的结果。",
+    "sample_input": "ab",
+    "sample_output": "abab",
+    "test_cases": [
+      {
+        "input": "ab",
+        "output": "abab"
+      },
+      {
+        "input": "hi",
+        "output": "hihi"
+      }
+    ],
+    "hints": [
+      "def repeat(text, times=2): 默认参数。",
+      "return text * times。",
+      "调用时只传一个参数即用默认值 2。"
+    ],
+    "solution": "# 默认参数:def f(x, times=2)\ndef repeat(text, times=2):\n    return text * times   # 字符串乘整数=重复\n\ns = input()\nprint(repeat(s))"
+  },
+  {
+    "id": 1005,
+    "title": "多返回值",
+    "difficulty": "medium",
+    "description": "定义一个函数 min_max(nums)，返回列表中的最小值和最大值。读入一行整数，输出最小值、最大值（空格分隔）。",
+    "input_format": "一行，若干整数，空格分隔。",
+    "output_format": "两个整数：最小值、最大值，空格分隔。",
+    "sample_input": "3 1 4 1 5",
+    "sample_output": "1 5",
+    "test_cases": [
+      {
+        "input": "3 1 4 1 5",
+        "output": "1 5"
+      },
+      {
+        "input": "7 7 7",
+        "output": "7 7"
+      }
+    ],
+    "hints": [
+      "return min(nums), max(nums) 返回元组。",
+      "mn, mx = min_max(nums) 接收，print(mn, mx) 输出。"
+    ],
+    "solution": "# 多返回值:return 多个值\n# min() max() 求最值\ndef min_max(nums):\n    return min(nums), max(nums)\n\nnums = list(map(int, input().split()))\na, b = min_max(nums)\nprint(a, b)"
+  },
+  {
+    "id": 1006,
+    "title": "递归阶乘",
+    "difficulty": "hard",
+    "description": "定义一个递归函数 factorial(n)，返回 n!（n 的阶乘）。读入一个非负整数 n 并输出 factorial(n)。",
+    "input_format": "一行，一个非负整数 n。",
+    "output_format": "输出 n! 的值。",
+    "sample_input": "5",
+    "sample_output": "120",
+    "test_cases": [
+      {
+        "input": "5",
+        "output": "120"
+      },
+      {
+        "input": "0",
+        "output": "1"
+      },
+      {
+        "input": "3",
+        "output": "6"
+      }
+    ],
+    "hints": [
+      "递归：factorial(n) = n * factorial(n-1)。",
+      "基准情形：0! = 1。",
+      "def factorial(n):\\n    if n == 0: return 1\\n    return n * factorial(n - 1)"
+    ],
+    "solution": "# 递归:函数调用自己,需有退出条件(基线条件)\ndef factorial(n):\n    if n == 0:      # 基线\n        return 1\n    return n * factorial(n - 1)  # 递归\n\nn = int(input())\nprint(factorial(n))"
+  }
+]

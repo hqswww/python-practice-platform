@@ -1,0 +1,157 @@
+[
+  {
+    "id": 101,
+    "title": "Hello, Python!",
+    "difficulty": "easy",
+    "description": "在屏幕上输出一行文字：Hello, Python! 这是你学习 Python 的第一行代码。",
+    "input_format": "本题无输入。",
+    "output_format": "输出一行：Hello, Python!",
+    "sample_input": "",
+    "sample_output": "Hello, Python!",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "Hello, Python!"
+      }
+    ],
+    "hints": [
+      "使用 print() 函数输出内容。",
+      "print(\"Hello, Python!\")"
+    ],
+    "solution": "# 最简单的程序:用 print 输出一行文字\nprint(\"Hello, Python!\")"
+  },
+  {
+    "id": 102,
+    "title": "自我介绍",
+    "difficulty": "easy",
+    "description": "定义变量 name 为你的名字，变量 age 为你的年龄，然后分两行输出。体验变量的用处。",
+    "input_format": "本题无输入，直接运行。",
+    "output_format": "第一行输出：我的名字是{名字}；第二行输出：我今年{年龄}岁。",
+    "sample_input": "",
+    "sample_output": "我的名字是小明\n我今年18岁",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "我的名字是小明\n我今年18岁"
+      }
+    ],
+    "hints": [
+      "先把值赋给变量，再用 print() 输出。",
+      "可以用 print(\"我的名字是\" + name) 连接字符串。"
+    ],
+    "solution": "# 定义两个变量,再分两行输出\nname = \"小明\"\nage = 18\n# print 输出每个变量,默认换行\nprint(\"我的名字是\" + name)\nprint(\"我今年\" + str(age) + \"岁\")"
+  },
+  {
+    "id": 103,
+    "title": "欢迎你",
+    "difficulty": "easy",
+    "description": "读入一个名字，然后输出：欢迎，{名字}！体验用 input() 接收输入。",
+    "input_format": "一行，一个字符串，表示名字。",
+    "output_format": "输出一行：欢迎，{名字}！",
+    "sample_input": "悟空",
+    "sample_output": "欢迎，悟空！",
+    "test_cases": [
+      {
+        "input": "悟空",
+        "output": "欢迎，悟空！"
+      },
+      {
+        "input": "张三",
+        "output": "欢迎，张三！"
+      },
+      {
+        "input": "Alice",
+        "output": "欢迎，Alice！"
+      }
+    ],
+    "hints": [
+      "用 input() 读入一行内容。",
+      "name = input() 然后 print(\"欢迎，\" + name + \"！\")"
+    ],
+    "solution": "# 用 input() 读入一行输入(得到的是字符串)\nname = input()\n# 字符串用 + 连接\nprint(\"欢迎，\" + name + \"！\")"
+  },
+  {
+    "id": 104,
+    "title": "类型转换",
+    "difficulty": "easy",
+    "description": "读入两个整数，输出它们的和。注意：input() 读到的是字符串，需要先转成整数。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔。",
+    "output_format": "输出一个整数，即 a + b 的结果。",
+    "sample_input": "3 5",
+    "sample_output": "8",
+    "test_cases": [
+      {
+        "input": "3 5",
+        "output": "8"
+      },
+      {
+        "input": "-1 10",
+        "output": "9"
+      },
+      {
+        "input": "100 200",
+        "output": "300"
+      },
+      {
+        "input": "0 0",
+        "output": "0"
+      }
+    ],
+    "hints": [
+      "input().split() 可以把一行按空格拆分成多个部分。",
+      "int() 能把字符串转成整数。",
+      "a, b = map(int, input().split()) 是最简洁的写法。"
+    ],
+    "solution": "# input() 读到的是字符串,要先转成整数才能相加\na, b = input().split()   # 用空格把\"3 5\"拆成 [\"3\",\"5\"]\na = int(a)               # 字符串 -> 整数\nb = int(b)\nprint(a + b)"
+  },
+  {
+    "id": 105,
+    "title": "换行输出",
+    "difficulty": "easy",
+    "description": "在一行中输出：计算 3.5 乘以 2 的结果。注意体会数字运算和乘法。",
+    "input_format": "本题无输入。",
+    "output_format": "输出 3.5 * 2 的计算结果。",
+    "sample_input": "",
+    "sample_output": "7.0",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "7.0"
+      }
+    ],
+    "hints": [
+      "直接 print(3.5 * 2)",
+      "注意 3.5 是浮点数，所以结果带 .0"
+    ],
+    "solution": "# 浮点数运算:3.5 是浮点,乘 2 结果仍带 .0\nprint(3.5 * 2)  # 输出 7.0"
+  },
+  {
+    "id": 106,
+    "title": "格式化输出",
+    "difficulty": "medium",
+    "description": "读入一个整数 n，输出：本次共收到 {n} 份作业。使用格式化字符串。",
+    "input_format": "一行，一个整数 n。",
+    "output_format": "输出一行，格式为：本次共收到 {n} 份作业。",
+    "sample_input": "42",
+    "sample_output": "本次共收到 42 份作业",
+    "test_cases": [
+      {
+        "input": "42",
+        "output": "本次共收到 42 份作业"
+      },
+      {
+        "input": "1000",
+        "output": "本次共收到 1000 份作业"
+      },
+      {
+        "input": "7",
+        "output": "本次共收到 7 份作业"
+      }
+    ],
+    "hints": [
+      "用 f-string：f\"本次共收到 {n} 份作业\"",
+      "n = int(input())"
+    ],
+    "solution": "# 用 f-string 格式化输出,f\"{变量}\" 会把变量塞进字符串\nn = input()\nprint(f\"本次共收到 {n} 份作业\")"
+  }
+]

@@ -1,0 +1,154 @@
+[
+  {
+    "id": 801,
+    "title": "元组的长度与元素",
+    "difficulty": "easy",
+    "description": "给定元组 t = (10, 20, 30, 40, 50)，输出它的长度和最后一个元素。",
+    "input_format": "无输入。",
+    "output_format": "两行：第一行元组长度，第二行最后一个元素。",
+    "sample_input": "",
+    "sample_output": "5\n50",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "5\n50"
+      }
+    ],
+    "hints": [
+      "len(t) 得长度。",
+      "t[-1] 得最后一个元素。"
+    ],
+    "solution": "# 元组的 len() 长度与下标取值\n# 元组里元素不能改,但能读\nprint(len((10, 20, 30, 40, 50)))\nprint((10, 20, 30, 40, 50)[-1])  # 负下标取最后一个"
+  },
+  {
+    "id": 802,
+    "title": "元组拆包",
+    "difficulty": "easy",
+    "description": "读入三个整数 a、b、c（空格分隔），把它们打包成元组后输出，再交换 a、b 的值输出。",
+    "input_format": "一行，三个整数，空格分隔。",
+    "output_format": "第一行：元组 (a, b, c)；第二行：交换后 (b, a, c) 用空格分隔输出。",
+    "sample_input": "1 2 3",
+    "sample_output": "(1, 2, 3)\n2 1 3",
+    "test_cases": [
+      {
+        "input": "1 2 3",
+        "output": "(1, 2, 3)\n2 1 3"
+      },
+      {
+        "input": "7 8 9",
+        "output": "(7, 8, 9)\n8 7 9"
+      }
+    ],
+    "hints": [
+      "a, b, c = map(int, input().split())",
+      "print((a, b, c)) 输出元组。",
+      "交换：a, b = b, a"
+    ],
+    "solution": "# 元组打包:三个值放进一个元组\na, b, c = map(int, input().split())\nt = (a, b, c)\nprint(t)              # (1, 2, 3)\n# 交换前两个的值后输出\nprint(b, a, c)"
+  },
+  {
+    "id": 803,
+    "title": "集合去重",
+    "difficulty": "easy",
+    "description": "读入一行字符串，用空格分隔成多个单词，输出共有多少个不同的单词。",
+    "input_format": "一行，若干单词，空格分隔。",
+    "output_format": "输出不同单词的个数。",
+    "sample_input": "apple banana apple orange",
+    "sample_output": "3",
+    "test_cases": [
+      {
+        "input": "apple banana apple orange",
+        "output": "3"
+      },
+      {
+        "input": "a a a",
+        "output": "1"
+      },
+      {
+        "input": "one two",
+        "output": "2"
+      }
+    ],
+    "hints": [
+      "words = input().split() 得到单词列表。",
+      "set(words) 转成集合自动去重，len(set) 得个数。"
+    ],
+    "solution": "# set(集合)自动去重,len() 数不同的单词个数\nwords = input().split()\nprint(len(set(words)))"
+  },
+  {
+    "id": 804,
+    "title": "集合运算",
+    "difficulty": "medium",
+    "description": "两个集合 setA = {1, 2, 3, 4} 和 setB = {3, 4, 5, 6}，输出它们的交集、并集和差集（setA - setB）。",
+    "input_format": "无输入。",
+    "output_format": "三行：交集、并集、差集。",
+    "sample_input": "",
+    "sample_output": "{3, 4}\n{1, 2, 3, 4, 5, 6}\n{1, 2}",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "{3, 4}\n{1, 2, 3, 4, 5, 6}\n{1, 2}"
+      }
+    ],
+    "hints": [
+      "交集 & 、并集 | 、差集 -。",
+      "print(交集) 输出集合。",
+      "集合是无序的，但单行内打印通常按固定顺序，判题时会统一处理。"
+    ],
+    "solution": "# 集合运算:交集 & 并集 | 差集 -\nsetA = {1, 2, 3, 4}\nsetB = {3, 4, 5, 6}\nprint(setA & setB)   # 交集 {3,4}\nprint(setA | setB)   # 并集 {1..6}\nprint(setA - setB)   # 差集 {1,2}"
+  },
+  {
+    "id": 805,
+    "title": "元素判定",
+    "difficulty": "medium",
+    "description": "读入一个整数 x，判断它是否在列表 [2, 3, 5, 7] 中，输出 True 或 False。",
+    "input_format": "一行，一个整数 x。",
+    "output_format": "输出 x 是否在列表中（True 或 False）。",
+    "sample_input": "5",
+    "sample_output": "True",
+    "test_cases": [
+      {
+        "input": "5",
+        "output": "True"
+      },
+      {
+        "input": "4",
+        "output": "False"
+      },
+      {
+        "input": "2",
+        "output": "True"
+      }
+    ],
+    "hints": [
+      "用 in 判断：x in [2, 3, 5, 7]",
+      "print(x in [...]) 直接输出布尔值。"
+    ],
+    "solution": "# in 判断元素是否在列表里,结果是 True/False\nx = int(input())\nprint(x in [2, 3, 5, 7])"
+  },
+  {
+    "id": 806,
+    "title": "列表转元组",
+    "difficulty": "medium",
+    "description": "读入一行整数，用空格分隔，先输出列表形式，再转成元组输出。",
+    "input_format": "一行，若干整数，空格分隔。",
+    "output_format": "两行：列表形式、元组形式。",
+    "sample_input": "1 2 3",
+    "sample_output": "[1, 2, 3]\n(1, 2, 3)",
+    "test_cases": [
+      {
+        "input": "1 2 3",
+        "output": "[1, 2, 3]\n(1, 2, 3)"
+      },
+      {
+        "input": "4 5",
+        "output": "[4, 5]\n(4, 5)"
+      }
+    ],
+    "hints": [
+      "lst = list(map(int, input().split()))",
+      "print(lst) 输出列表，t = tuple(lst) 转元组后 print(t)。"
+    ],
+    "solution": "# 列表转元组:tuple()\nnums = list(map(int, input().split()))\nprint(nums)\nprint(tuple(nums))"
+  }
+]

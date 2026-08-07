@@ -1,0 +1,163 @@
+[
+  {
+    "id": 601,
+    "title": "字符串长度",
+    "difficulty": "easy",
+    "description": "读入一个字符串，输出它的长度（字符个数）。",
+    "input_format": "一行，一个字符串 s。",
+    "output_format": "输出字符串的长度。",
+    "sample_input": "hello",
+    "sample_output": "5",
+    "test_cases": [
+      {
+        "input": "hello",
+        "output": "5"
+      },
+      {
+        "input": "Python3",
+        "output": "7"
+      },
+      {
+        "input": "abc def",
+        "output": "7"
+      }
+    ],
+    "hints": [
+      "len(s) 返回字符串长度。",
+      "注意空格也算一个字符。"
+    ],
+    "solution": "# len() 返回字符串长度\ns = input()\nprint(len(s))"
+  },
+  {
+    "id": 602,
+    "title": "字符串拼接",
+    "difficulty": "easy",
+    "description": "读入两个字符串 a 和 b，输出它们拼接后的结果（a 在前）。",
+    "input_format": "两行，第一行字符串 a，第二行字符串 b。",
+    "output_format": "输出 a 和 b 直接拼接的字符串。",
+    "sample_input": "Hello\nWorld",
+    "sample_output": "HelloWorld",
+    "test_cases": [
+      {
+        "input": "Hello\nWorld",
+        "output": "HelloWorld"
+      },
+      {
+        "input": "abc\ndef",
+        "output": "abcdef"
+      }
+    ],
+    "hints": [
+      "a = input() 读第一行，b = input() 读第二行。",
+      "用 + 拼接：print(a + b)"
+    ],
+    "solution": "# 字符串直接用 + 拼接\n# 注意:两行输入要分别 input() 读取\ns1 = input()\ns2 = input()\nprint(s1 + s2)"
+  },
+  {
+    "id": 603,
+    "title": "字符串反转",
+    "difficulty": "easy",
+    "description": "读入一个字符串，输出它的反转结果。",
+    "input_format": "一行，一个字符串 s。",
+    "output_format": "输出 s 反转后的字符串。",
+    "sample_input": "abcde",
+    "sample_output": "edcba",
+    "test_cases": [
+      {
+        "input": "abcde",
+        "output": "edcba"
+      },
+      {
+        "input": "madam",
+        "output": "madam"
+      },
+      {
+        "input": "Python",
+        "output": "nohtyP"
+      }
+    ],
+    "hints": [
+      "切片反转：s[::-1]",
+      "这是 Python 字符串处理最常用的技巧之一。"
+    ],
+    "solution": "# 切片 [::-1] 表示步长 -1,从后往前取,实现反转\ns = input()\nprint(s[::-1])"
+  },
+  {
+    "id": 604,
+    "title": "大小写转换",
+    "difficulty": "easy",
+    "description": "读入一个字符串，分别输出它的全大写和全小写形式。",
+    "input_format": "一行，一个字符串 s。",
+    "output_format": "两行：第一行全大写，第二行全小写。",
+    "sample_input": "Hello World",
+    "sample_output": "HELLO WORLD\nhello world",
+    "test_cases": [
+      {
+        "input": "Hello World",
+        "output": "HELLO WORLD\nhello world"
+      },
+      {
+        "input": "AbC",
+        "output": "ABC\nabc"
+      }
+    ],
+    "hints": [
+      "s.upper() 转大写，s.lower() 转小写。"
+    ],
+    "solution": "# .upper() 全大写,.lower() 全小写\ns = input()\nprint(s.upper())\nprint(s.lower())"
+  },
+  {
+    "id": 605,
+    "title": "统计字符数",
+    "difficulty": "medium",
+    "description": "读入一个字符串，统计其中字母 a 出现的次数（忽略大小写，A 和 a 都算）并输出。",
+    "input_format": "一行，一个字符串 s。",
+    "output_format": "输出字母 a（含大写 A）在 s 中出现的次数。",
+    "sample_input": "banana",
+    "sample_output": "3",
+    "test_cases": [
+      {
+        "input": "banana",
+        "output": "3"
+      },
+      {
+        "input": "Apple",
+        "output": "1"
+      },
+      {
+        "input": "xyz",
+        "output": "0"
+      }
+    ],
+    "hints": [
+      "先转成小写再 count('a'),即可忽略大小写。",
+      "或遍历字符串逐个比较（把大写 A 也当 a）。"
+    ],
+    "solution": "# 统计字母 a 出现的次数,忽略大小写(A 和 a 都算)\n# 先统一转小写再 count,这样大写 A 也算\ns = input().lower()\nprint(s.count('a'))"
+  },
+  {
+    "id": 606,
+    "title": "字符串切片",
+    "difficulty": "medium",
+    "description": "读入一个字符串，输出它的前 3 个字符、第 3 到第 5 个字符、后 3 个字符，每行一个。",
+    "input_format": "一行，一个长度 ≥ 6 的字符串 s。",
+    "output_format": "三行：s[0:3]、s[2:5]、s[-3:]。（第 3 到第 5 个字符，共 3 个）",
+    "sample_input": "abcdefghi",
+    "sample_output": "abc\ncdef\nghi",
+    "test_cases": [
+      {
+        "input": "abcdefghi",
+        "output": "abc\ncdef\nghi"
+      },
+      {
+        "input": "1234567890",
+        "output": "123\n3456\n890"
+      }
+    ],
+    "hints": [
+      "s[起点:终点] 切片，终点不含。",
+      "s[-3:] 表示最后 3 个字符。"
+    ],
+    "solution": "# 字符串切片\n# s[0:3] 前3个字符;s[2:6] 下标2~5(共4个,第3到第6个字符)\n# s[-3:] 末尾3个\ns = input()\nprint(s[0:3])\nprint(s[2:6])\nprint(s[-3:])"
+  }
+]

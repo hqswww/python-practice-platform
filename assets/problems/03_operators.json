@@ -1,0 +1,157 @@
+[
+  {
+    "id": 301,
+    "title": "算术运算符",
+    "difficulty": "easy",
+    "description": "读入两个整数 a 和 b，分别输出 a+b、a-b、a×b、a/b（浮点，保留一位小数）、a%b（模运算）。",
+    "input_format": "一行，两个整数 a 和 b（a、b 均大于 0）。",
+    "output_format": "五行，依次为：和、差、积、商（一位小数）、模。",
+    "sample_input": "7 3",
+    "sample_output": "10\n4\n21\n2.3\n1",
+    "test_cases": [
+      {
+        "input": "7 3",
+        "output": "10\n4\n21\n2.3\n1"
+      },
+      {
+        "input": "10 4",
+        "output": "14\n6\n40\n2.5\n2"
+      }
+    ],
+    "hints": [
+      "+ - * / % 是基本算术运算符。",
+      "/ 永远是浮点除法，// 是整除。",
+      "商保留一位小数用 {:.1f}。"
+    ],
+    "solution": "# 两个整数的五种运算\n# + - * 直接算,/(浮点除,保留一位),%(求余)\na, b = map(int, input().split())\nprint(a + b)\nprint(a - b)\nprint(a * b)\nprint(f\"{a / b:.1f}\")  # 商保留一位小数\nprint(a % b)"
+  },
+  {
+    "id": 302,
+    "title": "比较运算",
+    "difficulty": "easy",
+    "description": "读入两个整数 a 和 b，依次输出 a>b、a>=b、a<b、a<=b、a==b 的结果（True 或 False），每行一个。",
+    "input_format": "一行，两个整数 a 和 b。",
+    "output_format": "五行，依次为 a>b、a>=b、a<b、a<=b、a==b 的布尔值。",
+    "sample_input": "5 3",
+    "sample_output": "True\nTrue\nFalse\nFalse\nFalse",
+    "test_cases": [
+      {
+        "input": "5 3",
+        "output": "True\nTrue\nFalse\nFalse\nFalse"
+      },
+      {
+        "input": "4 4",
+        "output": "False\nTrue\nFalse\nTrue\nTrue"
+      },
+      {
+        "input": "2 9",
+        "output": "False\nFalse\nTrue\nTrue\nFalse"
+      }
+    ],
+    "hints": [
+      "比较运算符返回布尔值 True/False。",
+      "直接 print(a > b) 即可。"
+    ],
+    "solution": "# 五个比较运算,按题目要求顺序输出\n# 顺序: >  >=  <  <=  ==\na, b = map(int, input().split())\nprint(a > b)\nprint(a >= b)\nprint(a < b)\nprint(a <= b)\nprint(a == b)"
+  },
+  {
+    "id": 303,
+    "title": "逻辑运算",
+    "difficulty": "medium",
+    "description": "读入两个整数 a 和 b，判断 a 是否为正数（a>0），用逻辑运算输出三个结果：a 和 b 都为正、a 或 b 为正、a 不为正。每行一个 True/False。",
+    "input_format": "一行，两个整数 a 和 b。",
+    "output_format": "三行，依次为：(a>0) and (b>0)、(a>0) or (b>0)、not (a>0) 的结果。",
+    "sample_input": "5 -1",
+    "sample_output": "False\nTrue\nFalse",
+    "test_cases": [
+      {
+        "input": "5 -1",
+        "output": "False\nTrue\nFalse"
+      },
+      {
+        "input": "-3 -5",
+        "output": "False\nFalse\nTrue"
+      },
+      {
+        "input": "4 7",
+        "output": "True\nTrue\nFalse"
+      }
+    ],
+    "hints": [
+      "and 两者都真才真，or 一个真就真，not 取反。",
+      "print((a>0) and (b>0))"
+    ],
+    "solution": "# 逻辑运算 and/or/not\na, b = input().split()\na, b = int(a), int(b)\nprint(a > 0 and b > 0)   # 5>0 且 -1>0 -> False\nprint(a > 0 or b > 0)    # True\nprint(not a > 0)         # False\n"
+  },
+  {
+    "id": 304,
+    "title": "幂运算",
+    "difficulty": "easy",
+    "description": "读入两个整数 a 和 b，输出 a 的 b 次方（a^b）。",
+    "input_format": "一行，两个整数 a 和 b。",
+    "output_format": "输出 a 的 b 次方结果。",
+    "sample_input": "2 10",
+    "sample_output": "1024",
+    "test_cases": [
+      {
+        "input": "2 10",
+        "output": "1024"
+      },
+      {
+        "input": "3 3",
+        "output": "27"
+      },
+      {
+        "input": "5 0",
+        "output": "1"
+      }
+    ],
+    "hints": [
+      "幂运算符是 ** 。",
+      "print(a ** b)"
+    ],
+    "solution": "# 幂运算用 **\na, b = map(int, input().split())\nprint(a ** b)"
+  },
+  {
+    "id": 305,
+    "title": "整数除法陷阱",
+    "difficulty": "medium",
+    "description": "输出 7/2、7//2、7%2、7.0/2 四个表达式的结果，每个占一行。体验 /、//、% 的区别和浮点。",
+    "input_format": "本题无输入。",
+    "output_format": "四行，依次为 7/2、7//2、7%2、7.0/2 的结果。",
+    "sample_input": "",
+    "sample_output": "3.5\n3\n1\n3.5",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "3.5\n3\n1\n3.5"
+      }
+    ],
+    "hints": [
+      "/ 是浮点除法，// 是整除（向下取整），% 是取余。",
+      "7/2 = 3.5，7//2 = 3，7%2 = 1，7.0/2 = 3.5。"
+    ],
+    "solution": "# 区分 /(浮点)与 //(整除)\na, b = 7, 2\nprint(a / b)    # 3.5\nprint(a // b)   # 3\nprint(a % b)    # 1\nprint(a / b)    # 3.5\n"
+  },
+  {
+    "id": 306,
+    "title": "运算符优先级",
+    "difficulty": "medium",
+    "description": "计算表达式的值并输出：2 + 3 * 4 ** 2。体会运算符优先级。",
+    "input_format": "本题无输入。",
+    "output_format": "输出表达式 2 + 3 * 4 ** 2 的结果。",
+    "sample_input": "",
+    "sample_output": "50",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "50"
+      }
+    ],
+    "hints": [
+      "优先级：** 最高，然后 * /，最后 + -。",
+      "先算 4**2=16，再 3*16=48，最后 2+48=50。"
+    ],
+    "solution": "# 运算符优先级:** 最高,再 * / 和 %,最后 + -\n# 先 4**2=16,再 3*16=48,最后 2+48=50\nprint(2 + 3 * 4 ** 2)"
+  }
+]

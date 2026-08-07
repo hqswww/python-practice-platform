@@ -1,0 +1,157 @@
+[
+  {
+    "id": 1101,
+    "title": "列表推导式求平方",
+    "difficulty": "medium",
+    "description": "读入一行整数，用列表推导式生成它们平方后组成的新列表，输出这个列表。",
+    "input_format": "一行，若干整数，空格分隔。",
+    "output_format": "输出平方后组成的列表。",
+    "sample_input": "1 2 3 4",
+    "sample_output": "[1, 4, 9, 16]",
+    "test_cases": [
+      {
+        "input": "1 2 3 4",
+        "output": "[1, 4, 9, 16]"
+      },
+      {
+        "input": "-1 0 5",
+        "output": "[1, 0, 25]"
+      }
+    ],
+    "hints": [
+      "列表推导式：[x * x for x in nums]",
+      "nums = list(map(int, input().split()))",
+      "print(列表推导式结果) 输出。"
+    ],
+    "solution": "# 列表推导式:对每个元素做平方\nnums = list(map(int, input().split()))\nsq = [x * x for x in nums]\nprint(sq)"
+  },
+  {
+    "id": 1102,
+    "title": "列表推导式过滤",
+    "difficulty": "medium",
+    "description": "读入一行整数，用列表推导式保留所有偶数，输出结果列表。",
+    "input_format": "一行，若干整数，空格分隔。",
+    "output_format": "输出偶数组成的列表。",
+    "sample_input": "1 2 3 4 5 6",
+    "sample_output": "[2, 4, 6]",
+    "test_cases": [
+      {
+        "input": "1 2 3 4 5 6",
+        "output": "[2, 4, 6]"
+      },
+      {
+        "input": "2 4 8",
+        "output": "[2, 4, 8]"
+      }
+    ],
+    "hints": [
+      "带条件的推导式：[x for x in nums if x % 2 == 0]",
+      "x % 2 == 0 表示偶数。"
+    ],
+    "solution": "# 列表推导式 + 条件过滤:只保留偶数\nnums = list(map(int, input().split()))\n# 若 x 是偶数(x%2==0)才保留\neven = [x for x in nums if x % 2 == 0]\nprint(even)"
+  },
+  {
+    "id": 1103,
+    "title": "lambda 排序",
+    "difficulty": "medium",
+    "description": "读入若干行，每行一个 '名字 分数'（名字字符串，分数整数）。按分数从高到低排序，分数相同时按名字字典序，输出排序后的名字。",
+    "input_format": "若干行，每行 '名字 分数'。输入可能有多行。",
+    "output_format": "每行一个名字，按上述规则排序。",
+    "sample_input": "bob 80\nalice 95\ncarol 80",
+    "sample_output": "alice\nbob\ncarol",
+    "test_cases": [
+      {
+        "input": "bob 80\nalice 95\ncarol 80",
+        "output": "alice\nbob\ncarol"
+      },
+      {
+        "input": "x 1\ny 1",
+        "output": "x\ny"
+      }
+    ],
+    "hints": [
+      "先解析出 (名字, 分数) 列表。",
+      "sorted(名单, key=lambda x: (-x[1], x[0])) 先按分数降序再名字升序。",
+      "多行输入：用 sys.stdin 循环读或在 try/except 捕获 EOFError。"
+    ],
+    "solution": "# lambda 匿名函数 + 排序\n# 分数降序;分数相同按名字(字典序升序)\nimport sys\npairs = []\nfor line in sys.stdin:\n    line = line.strip()\n    if not line:\n        continue\n    name, score = line.split()\n    pairs.append((name, int(score)))\n# key 返回 (-分数, 名字):-分数使高分在前,名字处理同分先后\npairs.sort(key=lambda p: (-p[1], p[0]))\nfor name, _ in pairs:\n    print(name)"
+  },
+  {
+    "id": 1104,
+    "title": "异常处理",
+    "difficulty": "medium",
+    "description": "读入一个字符串，尝试把它转成整数。若成功输出 'OK: {数值}'，若失败（比如字母）输出 'Error'。",
+    "input_format": "一行，一个字符串。",
+    "output_format": "成功输出 'OK: 数值'，失败输出 'Error'。",
+    "sample_input": "123",
+    "sample_output": "OK: 123",
+    "test_cases": [
+      {
+        "input": "123",
+        "output": "OK: 123"
+      },
+      {
+        "input": "abc",
+        "output": "Error"
+      },
+      {
+        "input": "3.14",
+        "output": "Error"
+      }
+    ],
+    "hints": [
+      "用 try/except ValueError 捕获转换失败。",
+      "try:\\n    n = int(s)\\n    print(f'OK: {n}')\\nexcept ValueError:\\n    print('Error')"
+    ],
+    "solution": "# 异常处理:try/except\ntry:\n    n = int(input())\n    print(f\"OK: {n}\")\nexcept ValueError:\n    print(\"Error\")"
+  },
+  {
+    "id": 1105,
+    "title": "二维列表转置",
+    "difficulty": "hard",
+    "description": "读入 3 行，每行 3 个整数（空格分隔），组成 3×3 矩阵，输出它的转置（行变列）。",
+    "input_format": "3 行，每行 3 个整数，空格分隔。",
+    "output_format": "转置后的矩阵，每行 3 个数，空格分隔，共 3 行。",
+    "sample_input": "1 2 3\n4 5 6\n7 8 9",
+    "sample_output": "1 4 7\n2 5 8\n3 6 9",
+    "test_cases": [
+      {
+        "input": "1 2 3\n4 5 6\n7 8 9",
+        "output": "1 4 7\n2 5 8\n3 6 9"
+      }
+    ],
+    "hints": [
+      "先读 3 行组成矩阵 mat。",
+      "转置：new_mat = [[mat[j][i] for j in range(3)] for i in range(3)]",
+      "用 zip(*mat) 也可快速转置。",
+      "输出时每行用 ' '.join(str(n) for n in row)。"
+    ],
+    "solution": "# 二维矩阵转置:行变列\n# 读 3 行,每行 3 个数\ngrid = []\nfor _ in range(3):\n    grid.append(list(map(int, input().split())))\n# 转置:zip(*grid) 把每行对应位置组合成新行\nfor row in zip(*grid):\n    print(' '.join(map(str, row)))"
+  },
+  {
+    "id": 1106,
+    "title": "多行计数",
+    "difficulty": "hard",
+    "description": "读入未知行数的整数（每行一个或空格分隔多个，直到输入结束），输出所有整数的个数和总和。",
+    "input_format": "若干行，每行若干整数，空格分隔，直到输入结束。",
+    "output_format": "两个整数：整数总个数、总和，空格分隔。",
+    "sample_input": "1 2\n3\n4 5 6",
+    "sample_output": "6 21",
+    "test_cases": [
+      {
+        "input": "1 2\n3\n4 5 6",
+        "output": "6 21"
+      },
+      {
+        "input": "7 8\n9",
+        "output": "3 24"
+      }
+    ],
+    "hints": [
+      "用 sys.stdin 逐行读取：for line in sys.stdin:",
+      "每行 split 后逐个累加。",
+      "import sys; 最后 print(个数, 总和)。"
+    ],
+    "solution": "# 读未知行数整数,直到输入结束\nimport sys\ntotal_count = 0\ntotal_sum = 0\nfor line in sys.stdin:\n    line = line.strip()\n    if not line:\n        continue\n    nums = list(map(int, line.split()))\n    total_count += len(nums)\n    total_sum += sum(nums)\nprint(total_count, total_sum)"
+  }
+]

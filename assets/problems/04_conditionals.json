@@ -1,0 +1,196 @@
+[
+  {
+    "id": 401,
+    "title": "判断奇数偶数",
+    "difficulty": "easy",
+    "description": "读入一个整数，判断它是奇数还是偶数，并输出对应的中文。",
+    "input_format": "一行，一个整数 n。",
+    "output_format": "如果 n 是偶数，输出：偶数；如果是奇数，输出：奇数。",
+    "sample_input": "4",
+    "sample_output": "偶数",
+    "test_cases": [
+      {
+        "input": "4",
+        "output": "偶数"
+      },
+      {
+        "input": "7",
+        "output": "奇数"
+      },
+      {
+        "input": "0",
+        "output": "偶数"
+      },
+      {
+        "input": "-3",
+        "output": "奇数"
+      }
+    ],
+    "hints": [
+      "用 n % 2 判断，结果为 0 是偶数。",
+      "n = int(input())"
+    ],
+    "solution": "# if/else 判断奇偶\nn = int(input())\nif n % 2 == 0:\n    print(\"偶数\")\nelse:\n    print(\"奇数\")"
+  },
+  {
+    "id": 402,
+    "title": "比较大小",
+    "difficulty": "easy",
+    "description": "读入两个整数 a 和 b，输出较大的那个数。若相等则输出任意一个。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔。",
+    "output_format": "输出较大的那个数。",
+    "sample_input": "5 9",
+    "sample_output": "9",
+    "test_cases": [
+      {
+        "input": "5 9",
+        "output": "9"
+      },
+      {
+        "input": "-3 -8",
+        "output": "-3"
+      },
+      {
+        "input": "7 7",
+        "output": "7"
+      }
+    ],
+    "hints": [
+      "用 if a > b 判断。",
+      "也可以用内置函数 max(a, b)。"
+    ],
+    "solution": "# 输出两个数中较大的\na, b = map(int, input().split())\nif a > b:\n    print(a)\nelse:\n    print(b)"
+  },
+  {
+    "id": 403,
+    "title": "成绩等级",
+    "difficulty": "medium",
+    "description": "读入一个成绩（0-100 的整数），按以下规则输出等级：90-100 为 A，80-89 为 B，70-79 为 C，60-69 为 D，0-59 为 E。",
+    "input_format": "一行，一个整数 score。",
+    "output_format": "输出对应的等级字母：A、B、C、D 或 E。",
+    "sample_input": "85",
+    "sample_output": "B",
+    "test_cases": [
+      {
+        "input": "95",
+        "output": "A"
+      },
+      {
+        "input": "85",
+        "output": "B"
+      },
+      {
+        "input": "72",
+        "output": "C"
+      },
+      {
+        "input": "61",
+        "output": "D"
+      },
+      {
+        "input": "40",
+        "output": "E"
+      },
+      {
+        "input": "100",
+        "output": "A"
+      }
+    ],
+    "hints": [
+      "使用 if / elif / else 多分支判断。",
+      "注意判断顺序：先判断高分段，再逐渐降低。"
+    ],
+    "solution": "# 分数段分级:0-59 为 E,60 起依次 D/C/B/A\nscore = int(input())\nif score >= 90:\n    print(\"A\")\nelif score >= 80:\n    print(\"B\")\nelif score >= 70:\n    print(\"C\")\nelif score >= 60:\n    print(\"D\")\nelse:\n    print(\"E\")"
+  },
+  {
+    "id": 404,
+    "title": "闰年判断",
+    "difficulty": "medium",
+    "description": "读入一个年份，判断它是否为闰年。规则：能被 4 整除且不能被 100 整除，或能被 400 整除的是闰年。",
+    "input_format": "一行，一个整数 year。",
+    "output_format": "如果是闰年输出：yes；否则输出：no。",
+    "sample_input": "2024",
+    "sample_output": "yes",
+    "test_cases": [
+      {
+        "input": "2024",
+        "output": "yes"
+      },
+      {
+        "input": "2023",
+        "output": "no"
+      },
+      {
+        "input": "2000",
+        "output": "yes"
+      },
+      {
+        "input": "1900",
+        "output": "no"
+      }
+    ],
+    "hints": [
+      "闰年条件：(year % 4 == 0 and year % 100 != 0) or year % 400 == 0",
+      "注意逻辑运算符 and / or 的使用。"
+    ],
+    "solution": "# 闰年:能被4整除且(不能被100整除或能被400整除)\nyear = int(input())\nif (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:\n    print(\"yes\")\nelse:\n    print(\"no\")"
+  },
+  {
+    "id": 405,
+    "title": "正负零",
+    "difficulty": "easy",
+    "description": "读入一个整数，判断它是正数、负数还是零，并输出对应中文。",
+    "input_format": "一行，一个整数 n。",
+    "output_format": "正数输出：正数；负数输出：负数；零输出：零。",
+    "sample_input": "5",
+    "sample_output": "正数",
+    "test_cases": [
+      {
+        "input": "5",
+        "output": "正数"
+      },
+      {
+        "input": "-5",
+        "output": "负数"
+      },
+      {
+        "input": "0",
+        "output": "零"
+      }
+    ],
+    "hints": [
+      "先判断是否为 0，再判断正负。",
+      "if n > 0 / elif n < 0 / else"
+    ],
+    "solution": "# 判断正数/负数/零\nn = int(input())\nif n > 0:\n    print(\"正数\")\nelif n < 0:\n    print(\"负数\")\nelse:\n    print(\"零\")"
+  },
+  {
+    "id": 406,
+    "title": "三个数取最大",
+    "difficulty": "medium",
+    "description": "读入三个整数，输出其中最大的数。",
+    "input_format": "一行，三个整数 a、b、c，用空格分隔。",
+    "output_format": "输出最大的那个数。",
+    "sample_input": "3 8 5",
+    "sample_output": "8",
+    "test_cases": [
+      {
+        "input": "3 8 5",
+        "output": "8"
+      },
+      {
+        "input": "-1 -5 -2",
+        "output": "-1"
+      },
+      {
+        "input": "10 10 10",
+        "output": "10"
+      }
+    ],
+    "hints": [
+      "可以嵌套 if 比较，或用内置函数 max(a, b, c)。",
+      "a, b, c = map(int, input().split())"
+    ],
+    "solution": "# 三个数取最大:两两比较\na, b, c = map(int, input().split())\nif a >= b and a >= c:\n    print(a)\nelif b >= a and b >= c:\n    print(b)\nelse:\n    print(c)"
+  }
+]

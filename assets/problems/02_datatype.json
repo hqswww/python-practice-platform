@@ -1,0 +1,177 @@
+[
+  {
+    "id": 201,
+    "title": "整数运算",
+    "difficulty": "easy",
+    "description": "读入两个整数 a 和 b，分别输出它们的和、差（a-b）、积（a×b）和整除商（a÷b 向下取整）。每个结果占一行。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔。",
+    "output_format": "四行：第一行 a+b，第二行 a-b，第三行 a×b，第四行 a//b。",
+    "sample_input": "10 3",
+    "sample_output": "13\n7\n30\n3",
+    "test_cases": [
+      {
+        "input": "10 3",
+        "output": "13\n7\n30\n3"
+      },
+      {
+        "input": "9 2",
+        "output": "11\n7\n18\n4"
+      },
+      {
+        "input": "-7 2",
+        "output": "-5\n-9\n-14\n-4"
+      }
+    ],
+    "hints": [
+      "整除用 // 运算符。",
+      "注意 Python 的 // 是向下取整。"
+    ],
+    "solution": "# 读取两个整数,分别做四则运算\na, b = map(int, input().split())  # map 把两个值转成 int\nprint(a + b)   # 加\nprint(a - b)   # 减\nprint(a * b)   # 乘\nprint(a // b)  # 整除(//)只保留整数部分"
+  },
+  {
+    "id": 202,
+    "title": "浮点数四舍五入",
+    "difficulty": "easy",
+    "description": "读入一个小数，保留两位小数输出。",
+    "input_format": "一行，一个小数 x。",
+    "output_format": "输出 x 保留两位小数的结果。",
+    "sample_input": "3.14159",
+    "sample_output": "3.14",
+    "test_cases": [
+      {
+        "input": "3.14159",
+        "output": "3.14"
+      },
+      {
+        "input": "2.675",
+        "output": "2.67"
+      },
+      {
+        "input": "5.0",
+        "output": "5.00"
+      }
+    ],
+    "hints": [
+      "用格式化：print(f\"{x:.2f}\")",
+      "注意浮点数表示可能会有微小误差。"
+    ],
+    "solution": "# 保留两位小数:用 f-string 格式化 {:.2f}\nn = float(input())\n# .2f 会补足到两位小数,如 5.0 -> 5.00\nprint(f\"{n:.2f}\")"
+  },
+  {
+    "id": 203,
+    "title": "余数和整除",
+    "difficulty": "easy",
+    "description": "读入两个正整数 a 和 b，输出 a 除以 b 的商和余数。",
+    "input_format": "一行，两个正整数 a 和 b，空格分隔。",
+    "output_format": "输出两个整数：商和余数，用空格分隔。",
+    "sample_input": "17 5",
+    "sample_output": "3 2",
+    "test_cases": [
+      {
+        "input": "17 5",
+        "output": "3 2"
+      },
+      {
+        "input": "20 4",
+        "output": "5 0"
+      },
+      {
+        "input": "9 2",
+        "output": "4 1"
+      }
+    ],
+    "hints": [
+      "商用 // ，余数用 % 。",
+      "print(a // b, a % b)"
+    ],
+    "solution": "# 余数用 %,整除用 //\na, b = map(int, input().split())\nprint(a // b, a % b)"
+  },
+  {
+    "id": 204,
+    "title": "温度转换",
+    "difficulty": "medium",
+    "description": "读入一个华氏温度，转换成摄氏温度并输出。公式：C = (F - 32) × 5 / 9，保留一位小数。",
+    "input_format": "一行，一个数字表示华氏温度 F。",
+    "output_format": "输出摄氏温度，保留一位小数。",
+    "sample_input": "100",
+    "sample_output": "37.8",
+    "test_cases": [
+      {
+        "input": "100",
+        "output": "37.8"
+      },
+      {
+        "input": "32",
+        "output": "0.0"
+      },
+      {
+        "input": "212",
+        "output": "100.0"
+      }
+    ],
+    "hints": [
+      "C = (F - 32) * 5 / 9",
+      "用 f\"{c:.1f}\" 保留一位小数。"
+    ],
+    "solution": "# 由摄氏温度算华氏温度:C = (F - 32) * 5 / 9\nf = float(input())\nc = (f - 32) * 5 / 9\n# 保留 1 位小数\nprint(f\"{c:.1f}\")"
+  },
+  {
+    "id": 205,
+    "title": "交换两个数",
+    "difficulty": "easy",
+    "description": "读入两个整数 a 和 b，交换它们的值并输出。",
+    "input_format": "一行，两个整数 a 和 b。",
+    "output_format": "输出交换后的两个数，用空格分隔（先 b 后 a）。",
+    "sample_input": "1 2",
+    "sample_output": "2 1",
+    "test_cases": [
+      {
+        "input": "1 2",
+        "output": "2 1"
+      },
+      {
+        "input": "5 -3",
+        "output": "-3 5"
+      },
+      {
+        "input": "0 9",
+        "output": "9 0"
+      }
+    ],
+    "hints": [
+      "Python 可直接一次交换：a, b = b, a",
+      "或用一个中间变量 temp。"
+    ],
+    "solution": "# 交换两个变量:用 Python 的元组解包,一行搞定\na, b = input().split()\na, b = b, a   # 右边的 b,a 先打包成元组,再按顺序赋给 a,b\nprint(a, b)"
+  },
+  {
+    "id": 206,
+    "title": "平均值",
+    "difficulty": "medium",
+    "description": "读入三个整数，输出它们的平均值，保留两位小数。",
+    "input_format": "一行，三个整数 a、b、c，空格分隔。",
+    "output_format": "输出平均值，保留两位小数。",
+    "sample_input": "85 90 80",
+    "sample_output": "85.00",
+    "test_cases": [
+      {
+        "input": "85 90 80",
+        "output": "85.00"
+      },
+      {
+        "input": "1 2 3",
+        "output": "2.00"
+      },
+      {
+        "input": "10 20 31",
+        "output": "20.33"
+      }
+    ],
+    "hints": [
+      "平均 = 总和 / 个数。",
+      "注意要用浮点除法 / 。",
+      "f\"{avg:.2f}\" 保留两位小数。"
+    ],
+    "solution": "# 求平均值并保留两位小数\nnums = list(map(int, input().split()))\navg = sum(nums) / len(nums)\nprint(f\"{avg:.2f}\")"
+  }
+]

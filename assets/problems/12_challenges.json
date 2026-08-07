@@ -1,0 +1,185 @@
+[
+  {
+    "id": 1201,
+    "title": "判断质数",
+    "difficulty": "medium",
+    "description": "读入一个正整数 n，判断它是否为质数（只能被 1 和它本身整除），输出 True 或 False。",
+    "input_format": "一行，一个正整数 n。",
+    "output_format": "输出 n 是否为质数（True 或 False）。",
+    "sample_input": "7",
+    "sample_output": "True",
+    "test_cases": [
+      {
+        "input": "7",
+        "output": "True"
+      },
+      {
+        "input": "9",
+        "output": "False"
+      },
+      {
+        "input": "2",
+        "output": "True"
+      },
+      {
+        "input": "1",
+        "output": "False"
+      }
+    ],
+    "hints": [
+      "质数必须大于 1。",
+      "从 2 到 sqrt(n) 检查能否整除，只要有一个能整除就不是质数。",
+      "用 math.isqrt(n) 或 int(n ** 0.5) 作为循环上界。"
+    ],
+    "solution": "# 判断质数:只能被 1 和自己整除\nn = int(input())\nif n < 2:\n    print(False)   # 0 和 1 不是质数\nelse:\n    is_prime = True\n    import math\n    # 从 2 试到 sqrt(n) 即可(正因子成对出现)\n    for i in range(2, int(math.isqrt(n)) + 1):\n        if n % i == 0:\n            is_prime = False\n            break\n    print(is_prime)"
+  },
+  {
+    "id": 1202,
+    "title": "斐波那契数列",
+    "difficulty": "medium",
+    "description": "读入一个正整数 n，输出斐波那契数列的前 n 项，用空格分隔。（第 1 项为 1，第 2 项为 1，之后每一项为前两项之和）",
+    "input_format": "一行，一个正整数 n。",
+    "output_format": "前 n 个斐波那契数，空格分隔，末尾无多余空格。",
+    "sample_input": "6",
+    "sample_output": "1 1 2 3 5 8",
+    "test_cases": [
+      {
+        "input": "6",
+        "output": "1 1 2 3 5 8"
+      },
+      {
+        "input": "3",
+        "output": "1 1 2"
+      },
+      {
+        "input": "1",
+        "output": "1"
+      }
+    ],
+    "hints": [
+      "a, b = 1, 1，每次输出 a 然后 a, b = b, a + b。",
+      "循环 n 次。",
+      "用列表收集结果再 ' '.join 输出。"
+    ],
+    "solution": "# 斐波那契:前两项 1,1,之后每项是前两项之和\nn = int(input())\nfib = []\na, b = 1, 1\nfor _ in range(n):\n    fib.append(a)\n    a, b = b, a + b\nprint(' '.join(map(str, fib)))"
+  },
+  {
+    "id": 1203,
+    "title": "回文字符串",
+    "difficulty": "medium",
+    "description": "读入一个字符串，判断它是否是回文（正读反读都一样），输出 True 或 False。忽略空格和大小写。",
+    "input_format": "一行，一个字符串（可能含空格和大写字母）。",
+    "output_format": "输出是否为回文（True 或 False）。",
+    "sample_input": "A man a plan a canal Panama",
+    "sample_output": "True",
+    "test_cases": [
+      {
+        "input": "A man a plan a canal Panama",
+        "output": "True"
+      },
+      {
+        "input": "No lemon no melon",
+        "output": "True"
+      },
+      {
+        "input": "hello",
+        "output": "False"
+      }
+    ],
+    "hints": [
+      "先把字符串转小写并去掉空格：s = s.replace(' ', '').lower()",
+      "判断 s == s[::-1]。",
+      "题目保证只含字母和空格。"
+    ],
+    "solution": "# 判断回文:忽略空格和大小写\n# 先去掉所有空格,再统一小写,再对比反转\nimport re\ns = input()\ns = re.sub(r'\\s+', '', s).lower()\nprint(s == s[::-1])"
+  },
+  {
+    "id": 1204,
+    "title": "统计元音字母",
+    "difficulty": "medium",
+    "description": "读入一个字符串（可能含空格），统计其中元音字母(a, e, i, o, u)的个数，忽略大小写，输出个数。",
+    "input_format": "一行，一个字符串。",
+    "output_format": "输出元音字母的个数。",
+    "sample_input": "Hello World",
+    "sample_output": "3",
+    "test_cases": [
+      {
+        "input": "Hello World",
+        "output": "3"
+      },
+      {
+        "input": "AEIOU",
+        "output": "5"
+      },
+      {
+        "input": "xyz",
+        "output": "0"
+      }
+    ],
+    "hints": [
+      "转小写后逐个字符判断是否 in 'aeiou'。",
+      "count = sum(1 for ch in s if ch in 'aeiou')"
+    ],
+    "solution": "# 统计元音字母个数,忽略大小写\ns = input().lower()\nvowels = set('aeiou')\ncount = 0\nfor ch in s:\n    if ch in vowels:\n        count += 1\nprint(count)"
+  },
+  {
+    "id": 1205,
+    "title": "数字位数求和",
+    "difficulty": "medium",
+    "description": "读入一个正整数 n，反复把它的各位数字相加，直到结果是一位数，输出这个一位数。",
+    "input_format": "一行，一个正整数 n。",
+    "output_format": "输出逐位相加直到一位数的结果。",
+    "sample_input": "38",
+    "sample_output": "2",
+    "test_cases": [
+      {
+        "input": "38",
+        "output": "2"
+      },
+      {
+        "input": "12345",
+        "output": "6"
+      },
+      {
+        "input": "9",
+        "output": "9"
+      }
+    ],
+    "hints": [
+      "3 + 8 = 11，1 + 1 = 2。",
+      "用 while 循环，当 n >= 10 时持续把各位相加。",
+      "sum(map(int, str(n))) 求各位和。"
+    ],
+    "solution": "# 数字位数求和,直到一位数(数学上的数根)\n# 若 n%9==0 且 n>0 则数根为 9\nn = int(input())\nif n == 0:\n    print(0)\nelif n % 9 == 0:\n    print(9)\nelse:\n    print(n % 9)"
+  },
+  {
+    "id": 1206,
+    "title": "最大公约数",
+    "difficulty": "hard",
+    "description": "读入两个正整数 a 和 b，输出它们的最大公约数（GCD）。",
+    "input_format": "一行，两个正整数 a 和 b，空格分隔。",
+    "output_format": "输出 a 和 b 的最大公约数。",
+    "sample_input": "12 18",
+    "sample_output": "6",
+    "test_cases": [
+      {
+        "input": "12 18",
+        "output": "6"
+      },
+      {
+        "input": "7 13",
+        "output": "1"
+      },
+      {
+        "input": "100 75",
+        "output": "25"
+      }
+    ],
+    "hints": [
+      "直接用 math.gcd(a, b)。",
+      "或自己写辗转相除法：while b: a, b = b, a % b",
+      "辗转相除法：最后 a 就是最大公约数。"
+    ],
+    "solution": "# 最大公约数:辗转相除法\n# 反复用余数替换,直到余数为 0\ndef gcd(a, b):\n    while b != 0:\n        a, b = b, a % b\n    return a\n\na, b = map(int, input().split())\nprint(gcd(a, b))"
+  }
+]

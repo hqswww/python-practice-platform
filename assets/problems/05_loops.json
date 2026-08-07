@@ -1,0 +1,174 @@
+[
+  {
+    "id": 501,
+    "title": "从1数到n",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，从 1 数到 n，每个数占一行输出。体验 for 循环。",
+    "input_format": "一行，一个整数 n。",
+    "output_format": "输出 n 行，依次为 1 到 n。",
+    "sample_input": "5",
+    "sample_output": "1\n2\n3\n4\n5",
+    "test_cases": [
+      {
+        "input": "5",
+        "output": "1\n2\n3\n4\n5"
+      },
+      {
+        "input": "1",
+        "output": "1"
+      },
+      {
+        "input": "3",
+        "output": "1\n2\n3"
+      }
+    ],
+    "hints": [
+      "for i in range(1, n+1):",
+      "range(1, n+1) 会生成 1 到 n。"
+    ],
+    "solution": "# 用 range(1, n+1) 生成 1 到 n 的序列,for 逐个取出并输出\nn = int(input())\n# range(1, n+1) 表示从 1 开始,到 n 为止(左闭右开)\nfor i in range(1, n + 1):\n    print(i)"
+  },
+  {
+    "id": 502,
+    "title": "累加求和",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，计算 1 + 2 + ... + n 的和并输出。",
+    "input_format": "一行，一个整数 n。",
+    "output_format": "输出从 1 加到 n 的总和。",
+    "sample_input": "100",
+    "sample_output": "5050",
+    "test_cases": [
+      {
+        "input": "10",
+        "output": "55"
+      },
+      {
+        "input": "100",
+        "output": "5050"
+      },
+      {
+        "input": "1",
+        "output": "1"
+      }
+    ],
+    "hints": [
+      "用一个变量 sum 累加，初始为 0。",
+      "sum += i 等价于 sum = sum + i。"
+    ],
+    "solution": "# 累加求和:用一个变量 total 不断累加\nn = int(input())\ntotal = 0\nfor i in range(1, n + 1):\n    total += i   # 等价于 total = total + i\nprint(total)"
+  },
+  {
+    "id": 503,
+    "title": "打印偶数",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，输出 1 到 n 之间的所有偶数，每个一行。",
+    "input_format": "一行，一个整数 n。",
+    "output_format": "按从小到大输出 1 到 n 中的偶数，每行一个。",
+    "sample_input": "10",
+    "sample_output": "2\n4\n6\n8\n10",
+    "test_cases": [
+      {
+        "input": "10",
+        "output": "2\n4\n6\n8\n10"
+      },
+      {
+        "input": "6",
+        "output": "2\n4\n6"
+      },
+      {
+        "input": "3",
+        "output": "2"
+      }
+    ],
+    "hints": [
+      "循环里用 if i % 2 == 0 判断是否偶数。",
+      "也可以用 range(2, n+1, 2)。"
+    ],
+    "solution": "# 打印 1 到 n 的偶数:数字 % 2 == 0 即为偶数\nn = int(input())\nfor i in range(1, n + 1):\n    if i % 2 == 0:\n        print(i)"
+  },
+  {
+    "id": 504,
+    "title": "乘法表",
+    "difficulty": "medium",
+    "description": "输出 9x9 乘法表的每一行，格式为：1x1=1，每一行表达式之间用一个空格分隔。",
+    "input_format": "本题无输入。",
+    "output_format": "输出 9 行，第 i 行包含 1x1=... 到 ix i=... 的表达式，格式如 1x1=1 2x2=4，全部用\"x\"（小写x）连接。",
+    "sample_input": "",
+    "sample_output": "1x1=1\n1x2=2 2x2=4\n1x3=3 2x3=6 3x3=9",
+    "test_cases": [
+      {
+        "input": "",
+        "output": "1x1=1\n1x2=2 2x2=4\n1x3=3 2x3=6 3x3=9\n1x4=4 2x4=8 3x4=12 4x4=16\n1x5=5 2x5=10 3x5=15 4x5=20 5x5=25\n1x6=6 2x6=12 3x6=18 4x6=24 5x6=30 6x6=36\n1x7=7 2x7=14 3x7=21 4x7=28 5x7=35 6x7=42 7x7=49\n1x8=8 2x8=16 3x8=24 4x8=32 5x8=40 6x8=48 7x8=56 8x8=64\n1x9=9 2x9=18 3x9=27 4x9=36 5x9=45 6x9=54 7x9=63 8x9=72 9x9=81"
+      }
+    ],
+    "hints": [
+      "外层循环控制行，内层循环控制每行的列。",
+      "用 print() 的 end=\" \" 参数控制不换行。",
+      "每行结束再 print() 换行。"
+    ],
+    "solution": "# 嵌套 for 打印乘法表\n# 外层 i 表示行(1~9),内层 j 表示每行从 1 到 i\n# 每行内多个式子之间用空格分隔\nfor i in range(1, 10):\n    row = []\n    for j in range(1, i + 1):\n        row.append(f\"{j}x{i}={j*i}\")\n    print(\" \".join(row))"
+  },
+  {
+    "id": 505,
+    "title": "统计正数个数",
+    "difficulty": "medium",
+    "description": "读入 n 个整数，统计其中正数（大于 0）的个数并输出。",
+    "input_format": "第一行是一个整数 n，第二行是 n 个整数，用空格分隔。",
+    "output_format": "输出一个整数，表示正数的个数。",
+    "sample_input": "6\n3 -2 5 0 -8 10",
+    "sample_output": "3",
+    "test_cases": [
+      {
+        "input": "6\n3 -2 5 0 -8 10",
+        "output": "3"
+      },
+      {
+        "input": "4\n-1 -2 -3 -4",
+        "output": "0"
+      },
+      {
+        "input": "3\n1 2 3",
+        "output": "3"
+      }
+    ],
+    "hints": [
+      "第一行读入 n，第二行用 input().split() 读入列表。",
+      "遍历列表，用 if x > 0 计数。",
+      "注意 split() 出来的还是字符串，需要 int() 转换。"
+    ],
+    "solution": "# 统计正数个数:遍历每个数,>0 就计数加一\nn = int(input())\nnums = list(map(int, input().split()))\ncount = 0\nfor x in nums:\n    if x > 0:\n        count += 1\nprint(count)"
+  },
+  {
+    "id": 506,
+    "title": "n的阶乘",
+    "difficulty": "medium",
+    "description": "读入一个整数 n，计算 n 的阶乘（n! = 1 × 2 × ... × n）并输出。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 10）。",
+    "output_format": "输出 n 的阶乘结果。",
+    "sample_input": "5",
+    "sample_output": "120",
+    "test_cases": [
+      {
+        "input": "5",
+        "output": "120"
+      },
+      {
+        "input": "10",
+        "output": "3628800"
+      },
+      {
+        "input": "0",
+        "output": "1"
+      },
+      {
+        "input": "3",
+        "output": "6"
+      }
+    ],
+    "hints": [
+      "用一个变量 result 初始为 1，循环累乘。",
+      "注意 0! = 1，循环前先考虑这个特殊情况。"
+    ],
+    "solution": "# 阶乘:从 1 乘到 n\nn = int(input())\nresult = 1\n# 从1乘到n;若 n=0,循环不执行,result 保持 1\nfor i in range(1, n + 1):\n    result *= i\nprint(result)"
+  }
+]
