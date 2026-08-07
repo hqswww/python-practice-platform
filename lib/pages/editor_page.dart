@@ -7,6 +7,7 @@ import '../services/progress_service.dart';
 import '../services/settings_service.dart';
 import 'widgets/problem_panel.dart';
 import 'widgets/judge_result_panel.dart';
+import 'widgets/python_code_field.dart';
 
 /// 编辑器判题页：左(题目描述) 右(代码编辑器 + 判题结果)
 ///
@@ -188,34 +189,13 @@ class _EditorPageState extends State<EditorPage> {
   Widget _buildEditorPanel(BuildContext context) {
     return Column(
       children: [
-        // 代码编辑器
+        // 代码编辑器（语法高亮 + 行号）
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-          child: TextField(
+          child: PythonCodeField(
             controller: _codeController,
-            maxLines: null,
-            expands: false,
             minLines: 10,
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 14,
-              height: 1.5,
-            ),
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              hintText: '在这里输入 Python 代码…',
-              hintStyle: const TextStyle(color: Colors.grey),
-              suffixIcon: _isJudging
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : null,
-            ),
+            hintText: '在这里输入 Python 代码…',
           ),
         ),
         // 操作栏
@@ -249,8 +229,17 @@ class _EditorPageState extends State<EditorPage> {
               // 运行判题
               FilledButton.icon(
                 onPressed: _isJudging ? null : _runJudge,
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('运行并判题'),
+                icon: _isJudging
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.play_arrow),
+                label: Text(_isJudging ? '判题中…' : '运行并判题'),
               ),
             ],
           ),

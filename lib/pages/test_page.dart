@@ -11,6 +11,7 @@ import '../services/judge_engine.dart';
 import '../services/progress_service.dart';
 import '../services/settings_service.dart';
 import 'test_history_page.dart';
+import 'widgets/python_code_field.dart';
 
 /// 测试中单题状态
 enum Status { none, submitted, correct }
@@ -1151,18 +1152,10 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
                 if (p.sampleOutput.isNotEmpty)
                   Text('示例输出: ${p.sampleOutput.replaceAll('\n', ' ⏎ ')}'),
                 const SizedBox(height: 12),
-                TextField(
+                PythonCodeField(
                   controller: _controller,
-                  maxLines: 8,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '在此输入代码…',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                  ),
+                  minLines: 8,
+                  hintText: '在此输入代码…',
                 ),
                 const SizedBox(height: 12),
                 Row(
