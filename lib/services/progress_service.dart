@@ -94,6 +94,38 @@ class ProgressService {
     await prefs.setBool('$_unansPrefix$problemId', true);
   }
 
+  /// 直接设置某题的错题次数（导入进度用；0 清除错题记录）
+  Future<void> setWrongCount(int problemId, int count) async {
+    final prefs = await _ensure();
+    if (count <= 0) {
+      await clearWrong(problemId);
+      return;
+    }
+    await prefs.setInt('$_wrongPrefix$problemId', count);
+    if (prefs.containsKey('$_unansPrefix$problemId')) {
+      await prefs.remove('$_unansPrefix$problemId');
+    }
+    _wrongCache[problemId] = count;
+  }
+
+  /// 直接设置某题的“未作答”标志（导入进度用）
+  Future<void> setUnanswered(int problemId, bool value) async {
+    final prefs = await _ensure();
+    if (value) {
+      await prefs.setBool('$_unansPrefix$problemId', true);
+    } else {
+      if (prefs.containsKey('$_unansPrefix$problemId')) {
+        await prefs.remove('$_unansPrefix$problemId');
+      }
+    }
+  }
+
+  /// 直接设置某题的收藏状态（导入进度用，非 toggle）
+  Future<void> setFavorite(int problemId, bool value) async {
+    final prefs = await _ensure();
+    await prefs.setBool('$_favPrefix$problemId', value);
+  }
+
   /// 该错题是否来自“未作答”（而非做错）
   Future<bool> isUnanswered(int problemId) async {
     final prefs = await _ensure();

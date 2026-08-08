@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../data/problem_repository.dart';
 import '../models/problem.dart';
 import '../services/export_service.dart';
+import '../services/import_service.dart';
 import '../services/progress_service.dart';
 import '../services/settings_service.dart';
 import 'achievements_page.dart';
@@ -21,6 +25,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final ProgressService _progress = ProgressService();
   final ExportService _export = ExportService();
+  final ImportService _import = ImportService();
 
   // 动画控制
   int _hoveredCard = -1;
@@ -213,6 +218,28 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 16),
           _settingsCard(
             index: 4,
+            icon: Icons.file_download_outlined,
+            color: Colors.teal,
+            title: '导入进度',
+            subtitle: '从导出的 JSON 文件合并进度（取并集，不会丢失当前进度）',
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      onPressed: _importJson,
+                      icon: const Icon(Icons.file_open_outlined),
+                      label: const Text('导入 JSON'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _settingsCard(
+            index: 5,
             icon: Icons.delete_sweep_outlined,
             color: Colors.red,
             title: '清除进度',
@@ -548,6 +575,141 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+  }
+
+  /// 导入 JSON 进度：先让用户选文件，再合并导入。
+  Future<void> _importJson() async {
+    late List<ListTile> files;
+    try {
+      files = await _buildImportFileList();
+      if (!mounted) return;
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('无法读取导入文件：$e')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (files.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('没找到可导入的进度 JSON 文件，请先导出')),
+      );
+      return;
+    }
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('选择要导入的进度文件'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: files,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
+    if (picked == null || !mounted) return;
+
+    // 确认合并（提示不会覆盖当前进度）
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('确认导入进度？'),
+        content: const Text('将以合并方式导入（取并集），不会清除你当前的进度。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('导入'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    try {
+      final summary = await _import.importFromFile(picked);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(summary.message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('导入失败：$e')),
+      );
+    }
+  }
+
+  /// 收集可导入的 JSON 文件（导出文件夹 + 下载目录），按修改时间倒序。
+  Future<List<ListTile>> _buildImportFileList() async {
+    final candidates = <File>[];
+    // 导出目录
+    try {
+      final docs = await getApplicationDocumentsDirectory();
+      final exportDir = Directory('${docs.path}/PythonPractice导出');
+      if (await exportDir.exists()) {
+        await for (final e in exportDir.list()) {
+          if (e is File && e.path.toLowerCase().endsWith('.json')) {
+            candidates.add(e);
+          }
+        }
+      }
+    } catch (_) {}
+    // 下载目录
+    try {
+      final dl = await getDownloadsDirectory();
+      if (dl != null && await dl.exists()) {
+        await for (final e in dl.list()) {
+          if (e is File && e.path.toLowerCase().endsWith('.json')) {
+            candidates.add(e);
+          }
+        }
+      }
+    } catch (_) {}
+    // 按修改时间倒序，去重（同一路径只留一次）
+    final seen = <String>{};
+    final unique = <File>[];
+    for (final f in candidates) {
+      if (seen.add(f.path)) unique.add(f);
+    }
+    unique.sort((a, b) {
+      final at = a.statSync().modified;
+      final bt = b.statSync().modified;
+      return bt.compareTo(at);
+    });
+    final tiles = <ListTile>[];
+    for (final f in unique.take(30)) {
+      final stat = f.statSync();
+      tiles.add(
+        ListTile(
+          title: Text(f.uri.pathSegments.last),
+          subtitle: Text(
+            '${f.parent.path}\n${stat.size ~/ 1024} KB · '
+            '${_fmtTime(stat.modified)}',
+          ),
+          trailing: const Icon(Icons.file_open_outlined),
+          onTap: () => Navigator.pop(context, f.path),
+        ),
+      );
+    }
+    return tiles;
+  }
+
+  String _fmtTime(DateTime t) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
   }
 
   Future<void> _confirmReset() async {
