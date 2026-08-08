@@ -13,6 +13,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'python_runtime.dart';
+
 /// 一次交互运行的生命周期事件
 enum RunnerEventKind {
   /// 程序输出到 stdout
@@ -43,12 +45,7 @@ class InteractiveRunner {
   bool _ioClosed = false;
 
   InteractiveRunner({String? pythonCommand})
-      : pythonCommand = pythonCommand ?? _defaultPython();
-
-  static String _defaultPython() {
-    if (Platform.isWindows) return 'python.exe';
-    return 'python3';
-  }
+      : pythonCommand = pythonCommand ?? PythonRuntime.resolvePythonCommand();
 
   bool get isRunning => _isRunning;
 
@@ -78,8 +75,9 @@ class InteractiveRunner {
 
     final process = await Process.start(
       pythonCommand,
-      [file.absolute.path],
+      [...PythonRuntime.utf8Args, file.absolute.path],
       workingDirectory: file.parent.path,
+      environment: PythonRuntime.withUtf8Env(),
     );
     _process = process;
     _isRunning = true;

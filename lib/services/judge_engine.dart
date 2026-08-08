@@ -14,6 +14,7 @@ import 'dart:io';
 
 import '../models/judge_result.dart';
 import '../models/problem.dart';
+import 'python_runtime.dart';
 
 class JudgeEngine {
   /// 判题超时时间（毫秒）
@@ -23,13 +24,7 @@ class JudgeEngine {
   final String pythonCommand;
 
   JudgeEngine({this.timeoutMs = 2000, String? pythonCommand})
-      : pythonCommand = pythonCommand ?? _defaultPython();
-
-  /// 默认 Python 命令：Windows 用 python.exe（捆绑），其他用 python3
-  static String _defaultPython() {
-    if (Platform.isWindows) return 'python.exe';
-    return 'python3';
-  }
+      : pythonCommand = pythonCommand ?? PythonRuntime.resolvePythonCommand();
 
   /// 判题用包装：重写 input()，把提示(prompt)写到 stderr 而非 stdout。
   /// 这样 prompt 不会混入判题比对的标准输出，`a=input("a=")` 这类代码能正常判对。
@@ -127,12 +122,12 @@ builtins.input = _judge_input
     try {
       final process = await Process.start(
         pythonCommand,
-        [solutionFile.absolute.path],
+        [...PythonRuntime.utf8Args, solutionFile.absolute.path],
         workingDirectory: solutionFile.parent.path,
-        // 保证 sitecustomize.py 被加载（input prompt 转 stderr）
-        environment: {
+        // 保证 sitecustomize.py 被加载（input prompt 转 stderr）+ 强制 UTF-8
+        environment: PythonRuntime.withUtf8Env({
           'PYTHONPATH': solutionFile.parent.path,
-        },
+        }),
       );
 
       // 写入输入（判题用到的测试输入）
