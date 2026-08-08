@@ -64,11 +64,11 @@ class _AchievementsPageState extends State<AchievementsPage> {
               .where((a) => _svc.isUnlockedAchievement(a, snap))
               .length;
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             children: [
               // ---- 当前称号卡片 ----
               _titleCard(context, title, snapshot: snap),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               // ---- 成就统计 ----
               Row(
                 children: [
@@ -96,9 +96,9 @@ class _AchievementsPageState extends State<AchievementsPage> {
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.82,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.98,
                 ),
                 itemCount: kAchievements.length,
                 itemBuilder: (context, i) {
@@ -185,7 +185,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
             ? a.color.withValues(alpha: 0.08)
             : scheme.surfaceContainerLow,
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -194,8 +194,8 @@ class _AchievementsPageState extends State<AchievementsPage> {
                 alignment: Alignment.center,
                 children: [
                   SizedBox(
-                    width: 44,
-                    height: 44,
+                    width: 40,
+                    height: 40,
                     child: CircularProgressIndicator(
                       value: progress,
                       strokeWidth: 3,
@@ -206,11 +206,11 @@ class _AchievementsPageState extends State<AchievementsPage> {
                   Icon(
                     unlocked ? a.icon : Icons.lock_outline,
                     color: unlocked ? a.color : Colors.grey,
-                    size: 22,
+                    size: 20,
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 a.name,
                 textAlign: TextAlign.center,
@@ -218,17 +218,17 @@ class _AchievementsPageState extends State<AchievementsPage> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 12,
+                  fontSize: 11,
                   color: unlocked
                       ? a.color
                       : scheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               Text(
                 unlocked ? '已解锁' : '${(progress * 100).round()}%',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 9,
                   color: unlocked ? a.color : Colors.grey,
                 ),
               ),
