@@ -264,22 +264,31 @@ class _InteractiveTerminalState extends State<InteractiveTerminal> {
                         fontSize: 13,
                         fontWeight: FontWeight.w700)),
                 Expanded(
-                  child: TextField(
-                    controller: _inputController,
-                    enabled: _running && !_ended,
-                    style: const TextStyle(
-                        fontFamily: 'monospace',
-                        color: Colors.white,
-                        fontSize: 13),
-                    cursorColor: Colors.tealAccent,
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      hintText: '输入数据后按回车…',
-                      hintStyle:
-                          TextStyle(color: Colors.white38, fontSize: 12),
-                      border: InputBorder.none,
+                  child: Container(
+                    // 深色衬底：让输入栏和白色文字在深色终端上有清晰对比
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E2430),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFF3A4254)),
                     ),
-                    onSubmitted: (_) => _submitLine(),
+                    child: TextField(
+                      controller: _inputController,
+                      enabled: _running && !_ended,
+                      style: const TextStyle(
+                          fontFamily: 'monospace',
+                          color: Color(0xFFF0F6FC),
+                          fontSize: 13),
+                      cursorColor: Colors.tealAccent,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        hintText: '输入数据后按回车…',
+                        hintStyle:
+                            TextStyle(color: Color(0xFF6E7681), fontSize: 12),
+                        border: InputBorder.none,
+                      ),
+                      onSubmitted: (_) => _submitLine(),
+                    ),
                   ),
                 ),
                 IconButton(
