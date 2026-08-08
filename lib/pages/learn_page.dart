@@ -75,21 +75,26 @@ class _LearnPageState extends State<LearnPage> {
           ],
         ),
       ),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 左侧导航（分类+题目树）
-          SizedBox(
-            width: 230,
-            child: _buildSidebar(),
-          ),
-          // 分隔线
-          VerticalDivider(width: 1, thickness: 1),
-          // 右侧笔记
-          Expanded(
-            child: _buildNoteContent(current.problem),
-          ),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Row(
+            key: const ValueKey('bodyRow'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 左侧导航（分类+题目树）
+              SizedBox(
+                width: 230,
+                child: _buildSidebar(),
+              ),
+              // 分隔线
+              VerticalDivider(width: 1, thickness: 1),
+              // 右侧笔记
+              Expanded(
+                child: _buildNoteContent(current.problem),
+              ),
+            ],
+          );
+        },
       ),
       bottomNavigationBar: _buildPrevNextBar(current.category.name),
     );
@@ -98,25 +103,26 @@ class _LearnPageState extends State<LearnPage> {
   // ---------- 左侧导航树 ----------
 
   Widget _buildSidebar() {
+    final kids = <Widget>[];
+    for (final cat in widget.categories) {
+      kids.add(_CategoryHeader(
+        category: cat,
+        expanded: _expandedCategories.contains(cat.key),
+        onTap: () => setState(() {
+          if (!_expandedCategories.add(cat.key)) {
+            _expandedCategories.remove(cat.key);
+          }
+        }),
+      ));
+      if (_expandedCategories.contains(cat.key)) {
+        for (final p in cat.problems) {
+          kids.add(_buildProblemTile(cat, p));
+        }
+      }
+    }
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      children: [
-        for (final cat in widget.categories) ...[
-          // 分类头
-          _CategoryHeader(
-            category: cat,
-            expanded: _expandedCategories.contains(cat.key),
-            onTap: () => setState(() {
-              if (!_expandedCategories.add(cat.key)) {
-                _expandedCategories.remove(cat.key);
-              }
-            }),
-          ),
-          // 题目列表
-          if (_expandedCategories.contains(cat.key))
-            for (final p in cat.problems) _buildProblemTile(cat, p),
-        ],
-      ],
+      children: kids,
     );
   }
 
@@ -311,42 +317,45 @@ class _LearnPageState extends State<LearnPage> {
   Widget _buildPrevNextBar(String categoryName) {
     final hasPrev = _index > 0;
     final hasNext = _index < _entries.length - 1;
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          border: Border(
-            top: BorderSide(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-            ),
+    return Container(
+      height: 60,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
           ),
         ),
-        child: Row(
-          children: [
-            OutlinedButton.icon(
-              onPressed: hasPrev ? () => _goTo(_index - 1) : null,
-              icon: const Icon(Icons.chevron_left, size: 18),
-              label: const Text('上一篇'),
-            ),
-            Expanded(
-              child: Center(
-                child: Text(
-                  '${_index + 1} / ${_entries.length}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.primary,
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: hasPrev ? () => _goTo(_index - 1) : null,
+                icon: const Icon(Icons.chevron_left, size: 18),
+                label: const Text('上一篇'),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${_index + 1} / ${_entries.length}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
               ),
-            ),
-            OutlinedButton.icon(
-              onPressed: hasNext ? () => _goTo(_index + 1) : null,
-              iconAlignment: IconAlignment.end,
-              icon: const Icon(Icons.chevron_right, size: 18),
-              label: const Text('下一篇'),
-            ),
-          ],
+              OutlinedButton.icon(
+                onPressed: hasNext ? () => _goTo(_index + 1) : null,
+                iconAlignment: IconAlignment.end,
+                icon: const Icon(Icons.chevron_right, size: 18),
+                label: const Text('下一篇'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -621,9 +630,11 @@ class _HintCardState extends State<_HintCard> {
   @override
   Widget build(BuildContext context) {
     return _NoteCard(
-      child: ExpansionTile(
-        leading: const Icon(Icons.lightbulb_outline, color: Colors.amber),
-        title: Text('提示', style: TextStyle(fontWeight: FontWeight.bold)),
+      child: Material(
+        color: Colors.transparent,
+        child: ExpansionTile(
+          leading: const Icon(Icons.lightbulb_outline, color: Colors.amber),
+          title: Text('提示', style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(
           _expanded ? '共 ${widget.hints.length} 条' : '点击展开逐步思路',
           style: const TextStyle(fontSize: 12),
@@ -669,7 +680,8 @@ class _HintCardState extends State<_HintCard> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -690,10 +702,12 @@ class _SolutionCardState extends State<_SolutionCard> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return _NoteCard(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: ExpansionTile(
-          leading: Icon(Icons.terminal, color: scheme.primary),
+      child: Material(
+        color: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: ExpansionTile(
+            leading: Icon(Icons.terminal, color: scheme.primary),
           title: Text(
             '参考代码',
             style: TextStyle(fontWeight: FontWeight.bold, color: scheme.primary),
@@ -719,6 +733,7 @@ class _SolutionCardState extends State<_SolutionCard> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
