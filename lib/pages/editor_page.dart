@@ -191,8 +191,11 @@ class _EditorPageState extends State<EditorPage> {
   }
 
   Widget _buildEditorPanel(BuildContext context) {
-    return Column(
+    // 用 Stack 把终端从底部勾起展示（像控制台抽屉），不挤压上方的编辑器。
+    return Stack(
       children: [
+        Column(
+          children: [
         // 代码编辑器（语法高亮 + 行号）
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
@@ -264,17 +267,6 @@ class _EditorPageState extends State<EditorPage> {
           ),
         ),
         const SizedBox(height: 8),
-        // 交互式终端（可折叠）——A 主：模拟 REPL 看 input 喂数 / B 辅：自动喂样例
-        if (_showTerminal)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: InteractiveTerminal(
-              getCode: () => _codeController.text,
-              sampleInput: widget.problem.sampleInput,
-              isJudging: _isJudging,
-              onJudge: _runJudge,
-            ),
-          ),
         // 判题通过后可“查看参考代码”按钮
         if (_lastResult?.allPassed == true)
           Padding(
@@ -329,6 +321,24 @@ class _EditorPageState extends State<EditorPage> {
             ),
           ),
         ),
+          ],
+        ),
+        // 底部勾起展示的交互式终端（不挤压编辑器，像控制台抽屉）
+        if (_showTerminal)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: InteractiveTerminal(
+                getCode: () => _codeController.text,
+                sampleInput: widget.problem.sampleInput,
+                isJudging: _isJudging,
+                onJudge: _runJudge,
+              ),
+            ),
+          ),
       ],
     );
   }

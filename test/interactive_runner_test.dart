@@ -55,6 +55,14 @@ sys.stderr.write("boom\\n")
     sub.cancel();
   });
 
+  test('InteractiveRunner: 先访问 events 再 start 不会崩（回归：空崩溃修复）', () {
+    final runner = InteractiveRunner();
+    // 未 start 前先订阅（模拟终端面板 initState 时立即订阅）
+    final sub = runner.events.listen((_) {});
+    expect(runner.events, isA<Stream<RunnerEvent>>());
+    sub.cancel();
+  });
+
   test('InteractiveRunner: 跑完能 stop 清理', () async {
     const code = 'while True: pass\n';
     final runner = InteractiveRunner();

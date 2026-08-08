@@ -53,7 +53,13 @@ class InteractiveRunner {
   bool get isRunning => _isRunning;
 
   /// 事件流：output / error / exit
-  Stream<RunnerEvent> get events => _events!.stream;
+  ///
+  /// 懒初始化：首次访问时自动创建 controller，保证不再有 `_events!` 空崩溃
+  /// （终端面板收起→销毁→再展开重建 State 时会新建 runner，这里必须能从头拿到流）。
+  Stream<RunnerEvent> get events {
+    _events ??= StreamController<RunnerEvent>.broadcast();
+    return _events!.stream;
+  }
 
   /// 启动一次交互运行，执行 [code]；之后的 input 由 [sendLine] 逐行喂入
   Future<Process> start(String code) async {
