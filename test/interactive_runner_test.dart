@@ -55,11 +55,25 @@ sys.stderr.write("boom\\n")
     sub.cancel();
   });
 
-  test('InteractiveRunner: 先访问 events 再 start 不会崩（回归：空崩溃修复）', () {
+  test('InteractiveRunner: 先订阅 events 再 start 不会崩（回归：空崩溃修复）', () {
     final runner = InteractiveRunner();
     // 未 start 前先订阅（模拟终端面板 initState 时立即订阅）
     final sub = runner.events.listen((_) {});
     expect(runner.events, isA<Stream<RunnerEvent>>());
+    sub.cancel();
+  });
+
+  test('InteractiveRunner: start 前订阅也能收到事件（回归：重建 controller 丢事件修复）',
+      () async {
+    final runner = InteractiveRunner();
+    // 关键场景：先订阅（UI initState 行为），再 start
+    final got = <RunnerEventKind>[];
+    final sub = runner.events.listen((e) => got.add(e.kind));
+    await runner.start("print('a')");
+    await Future.delayed(const Duration(milliseconds: 800));
+    expect(got, contains(RunnerEventKind.output));
+    expect(got, contains(RunnerEventKind.exit));
+    expect(runner.isRunning, false);
     sub.cancel();
   });
 

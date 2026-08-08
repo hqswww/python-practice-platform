@@ -63,10 +63,12 @@ class InteractiveRunner {
 
   /// 启动一次交互运行，执行 [code]；之后的 input 由 [sendLine] 逐行喂入
   Future<Process> start(String code) async {
-    final ev = StreamController<RunnerEvent>.broadcast();
-    // （若上一次残留）
-    _events?.close();
-    _events = ev;
+    // 复用已存在的 events controller：
+    // 调用方在 start 前就已订阅 events，重建会丢事件 → 必须复用一个实例。
+    if (_events == null || _events!.isClosed) {
+      _events = StreamController<RunnerEvent>.broadcast();
+    }
+    final ev = _events!;
     _ioClosed = false;
 
     final tempDir = await Directory.systemTemp.createTemp('py_interactive_');
