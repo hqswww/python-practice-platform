@@ -48,6 +48,8 @@ class PythonPracticeApp extends StatelessWidget {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      // 全局默认字体：捆绑的更纱黑体（简体），保证 Linux/Windows 中文渲染一致
+      fontFamily: 'SarasaGothicSC',
       cardTheme: CardThemeData(
         elevation: 1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
