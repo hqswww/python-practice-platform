@@ -5,6 +5,7 @@ import '../models/problem.dart';
 import '../services/export_service.dart';
 import '../services/progress_service.dart';
 import '../services/settings_service.dart';
+import 'achievements_page.dart';
 
 /// 设置板块
 class SettingsPage extends StatefulWidget {
@@ -102,10 +103,29 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
 
+          // ---- 成就与称号 ----
+          _sectionTitle(context, '成长'),
+          _settingsCard(
+            index: 1,
+            icon: Icons.emoji_events_outlined,
+            color: Colors.amber,
+            title: '成就与称号',
+            subtitle: '查看解锁的成就与当前称号',
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const AchievementsPage(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+
           // ---- 判题 ----
           _sectionTitle(context, '判题'),
           _settingsCard(
-            index: 1,
+            index: 2,
             icon: Icons.timer_outlined,
             color: Colors.teal,
             title: '判题超时',
@@ -153,7 +173,7 @@ class _SettingsPageState extends State<SettingsPage> {
           // ---- 数据 ----
           _sectionTitle(context, '数据'),
           _settingsCard(
-            index: 2,
+            index: 3,
             icon: Icons.ios_share,
             color: Colors.indigo,
             title: '导出进度',
@@ -183,7 +203,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           _settingsCard(
-            index: 3,
+            index: 4,
             icon: Icons.delete_sweep_outlined,
             color: Colors.red,
             title: '清除进度',

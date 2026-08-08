@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/judge_result.dart';
+import '../models/achievement.dart';
 import '../models/problem.dart';
+import '../services/achievement_service.dart';
 import '../services/judge_engine.dart';
 import '../services/progress_service.dart';
 import '../services/settings_service.dart';
@@ -96,7 +98,25 @@ class _EditorPageState extends State<EditorPage> {
     // 判题通过：记录进度
     if (result.allPassed) {
       await ProgressService().markSolved(widget.problem.id);
+      await _checkAchievements();
     }
+  }
+
+  /// 判题通过后检查新解锁的成就并弹窗庆祝
+  Future<void> _checkAchievements() async {
+    final svc = AchievementService();
+    final snap = await svc.snapshot();
+    final newly = await svc.popNewlyUnlocked(snap);
+    if (!mounted || newly.isEmpty) return;
+    final title = svc.getTitle(snap.solvedCount);
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => _AchievementUnlockDialog(
+        achievements: newly,
+        title: title,
+      ),
+    );
   }
 
   bool get _hasNext =>
@@ -411,6 +431,83 @@ class _EditorPageState extends State<EditorPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 判题通过时展示新解锁成就的庆祝弹窗
+class _AchievementUnlockDialog extends StatelessWidget {
+  final List<Achievement> achievements;
+  final TitleInfo title;
+
+  const _AchievementUnlockDialog({
+    required this.achievements,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.celebration, color: Colors.amber),
+          SizedBox(width: 8),
+          Text('🎉 新成就解锁！'),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final a in achievements)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Icon(a.icon, color: a.color),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          a.name,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          a.description,
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const Divider(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(title.icon, color: title.color, size: 20),
+              const SizedBox(width: 6),
+              Text(
+                '当前称号：${title.title}',
+                style: TextStyle(
+                  color: title.color,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('太棒了！'),
+        ),
+      ],
     );
   }
 }
