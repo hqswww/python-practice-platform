@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:python_practice/pages/widgets/python_code_field.dart';
@@ -37,6 +38,78 @@ void main() {
     );
     // 两行 → 行号文本 "1\n2"
     expect(find.textContaining('2'), findsWidgets);
+  });
+
+  testWidgets('按 Tab 插入 4 空格缩进', (tester) async {
+    final controller = TextEditingController(text: 'x = 1');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PythonCodeField(controller: controller, minLines: 1),
+        ),
+      ),
+    );
+    // 聚焦并让光标到行尾（offset 5）
+    await tester.showKeyboard(find.byType(TextField));
+    controller.selection = const TextSelection.collapsed(offset: 5);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(controller.text, 'x = 1    ');
+    expect(controller.selection.baseOffset, 9);
+  });
+
+  testWidgets('Enter 在冒号行后自动缩进一级', (tester) async {
+    final controller = TextEditingController(text: 'if x > 0:');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PythonCodeField(controller: controller, minLines: 1),
+        ),
+      ),
+    );
+    await tester.showKeyboard(find.byType(TextField));
+    controller.selection = const TextSelection.collapsed(offset: 9);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(controller.text, 'if x > 0:\n    ');
+    expect(controller.selection.baseOffset, 14);
+  });
+
+  testWidgets('Enter 在普通行后沿用当前缩进', (tester) async {
+    final controller = TextEditingController(text: '    return n + 2');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PythonCodeField(controller: controller, minLines: 1),
+        ),
+      ),
+    );
+    await tester.showKeyboard(find.byType(TextField));
+    controller.selection = const TextSelection.collapsed(offset: 16);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(controller.text, '    return n + 2\n    ');
+  });
+
+  testWidgets('多行选中按 Tab 整体缩进 4 格', (tester) async {
+    final controller = TextEditingController(text: 'a = 1\nb = 2');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PythonCodeField(controller: controller, minLines: 2),
+        ),
+      ),
+    );
+    await tester.showKeyboard(find.byType(TextField));
+    controller.selection =
+        const TextSelection(baseOffset: 0, extentOffset: 5);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(controller.text, '    a = 1\nb = 2');
   });
 }
 
