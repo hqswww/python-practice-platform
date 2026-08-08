@@ -182,93 +182,126 @@ class _LearnPageState extends State<LearnPage> {
   Widget _buildNoteContent(Problem p) {
     final scheme = Theme.of(context).colorScheme;
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       children: [
-        // 大标题
-        Row(
-          children: [
-            _difficultyChip(p.difficulty),
-            const SizedBox(width: 8),
-            Text(
-              '#${p.id}',
-              style: TextStyle(color: Colors.grey[500], fontSize: 14),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          p.title,
-          style: const TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            height: 1.2,
+        // 笔记头部卡片
+        _NoteCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _difficultyChip(p.difficulty),
+                  const SizedBox(width: 8),
+                  Text(
+                    '#${p.id}',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                p.title,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                height: 3,
+                width: 48,
+                decoration: BoxDecoration(
+                  color: scheme.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 6),
-        Container(
-          height: 3,
-          width: 48,
-          decoration: BoxDecoration(
-            color: scheme.primary,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(height: 20),
 
-        // 题目描述
-        _NoteSection(
-          icon: Icons.menu_book_outlined,
-          title: '题目描述',
-          child: _NoteParagraph(p.description),
-        ),
+        const SizedBox(height: 16),
+
+        // 题目描述卡片
+        if (p.description.isNotEmpty)
+          _NoteCard(
+            child: _NoteSection(
+              icon: Icons.menu_book_outlined,
+              title: '题目描述',
+              child: _NoteParagraph(p.description),
+            ),
+          ),
+
+        if (p.description.isNotEmpty) const SizedBox(height: 16),
 
         // 输入/输出格式（并排卡片）
         if (p.inputFormat.isNotEmpty || p.outputFormat.isNotEmpty)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (p.inputFormat.isNotEmpty)
-                Expanded(
-                  child: _FormatCard(title: '输入格式', content: p.inputFormat, icon: Icons.keyboard_alt_outlined),
-                ),
-              if (p.inputFormat.isNotEmpty && p.outputFormat.isNotEmpty)
-                const SizedBox(width: 12),
-              if (p.outputFormat.isNotEmpty)
-                Expanded(
-                  child: _FormatCard(title: '输出格式', content: p.outputFormat, icon: Icons.output),
-                ),
-            ],
+          _NoteCard(
+            child: _NoteSection(
+              icon: Icons.keyboard_alt_outlined,
+              title: '输入 / 输出格式',
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (p.inputFormat.isNotEmpty)
+                    Expanded(
+                      child: _FormatBox(
+                        title: '输入',
+                        content: p.inputFormat.isEmpty ? '（无）' : p.inputFormat,
+                      ),
+                    ),
+                  if (p.inputFormat.isNotEmpty && p.outputFormat.isNotEmpty)
+                    const SizedBox(width: 12),
+                  if (p.outputFormat.isNotEmpty)
+                    Expanded(
+                      child: _FormatBox(
+                        title: '输出',
+                        content: p.outputFormat.isEmpty ? '（无）' : p.outputFormat,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
 
+        if (p.inputFormat.isNotEmpty || p.outputFormat.isNotEmpty)
+          const SizedBox(height: 16),
+
         // 示例（代码块风格）
-        if (p.sampleInput.isNotEmpty || p.sampleOutput.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          const _NoteSectionHeader(icon: Icons.terminal, title: '示例'),
-          const SizedBox(height: 10),
-          _CodeBlock(
-            label: '输入',
-            code: p.sampleInput.isEmpty ? '(无)' : p.sampleInput,
+        if (p.sampleInput.isNotEmpty || p.sampleOutput.isNotEmpty)
+          _NoteCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _NoteSectionHeader(icon: Icons.terminal, title: '示例'),
+                const SizedBox(height: 10),
+                _CodeBlock(
+                  label: '输入',
+                  code: p.sampleInput.isEmpty ? '(无)' : p.sampleInput,
+                ),
+                const SizedBox(height: 10),
+                _CodeBlock(
+                  label: '输出',
+                  code: p.sampleOutput.isEmpty ? '(无)' : p.sampleOutput,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-          _CodeBlock(
-            label: '输出',
-            code: p.sampleOutput.isEmpty ? '(无)' : p.sampleOutput,
-          ),
-        ],
+
+        if (p.sampleInput.isNotEmpty || p.sampleOutput.isNotEmpty)
+          const SizedBox(height: 16),
 
         // 提示（折叠）
         if (p.hints.isNotEmpty) ...[
-          const SizedBox(height: 24),
           _HintCard(hints: p.hints),
+          if (p.solution.isNotEmpty) const SizedBox(height: 16),
         ],
 
-        // 参考代码（折叠代码块）
-        if (p.solution.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          _SolutionCard(solution: p.solution),
-        ],
+        // 参考代码（折叠）
+        if (p.solution.isNotEmpty) _SolutionCard(solution: p.solution),
 
-        const SizedBox(height: 32),
+        const SizedBox(height: 20),
       ],
     );
   }
@@ -468,45 +501,59 @@ class _NoteParagraph extends StatelessWidget {
   }
 }
 
-/// 输入/输出格式卡片
-class _FormatCard extends StatelessWidget {
-  final String title;
-  final String content;
-  final IconData icon;
+/// 笔记区块通用卡片容器（统一圆角/衬底/内边距）
+class _NoteCard extends StatelessWidget {
+  final Widget child;
 
-  const _FormatCard({
-    required this.title,
-    required this.content,
-    required this.icon,
-  });
+  const _NoteCard({required this.child});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(14),
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.35),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// 输入/输出格式子内容框（卡片内部的两栏）
+class _FormatBox extends StatelessWidget {
+  final String title;
+  final String content;
+
+  const _FormatBox({required this.title, required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surface.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: scheme.primary),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.primary,
-                ),
-              ),
-            ],
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: scheme.primary,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(content, style: const TextStyle(fontSize: 14, height: 1.5)),
         ],
       ),
@@ -573,8 +620,7 @@ class _HintCardState extends State<_HintCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.amber.withValues(alpha: 0.08),
+    return _NoteCard(
       child: ExpansionTile(
         leading: const Icon(Icons.lightbulb_outline, color: Colors.amber),
         title: Text('提示', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -590,8 +636,7 @@ class _HintCardState extends State<_HintCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (var i = 0; i < widget.hints.length; i++)
-                  Padding(
+                for (var i = 0; i < widget.hints.length; i++)                  Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,36 +689,35 @@ class _SolutionCardState extends State<_SolutionCard> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: ExpansionTile(
-        leading: Icon(Icons.terminal, color: scheme.primary),
-        title: Text(
-          '参考代码',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: scheme.primary,
+    return _NoteCard(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: ExpansionTile(
+          leading: Icon(Icons.terminal, color: scheme.primary),
+          title: Text(
+            '参考代码',
+            style: TextStyle(fontWeight: FontWeight.bold, color: scheme.primary),
           ),
-        ),
-        trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-        onExpansionChanged: (v) => setState(() => _expanded = v),
-        children: [
-          // 代码区：深色衬底，更像 IDE
-          Container(
-            width: double.infinity,
-            color: const Color(0xFF0F172A),
-            padding: const EdgeInsets.all(16),
-            child: SelectableText(
-              widget.solution,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 13.5,
-                height: 1.6,
-                color: Color(0xFFE2E8F0),
+          trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+          onExpansionChanged: (v) => setState(() => _expanded = v),
+          children: [
+            // 代码区：深色衬底，更像 IDE
+            Container(
+              width: double.infinity,
+              color: const Color(0xFF0F172A),
+              padding: const EdgeInsets.all(16),
+              child: SelectableText(
+                widget.solution,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13.5,
+                  height: 1.6,
+                  color: Color(0xFFE2E8F0),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
