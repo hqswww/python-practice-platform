@@ -265,7 +265,16 @@ builtins.input = _judge_input
       return '⚠️ 除零错误：不能除以 0。\n\n$combined';
     }
     if (combined.contains('EOFError')) {
-      return '⚠️ 输入读取错误：程序试图读取比输入更多的内容。可能是 input() 次数比测试用例给的数据多。\n\n$combined';
+      // 输入读取错误：程序想读更多，但测试用例输入已耗尽。
+      // 常见根因：代码用了多个 input()，但题目输入是单行空格分隔（如 `17 5`）。
+      return '⚠️ 输入读取错误：程序试图读取比输入更多的内容。\n'
+          '这通常是**代码用了多个 input()，但题目的输入是单行、多个数用空格分隔**。\n'
+          '\n'
+          '✅ 如果是一行多个数，改成一次读取再拆分：\n'
+          '> a, b = map(int, input().split())   # 一行读 17 5 两个数\n'
+          '\n'
+          '💡 也可以先看题目「输入格式」说明，确认是一行还是多行。\n'
+          '\n$combined';
     }
     if (combined.contains('IndentationError')) {
       return '⚠️ 缩进错误：Python 用缩进表示代码块，记得统一用空格或制表符（最好统一用 4 个空格）。\n\n$combined';
