@@ -205,7 +205,7 @@
     "difficulty": "medium",
     "description": "读入一个字符串，输出它的前 3 个字符、第 3 到第 5 个字符、后 3 个字符，每行一个。",
     "input_format": "一行，一个长度 ≥ 6 的字符串 s。",
-    "output_format": "三行：s[0:3]、s[2:5]、s[-3:]。（第 3 到第 5 个字符，共 3 个）",
+    "output_format": "三行：s[0:3]、s[2:6]、s[-3:]。（第 3 到第 6 个字符，共 4 个）",
     "sample_input": "abcdefghi",
     "sample_output": "abc\ncdef\nghi",
     "test_cases": [
