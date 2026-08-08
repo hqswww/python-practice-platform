@@ -96,7 +96,6 @@ class _LearnPageState extends State<LearnPage> {
           );
         },
       ),
-      bottomNavigationBar: _buildPrevNextBar(current.category.name),
     );
   }
 
@@ -309,55 +308,6 @@ class _LearnPageState extends State<LearnPage> {
 
         const SizedBox(height: 20),
       ],
-    );
-  }
-
-  // ---------- 底部上一篇/下一篇 ----------
-
-  Widget _buildPrevNextBar(String categoryName) {
-    final hasPrev = _index > 0;
-    final hasNext = _index < _entries.length - 1;
-    return Container(
-      height: 60,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-          ),
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Row(
-            children: [
-              OutlinedButton.icon(
-                onPressed: hasPrev ? () => _goTo(_index - 1) : null,
-                icon: const Icon(Icons.chevron_left, size: 18),
-                label: const Text('上一篇'),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    '${_index + 1} / ${_entries.length}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: hasNext ? () => _goTo(_index + 1) : null,
-                iconAlignment: IconAlignment.end,
-                icon: const Icon(Icons.chevron_right, size: 18),
-                label: const Text('下一篇'),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

@@ -23,10 +23,7 @@ void main() {
     expect(find.text('题目描述'), findsWidgets);
     expect(find.text('示例'), findsWidgets);
     expect(find.text('#${p0.id}'), findsWidgets);
-    // 底部导航
-    expect(find.text('上一篇'), findsOneWidget);
-    expect(find.text('下一篇'), findsOneWidget);
-    // body 高度不为 0（底部栏可用高度问题回归）
+    // body 高度不为 0
     final size = tester.getSize(find.byKey(const ValueKey('bodyRow')));
     expect(size.height, greaterThan(0), reason: 'body 高度不应为 0');
   });
