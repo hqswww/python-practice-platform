@@ -291,9 +291,7 @@ class _WrongQuestionViewState extends State<_WrongQuestionView> {
   @override
   Widget build(BuildContext context) {
     final p = widget.problem;
-    return Stack(
-      children: [
-        SingleChildScrollView(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -412,26 +410,19 @@ class _WrongQuestionViewState extends State<_WrongQuestionView> {
                     ),
                   ),
           ),
-        ],
-      ),
-    ),
-        // 底部勾起展示的交互式终端（不挤压编辑器，像控制台抽屉）
+        // 交互式终端：展开时作为页面内容的一部分排在下方（网页式下滑）
         if (_showTerminal)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: InteractiveTerminal(
-                getCode: () => _controller.text,
-                sampleInput: widget.problem.sampleInput,
-                isJudging: _judging,
-                onJudge: _submit,
-              ),
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: InteractiveTerminal(
+              getCode: () => _controller.text,
+              sampleInput: widget.problem.sampleInput,
+              isJudging: _judging,
+              onJudge: _submit,
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }

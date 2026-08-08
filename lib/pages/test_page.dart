@@ -1125,9 +1125,7 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
   @override
   Widget build(BuildContext context) {
     final p = widget.problem;
-    return Stack(
-      children: [
-        Column(
+    return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -1242,28 +1240,21 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
                           ),
                         ),
                 ),
+                // 交互式终端：展开时作为页面内容的一部分排在下方（网页式下滑）
+                if (_showTerminal)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: InteractiveTerminal(
+                      getCode: () => _controller.text,
+                      sampleInput: widget.problem.sampleInput,
+                      isJudging: _judging,
+                      onJudge: _submit,
+                    ),
+                  ),
               ],
             ),
           ),
         ),
-      ],
-    ),
-        // 底部勾起展示的交互式终端（不挤压编辑器，像控制台抽屉）
-        if (_showTerminal)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: InteractiveTerminal(
-                getCode: () => _controller.text,
-                sampleInput: widget.problem.sampleInput,
-                isJudging: _judging,
-                onJudge: _submit,
-              ),
-            ),
-          ),
       ],
     );
   }

@@ -211,14 +211,15 @@ class _EditorPageState extends State<EditorPage> {
   }
 
   Widget _buildEditorPanel(BuildContext context) {
-    // 用 Stack 把终端从底部勾起展示（像控制台抽屉），不挤压上方的编辑器。
-    return Stack(
-      children: [
-        Column(
-          children: [
+    // 全滚动布局：编辑器、结果、终端都在同一个滚动流里（网页式下滑），互不遮挡。
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         // 代码编辑器（语法高亮 + 行号）
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: PythonCodeField(
             controller: _codeController,
             minLines: 10,
@@ -313,8 +314,9 @@ class _EditorPageState extends State<EditorPage> {
             child: _buildSolutionCard(context),
           ),
         const SizedBox(height: 8),
-        // 判题结果面板（可滚动）——结果切换时带动画过渡
-        Expanded(
+        // 判题结果面板（自适应高度，随内容收缩；滚动由外层 SingleChildScrollView 负责）
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 350),
             switchInCurve: Curves.easeOutCubic,
@@ -341,25 +343,19 @@ class _EditorPageState extends State<EditorPage> {
             ),
           ),
         ),
-          ],
-        ),
-        // 底部勾起展示的交互式终端（不挤压编辑器，像控制台抽屉）
+        // 交互式终端：展开时作为页面内容的一部分排在下方（网页式下滑）
         if (_showTerminal)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: InteractiveTerminal(
-                getCode: () => _codeController.text,
-                sampleInput: widget.problem.sampleInput,
-                isJudging: _isJudging,
-                onJudge: _runJudge,
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            child: InteractiveTerminal(
+              getCode: () => _codeController.text,
+              sampleInput: widget.problem.sampleInput,
+              isJudging: _isJudging,
+              onJudge: _runJudge,
             ),
           ),
       ],
+    ),
     );
   }
 

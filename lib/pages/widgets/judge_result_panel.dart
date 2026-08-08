@@ -51,8 +51,8 @@ class JudgeResultPanel extends StatelessWidget {
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeOutCubic,
       builder: (context, t, _) {
-        return ListView(
-          padding: const EdgeInsets.all(12),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _stagger(t, 0, _headerSummary(r)),
             const SizedBox(height: 12),
