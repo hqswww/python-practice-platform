@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'data/problem_repository.dart';
 import 'models/problem_category.dart';
+import 'pages/learn_page.dart';
 import 'pages/practice_page.dart';
 import 'pages/test_page.dart';
 import 'pages/settings_page.dart';
@@ -167,6 +168,26 @@ class _HomePageState extends State<HomePage> {
         child: IndexedStack(
           index: _currentIndex,
           children: [
+            // 学习（第一个）
+            FutureBuilder<List<ProblemCategory>>(
+              future: _categoriesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return Scaffold(
+                    appBar: AppBar(title: const Text('学习笔记')),
+                    body: const Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Scaffold(
+                    appBar: AppBar(title: const Text('学习笔记')),
+                    body: Center(child: Text('加载题库失败: ${snapshot.error}')),
+                  );
+                }
+                final categories = snapshot.data ?? [];
+                return LearnPage(categories: categories);
+              },
+            ),
             // 练习
             FutureBuilder<List<ProblemCategory>>(
               future: _categoriesFuture,
@@ -198,6 +219,11 @@ class _HomePageState extends State<HomePage> {
         selectedIndex: _currentIndex,
         onDestinationSelected: _onDestinationSelected,
         destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book),
+            label: '学习',
+          ),
           NavigationDestination(
             icon: Icon(Icons.code),
             selectedIcon: Icon(Icons.code),
