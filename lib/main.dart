@@ -39,9 +39,9 @@ class PythonPracticeApp extends StatelessWidget {
 
   /// Material 3 主题构建
   ThemeData _buildTheme(Brightness brightness) {
-    // Google 系绿色 seed，贴合"Python 编程"的清新感
+    // 强调色可由用户在设置页选择（默认清新绿）
     final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF2E7D32),
+      seedColor: settings.accentColor,
       brightness: brightness,
     );
 

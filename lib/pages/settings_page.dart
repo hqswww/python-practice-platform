@@ -101,6 +101,15 @@ class _SettingsPageState extends State<SettingsPage> {
               onSelectionChanged: (s) => settings.setThemeMode(s.first),
             ),
           ),
+          const SizedBox(height: 12),
+          // ---- 主题强调色 ----
+          _settingsCard(
+            index: 0,
+            icon: Icons.color_lens_outlined,
+            color: settings.accentColor,
+            title: '主题强调色',
+            child: _accentColorPicker(context),
+          ),
           const SizedBox(height: 16),
 
           // ---- 成就与称号 ----
@@ -300,6 +309,47 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildAbout(context),
         ],
       ),
+    );
+  }
+
+  /// 主题强调色选择器（色板圆点，点选即切）
+  Widget _accentColorPicker(BuildContext context) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      children: [
+        for (final opt in kAccentColors)
+          InkWell(
+            key: ValueKey('accent_${opt.id}'),
+            onTap: () => settings.setAccent(opt.id),
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: opt.color,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: settings.accentId == opt.id
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Colors.transparent,
+                  width: 2.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: opt.color.withValues(alpha: 0.4),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: settings.accentId == opt.id
+                  ? const Icon(Icons.check,
+                      color: Colors.white, size: 16)
+                  : null,
+            ),
+          ),
+      ],
     );
   }
 
