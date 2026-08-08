@@ -31,11 +31,35 @@ class JudgeEngine {
     return 'python3';
   }
 
+  /// 判题用包装：重写 input()，把提示(prompt)写到 stderr 而非 stdout。
+  /// 这样 prompt 不会混入判题比对的标准输出，`a=input("a=")` 这类代码能正常判对。
+  static const String _siteCustomize = r'''
+import builtins, sys
+
+# 记录原始 input，避免递归
+_real_input = builtins.input
+
+def _judge_input(prompt=""):
+    # 提示语改写到 stderr（判题比对只看 stdout），真正的 input 读取不变
+    if prompt:
+        try:
+            sys.stderr.write(prompt)
+            sys.stderr.flush()
+        except Exception:
+            pass
+    return _real_input("")
+
+builtins.input = _judge_input
+''';
+
   /// 判一道题的全部测试用例
   Future<JudgeResult> judge(Problem problem, String code) async {
     final tempDir = await Directory.systemTemp.createTemp('python_judge_');
     final solutionFile = File('${tempDir.path}/solution.py');
     await solutionFile.writeAsString(code);
+    // 写一个 sitecustomize 包装：把 input() 的提示(prompt)从 stdout 挪到 stderr。
+    // 这样 input("a=") 的提示文字不会混入最终输出比对，`a=input("a=")` 这类题能判对。
+    await File('${tempDir.path}/sitecustomize.py').writeAsString(_siteCustomize);
 
     try {
       final results = <TestCaseResult>[];
@@ -72,6 +96,10 @@ class JudgeEngine {
         pythonCommand,
         [solutionFile.absolute.path],
         workingDirectory: solutionFile.parent.path,
+        // 保证 sitecustomize.py 被加载（input prompt 转 stderr）
+        environment: {
+          'PYTHONPATH': solutionFile.parent.path,
+        },
       );
 
       // 写入输入（判题用到的测试输入）
