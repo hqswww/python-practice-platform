@@ -228,12 +228,82 @@ class _LearnPageState extends State<LearnPage> {
 
         const SizedBox(height: 16),
 
+        // 📖 详细教程（runoob 风格分节）
+        if (p.hasTutorial) ...[
+          _NoteCard(
+            child: _NoteSection(
+              icon: Icons.school_outlined,
+              title: '详细教程',
+              child: Builder(builder: (context) {
+                final scheme = Theme.of(context).colorScheme;
+                final children = <Widget>[];
+                for (var i = 0; i < p.tutorial.length; i++) {
+                  final sec = p.tutorial[i];
+                  children.add(Row(
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: scheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '${i + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          sec.title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ));
+                  if (sec.body.isNotEmpty) {
+                    children.add(const SizedBox(height: 8));
+                    children.add(_NoteParagraph(sec.body));
+                  }
+                  if (sec.code.isNotEmpty) {
+                    children.add(const SizedBox(height: 10));
+                    children.add(_CodeBlock(label: '代码', code: sec.code));
+                  }
+                  if (sec.output.isNotEmpty) {
+                    children.add(const SizedBox(height: 8));
+                    children.add(_CodeBlock(label: '运行结果', code: sec.output));
+                  }
+                  if (i < p.tutorial.length - 1) {
+                    children.add(const SizedBox(height: 16));
+                    children.add(Divider(height: 1));
+                    children.add(const SizedBox(height: 16));
+                  }
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: children,
+                );
+              }),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
         // 题目描述卡片
         if (p.description.isNotEmpty)
           _NoteCard(
             child: _NoteSection(
               icon: Icons.menu_book_outlined,
-              title: '题目描述',
+              title: '题目',
               child: _NoteParagraph(p.description),
             ),
           ),

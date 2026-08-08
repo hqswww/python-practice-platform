@@ -52,6 +52,30 @@ class TestCase {
   }
 }
 
+/// 教程分节：一段讲解（runoob 风格），可含代码与运行结果
+class TutorialSection {
+  final String title; // 小节标题，如 "print() 是什么"
+  final String body; // 讲解文字（可含换行）
+  final String code; // 代码片段（可空）
+  final String output; // 运行结果（可空）
+
+  TutorialSection({
+    required this.title,
+    required this.body,
+    this.code = '',
+    this.output = '',
+  });
+
+  factory TutorialSection.fromJson(Map<String, dynamic> json) {
+    return TutorialSection(
+      title: (json['title'] ?? '') as String,
+      body: (json['body'] ?? '') as String,
+      code: (json['code'] ?? '') as String,
+      output: (json['output'] ?? '') as String,
+    );
+  }
+}
+
 /// 一道完整的题目
 class Problem {
   final int id;
@@ -70,6 +94,12 @@ class Problem {
   /// 参考代码（含详细注释作详解）；未提供时为空字符串
   final String solution;
 
+  /// 详细教程（runoob 风格分节）；未提供时为空列表
+  final List<TutorialSection> tutorial;
+
+  /// 是否有可展示的详细教程
+  bool get hasTutorial => tutorial.isNotEmpty;
+
   Problem({
     required this.id,
     required this.title,
@@ -82,6 +112,7 @@ class Problem {
     required this.testCases,
     required this.hints,
     this.solution = '',
+    this.tutorial = const [],
   });
 
   factory Problem.fromJson(Map<String, dynamic> json) {
@@ -101,6 +132,9 @@ class Problem {
           .map((e) => e as String)
           .toList(),
       solution: (json['solution'] ?? '') as String,
+      tutorial: (json['tutorial'] as List<dynamic>? ?? [])
+          .map((e) => TutorialSection.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
