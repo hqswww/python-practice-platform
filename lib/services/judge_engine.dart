@@ -91,6 +91,39 @@ builtins.input = _judge_input
   ) async {
     final stopwatch = Stopwatch()..start();
 
+    // 第一次：按题目原始输入喂
+    var result = await _execute(solutionFile, testCase, stopwatch);
+
+    // 自适应兜底：如果因“读了比输入更多的内容”而 EOFError，
+    // 很可能是代码用了多次 input()，但题目输入是单行空格分隔（如 `17 5`）。
+    // 此时重试一次：把输入按所有空白拆成多行（17 5 → 17\n5\n）。
+    // 这样单行 split 和分行多次 input 的写法都能判对，只要答案对上就算对。
+    if (result.status == JudgeStatus.runtimeError &&
+        (result.stderr + result.actualOutput).contains('EOFError')) {
+      final splitInput = _splitInputIntoLines(testCase.input);
+      if (splitInput != testCase.input) {
+        final retryCase = TestCase(
+          input: splitInput,
+          output: testCase.output,
+        );
+        final retryResult = await _execute(solutionFile, retryCase, stopwatch);
+        // 重试通过则采用；否则保留第一次结果（错误信息对用户更有用）
+        if (retryResult.status == JudgeStatus.passed ||
+            retryResult.status == JudgeStatus.wrongAnswer) {
+          result = retryResult;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /// 起一次 Python 进程并喂指定输入，返回评估结果。
+  Future<TestCaseResult> _execute(
+    File solutionFile,
+    TestCase testCase,
+    Stopwatch stopwatch,
+  ) async {
     try {
       final process = await Process.start(
         pythonCommand,
@@ -148,6 +181,14 @@ builtins.input = _judge_input
         message: '程序运行环境有问题，请联系管理员。',
       );
     }
+  }
+
+  /// 把输入按所有空白拆成多行：`17 5\n` → `17\n5\n`。
+  /// 这样一次读取一行（多次 input()）也能拿到完整数据。
+  String _splitInputIntoLines(String input) {
+    final tokens = input.split(RegExp(r'[ \t\n]+')).where((t) => t.isNotEmpty);
+    if (tokens.isEmpty) return input;
+    return '${tokens.join('\n')}\n';
   }
 
   /// 评估一个用例：比对输出 + 生成友好错误提示
