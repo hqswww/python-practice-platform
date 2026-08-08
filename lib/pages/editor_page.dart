@@ -8,6 +8,7 @@ import '../services/settings_service.dart';
 import 'widgets/problem_panel.dart';
 import 'widgets/judge_result_panel.dart';
 import 'widgets/python_code_field.dart';
+import 'widgets/interactive_terminal.dart';
 
 /// 编辑器判题页：左(题目描述) 右(代码编辑器 + 判题结果)
 ///
@@ -45,6 +46,9 @@ class _EditorPageState extends State<EditorPage> {
 
   /// 是否已收藏本题
   bool _isFavorite = false;
+
+  /// 是否展开交互式终端面板
+  bool _showTerminal = false;
 
   @override
   void initState() {
@@ -213,6 +217,21 @@ class _EditorPageState extends State<EditorPage> {
                     ? null
                     : (v) => setState(() => _showDetailed = v),
               ),
+              const SizedBox(width: 4),
+              // 交互式终端开关
+              OutlinedButton.icon(
+                onPressed: _isJudging
+                    ? null
+                    : () => setState(() => _showTerminal = !_showTerminal),
+                icon: Icon(
+                  _showTerminal ? Icons.terminal : Icons.terminal_outlined,
+                  size: 16,
+                ),
+                label: Text(_showTerminal ? '收起终端' : '交互式终端'),
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
               const Spacer(),
               // 重置代码到模板
               OutlinedButton.icon(
@@ -245,6 +264,17 @@ class _EditorPageState extends State<EditorPage> {
           ),
         ),
         const SizedBox(height: 8),
+        // 交互式终端（可折叠）——A 主：模拟 REPL 看 input 喂数 / B 辅：自动喂样例
+        if (_showTerminal)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: InteractiveTerminal(
+              getCode: () => _codeController.text,
+              sampleInput: widget.problem.sampleInput,
+              isJudging: _isJudging,
+              onJudge: _runJudge,
+            ),
+          ),
         // 判题通过后可“查看参考代码”按钮
         if (_lastResult?.allPassed == true)
           Padding(
