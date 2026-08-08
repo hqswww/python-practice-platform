@@ -4,6 +4,8 @@ import '../models/problem.dart';
 import '../services/judge_engine.dart';
 import '../services/progress_service.dart';
 import '../services/settings_service.dart';
+import 'widgets/interactive_terminal.dart';
+import 'widgets/python_code_field.dart';
 
 /// 错题本：从错题中自由选题重练，做对即移出错题本
 class WrongBookPage extends StatefulWidget {
@@ -246,6 +248,7 @@ class _WrongQuestionView extends StatefulWidget {
 class _WrongQuestionViewState extends State<_WrongQuestionView> {
   late final TextEditingController _controller;
   bool _judging = false;
+  bool _showTerminal = false;
 
   @override
   void initState() {
@@ -288,7 +291,9 @@ class _WrongQuestionViewState extends State<_WrongQuestionView> {
   @override
   Widget build(BuildContext context) {
     final p = widget.problem;
-    return SingleChildScrollView(
+    return Stack(
+      children: [
+        SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,33 +328,44 @@ class _WrongQuestionViewState extends State<_WrongQuestionView> {
           if (p.sampleOutput.isNotEmpty)
             Text('示例输出: ${p.sampleOutput.replaceAll('\n', ' ⏎ ')}'),
           const SizedBox(height: 12),
-          TextField(
+          PythonCodeField(
             controller: _controller,
-            maxLines: 8,
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 13,
-              height: 1.4,
-            ),
-            decoration: const InputDecoration(
-              hintText: '在此输入代码…',
-              hintStyle: TextStyle(color: Colors.grey),
-            ),
+            minLines: 8,
+            hintText: '在此输入代码…',
           ),
           const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: _judging ? null : _submit,
-            icon: _judging
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.play_arrow),
-            label: Text(_judging ? '判题中…' : '判题'),
+          Row(
+            children: [
+              // 交互式终端开关
+              OutlinedButton.icon(
+                onPressed: _judging
+                    ? null
+                    : () => setState(() => _showTerminal = !_showTerminal),
+                icon: Icon(
+                  _showTerminal ? Icons.terminal : Icons.terminal_outlined,
+                  size: 16,
+                ),
+                label: Text(_showTerminal ? '收起终端' : '交互式终端'),
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: _judging ? null : _submit,
+                icon: _judging
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.play_arrow),
+                label: Text(_judging ? '判题中…' : '判题'),
+              ),
+            ],
           ),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
@@ -398,6 +414,24 @@ class _WrongQuestionViewState extends State<_WrongQuestionView> {
           ),
         ],
       ),
+    ),
+        // 底部勾起展示的交互式终端（不挤压编辑器，像控制台抽屉）
+        if (_showTerminal)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: InteractiveTerminal(
+                getCode: () => _controller.text,
+                sampleInput: widget.problem.sampleInput,
+                isJudging: _judging,
+                onJudge: _submit,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -11,6 +11,7 @@ import '../services/judge_engine.dart';
 import '../services/progress_service.dart';
 import '../services/settings_service.dart';
 import 'test_history_page.dart';
+import 'widgets/interactive_terminal.dart';
 import 'widgets/python_code_field.dart';
 
 /// 测试中单题状态
@@ -1056,6 +1057,7 @@ class _TestQuestionView extends StatefulWidget {
 class _TestQuestionViewState extends State<_TestQuestionView> {
   late final TextEditingController _controller;
   bool _judging = false;
+  bool _showTerminal = false;
   String? _lastFeedback; // 判题反馈（对/错提示）
 
   @override
@@ -1123,7 +1125,9 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
   @override
   Widget build(BuildContext context) {
     final p = widget.problem;
-    return Column(
+    return Stack(
+      children: [
+        Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -1160,21 +1164,39 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _judging ? null : _submit,
-                        icon: _judging
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.play_arrow),
-                        label: Text(_judging ? '判题中…' : '判题'),
+                    // 交互式终端开关
+                    OutlinedButton.icon(
+                      onPressed: _judging
+                          ? null
+                          : () => setState(
+                              () => _showTerminal = !_showTerminal),
+                      icon: Icon(
+                        _showTerminal
+                            ? Icons.terminal
+                            : Icons.terminal_outlined,
+                        size: 16,
                       ),
+                      label: Text(
+                        _showTerminal ? '收起终端' : '交互式终端',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                    const Spacer(),
+                    FilledButton.icon(
+                      onPressed: _judging ? null : _submit,
+                      icon: _judging
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.play_arrow),
+                      label: Text(_judging ? '判题中…' : '判题'),
                     ),
                   ],
                 ),
@@ -1224,6 +1246,24 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
             ),
           ),
         ),
+      ],
+    ),
+        // 底部勾起展示的交互式终端（不挤压编辑器，像控制台抽屉）
+        if (_showTerminal)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: InteractiveTerminal(
+                getCode: () => _controller.text,
+                sampleInput: widget.problem.sampleInput,
+                isJudging: _judging,
+                onJudge: _submit,
+              ),
+            ),
+          ),
       ],
     );
   }
