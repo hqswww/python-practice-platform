@@ -14,6 +14,7 @@ import 'dart:io';
 
 import '../models/judge_result.dart';
 import '../models/problem.dart';
+import 'error_log_service.dart';
 import 'python_runtime.dart';
 
 class JudgeEngine {
@@ -62,6 +63,10 @@ builtins.input = _judge_input
 
       for (final testCase in problem.testCases) {
         final result = await _runTestCase(solutionFile, testCase);
+        // 记录非通过用例到错误日志，方便排查判题/环境问题
+        if (result.status != JudgeStatus.passed) {
+          _logNonPass(result);
+        }
         if (result.status == JudgeStatus.runtimeError) hasRuntimeError = true;
         results.add(result);
       }
@@ -166,6 +171,12 @@ builtins.input = _judge_input
         message: '程序运行超过限制时间，可能陷入了死循环。',
       );
     } on ProcessException catch (e) {
+      // Python 无法执行 → 记入错误日志供排查（如解释器路径配错/未安装）
+      errorLog.logError(
+        '无法运行 Python（$pythonCommand）: ${e.message}',
+        source: LogSource.python,
+        error: e,
+      );
       // Python 无法执行
       return TestCaseResult(
         testCase: testCase,
@@ -176,6 +187,24 @@ builtins.input = _judge_input
         message: '程序运行环境有问题，请联系管理员。',
       );
     }
+  }
+
+  /// 记录一次非通过用例到错误日志（超时 / 运行时错误 / 答案错误）。
+  /// 便于在「日志中心」排查：解释器路径配错、权限不足、环境异常等。
+  void _logNonPass(TestCaseResult result) {
+    final t = result.testCase;
+    final level = result.status == JudgeStatus.wrongAnswer
+        ? LogLevel.warning
+        : LogLevel.error;
+    // 用例没有 id，用输入摘要做标识
+    final inputHead = t.input.trim().replaceAll('\n', ' ');
+    final brief = (result.message.isNotEmpty ? result.message : result.status.name)
+        .trim();
+    errorLog.log(
+      '判题未通过 [${result.status.name}] 输入「$inputHead」：${brief.split('\n').first}',
+      source: LogSource.judge,
+      level: level,
+    );
   }
 
   /// 把输入按所有空白拆成多行：`17 5\n` → `17\n5\n`。

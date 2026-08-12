@@ -10,6 +10,7 @@ import '../services/import_service.dart';
 import '../services/progress_service.dart';
 import '../services/settings_service.dart';
 import 'achievements_page.dart';
+import 'log_center_page.dart';
 
 /// 设置板块
 class SettingsPage extends StatefulWidget {
@@ -30,6 +31,10 @@ class _SettingsPageState extends State<SettingsPage> {
   // 动画控制
   int _hoveredCard = -1;
   bool _showDetails = false;
+  // Python 解释器路径输入框 controller（保持引用避免 rebuild 重建）
+  late final TextEditingController _pythonPathController = TextEditingController(
+    text: settings.pythonPath,
+  );
 
   Future<(int, int, Map<Difficulty, (int, int)>)>? _statsFuture;
 
@@ -37,6 +42,14 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     _refreshSummary();
+    // 路径可能提前被外部改过（预留），每次进设置同步一次初始值
+    _pythonPathController.text = settings.pythonPath;
+  }
+
+  @override
+  void dispose() {
+    _pythonPathController.dispose();
+    super.dispose();
   }
 
   void _refreshSummary() {
@@ -181,6 +194,130 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               },
             ),
+          ),
+          const SizedBox(height: 16),
+
+          // ---- 代码编辑 ----
+          _sectionTitle(context, '代码编辑'),
+          _settingsCard(
+            index: 10,
+            icon: Icons.format_size,
+            color: Colors.blueGrey,
+            title: '编辑器字体大小',
+            subtitle: '代码输入区文字大小（12–22 px）',
+            child: ListenableBuilder(
+              listenable: settings,
+              builder: (context, _) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('小'),
+                        Expanded(
+                          child: Slider(
+                            value: settings.editorFontSize.toDouble(),
+                            min: 12,
+                            max: 22,
+                            divisions: 10,
+                            label: '${settings.editorFontSize} px',
+                            onChanged: (v) =>
+                                settings.setEditorFontSize(v.round()),
+                          ),
+                        ),
+                        const Text('大'),
+                      ],
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '当前 ${settings.editorFontSize} px',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          _settingsCard(
+            index: 11,
+            icon: Icons.space_bar,
+            color: Colors.cyan,
+            title: '缩进宽度',
+            subtitle: '按 Tab 时插入多少个空格（Python 建议 4）',
+            child: ListenableBuilder(
+              listenable: settings,
+              builder: (context, _) {
+                return SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 2, label: Text('2')),
+                    ButtonSegment(value: 4, label: Text('4')),
+                    ButtonSegment(value: 8, label: Text('8')),
+                  ],
+                  selected: {settings.editorIndentWidth},
+                  onSelectionChanged: (s) =>
+                      settings.setEditorIndentWidth(s.first),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          _settingsCard(
+            index: 12,
+            icon: Icons.terminal,
+            color: Colors.deepOrange,
+            title: 'Python 解释器',
+            subtitle: '留空自动：Linux 用 python3，Windows 优先捆绑的 python.exe',
+            child: ListenableBuilder(
+              listenable: settings,
+              builder: (context, _) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _pythonPathController,
+                      decoration: InputDecoration(
+                        hintText: '例如 /usr/bin/python3 或 C:\\python\\python.exe',
+                      ),
+                      onSubmitted: (v) => settings.setPythonPath(v),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton(
+                        onPressed: () =>
+                            settings.setPythonPath(_pythonPathController.text),
+                        child: const Text('保存路径'),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ---- 诊断 ----
+          _sectionTitle(context, '诊断'),
+          _settingsCard(
+            index: 13,
+            icon: Icons.bug_report_outlined,
+            color: Colors.purple,
+            title: '日志中心',
+            subtitle: '查看错误日志、导出或清空，便于排查判题/运行环境问题',
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const LogCenterPage(),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -513,7 +650,7 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: const Icon(Icons.info_outline, color: Colors.blue),
         title: const Text('关于'),
         subtitle: Text(
-          'Python 练习平台 V1.1\nFlutter (Material 3) + 系统 Python 判题',
+          'Python 练习平台 V1.2\nFlutter (Material 3) + 系统 Python 判题',
           style: TextStyle(color: Colors.grey[600]),
         ),
         trailing: const Icon(Icons.chevron_right),
@@ -521,10 +658,10 @@ class _SettingsPageState extends State<SettingsPage> {
           showAboutDialog(
             context: context,
             applicationName: 'Python 练习平台',
-            applicationVersion: 'V1.1',
+            applicationVersion: 'V1.2',
             applicationLegalese: '为学弟学妹准备的 Python 练习与判题工具',
             children: const [
-              Text('技术栈：Flutter (Material 3) + 系统 Python 判题\n题库：12 分类 72 道题'),
+              Text('技术栈：Flutter (Material 3) + 系统 Python 判题\n题库：12 分类 72 道题\n\nV1.2 新增：编辑器字体大小 / 缩进宽度 / 自定义 Python 解释器路径'),
             ],
           );
         },

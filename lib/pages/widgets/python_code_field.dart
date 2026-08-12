@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderEditable;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, KeyRepeatEvent, LogicalKeyboardKey;
 
+import '../../services/settings_service.dart';
+
 /// 简易 Python 语法高亮 + 行号代码输入框。
 ///
 /// 方案：外层一个 [SingleChildScrollView]，内含一个 Stack——
@@ -51,9 +53,9 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
 
   TextStyle get _base {
     return widget.style ??
-        const TextStyle(
+        TextStyle(
           fontFamily: 'monospace',
-          fontSize: 14,
+          fontSize: _fontSize.toDouble(),
           height: 1.5,
           // 锁定字体字重，避免 TextField 与 RichText 字体回退不一致
           fontFamilyFallback: ['JetBrainsMono Nerd Font Mono'],
@@ -73,6 +75,12 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
   void initState() {
     super.initState();
     widget.controller.addListener(_sync);
+    // 监听全局设置：字体大小/缩进宽度变化时即时重建（无需重开页面）
+    settings.addListener(_onSettingsChanged);
+  }
+
+  void _onSettingsChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -87,6 +95,7 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
   @override
   void dispose() {
     widget.controller.removeListener(_sync);
+    settings.removeListener(_onSettingsChanged);
     _focusNode.dispose();
     super.dispose();
   }
@@ -237,8 +246,11 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
     return KeyEventResult.ignored;
   }
 
-  // Python 缩进宽度：1 个 Tab = 4 空格
-  static const int _indentWidth = 4;
+  // Python 缩进宽度：1 个 Tab = 4 空格（可由设置页调整 2/4/8）
+  int get _indentWidth => settings.editorIndentWidth;
+
+  // 编辑器字体大小（px），默认 14，随设置页全局生效
+  int get _fontSize => settings.editorFontSize;
 
   // 从 render 树里递归找第一个 RenderEditable（TextField 的 key 拿到的是 RenderMouseRegion）
   RenderEditable? _findEditable(RenderObject? ro) {
@@ -292,10 +304,10 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
     // 高亮层里行号列已单独占 gutterWidth，RichText 只需从行号右侧 8px 开始。
     // 精确对齐：textPad.left = codePad.left - gutterWidth = 8，无需手调。
     final textPad = codePad.copyWith(left: codePad.left - gutterWidth);
-    // 统一行高(strut)，TextField 与 RichText 每行都 14*1.5=21px，两行框一致
-    final _strut = const StrutStyle(
+    // 统一行高(strut)，TextField 与 RichText 每行都 size*1.5=21px，两行框一致
+    final strut = StrutStyle(
       fontFamily: 'monospace',
-      fontSize: 14,
+      fontSize: _fontSize.toDouble(),
       height: 1.5,
       forceStrutHeight: true,
     );
@@ -329,7 +341,7 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
                   height: base.height,
                 ),
                 // 强制行高与高亮层一致，消除 TextField/EditableText 的基线偏移
-                strutStyle: _strut,
+                strutStyle: strut,
                 cursorColor: theme.colorScheme.primary,
                 cursorWidth: 2,
                 decoration: InputDecoration(
@@ -369,7 +381,7 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
                         offset: _alignDelta,
                         child: RichText(
                           key: _highKey,
-                          strutStyle: _strut,
+                          strutStyle: strut,
                           text: TextSpan(
                             style: base,
                             children:

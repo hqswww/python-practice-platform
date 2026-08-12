@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'data/problem_repository.dart';
@@ -6,6 +8,7 @@ import 'pages/learn_page.dart';
 import 'pages/practice_page.dart';
 import 'pages/test_page.dart';
 import 'pages/settings_page.dart';
+import 'services/error_log_service.dart';
 import 'services/settings_service.dart';
 
 /// 全局设置服务单例（供各页面读取/修改）
@@ -13,8 +16,21 @@ import 'services/settings_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // 先挂全局错误收集（越早越好，能捞到启动期异常）
+  errorLog.installGlobalHandlers();
   await settings.load();
-  runApp(const PythonPracticeApp());
+
+  // runZonedGuarded 兜底：捕获 Zone 内异步/微任务异常（Dart 层最全的一层）
+  await runZonedGuarded(() async {
+    runApp(const PythonPracticeApp());
+  }, (error, stackTrace) {
+    errorLog.logError(
+      '未捕获的异步异常: $error',
+      source: LogSource.uncaught,
+      error: error,
+      stackTrace: stackTrace,
+    );
+  });
 }
 
 class PythonPracticeApp extends StatelessWidget {

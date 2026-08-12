@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'settings_service.dart';
+
 /// Python 运行时解析与 UTF-8 加固（Windows 迁移关键）
 ///
 /// Windows 迁移两大坑：
@@ -16,10 +18,14 @@ class PythonRuntime {
   static const String bundledExeName = 'python.exe';
 
   /// 解析实际要用的 Python 命令：
-  /// - Windows：优先找捆绑的 python.exe（exe 同目录/python/python.exe），
-  ///   找不到才回退 `python.exe`（走 PATH，开发期调试用）。
-  /// - 其他平台：`python3`。
+  /// 1. 若用户在设置页填了自定义路径，优先用它（可指向任意 python/python.exe）
+  /// 2. Windows：找捆绑的 python.exe（exe 同目录/python/python.exe），找不到回退 `python.exe`
+  /// 3. 其他平台：`python3`
   static String resolvePythonCommand() {
+    // 自定义路径优先（设置页可配，方便引导到指定解释器）
+    final custom = settings.pythonPath.trim();
+    if (custom.isNotEmpty) return custom;
+
     if (!Platform.isWindows) return 'python3';
 
     final bundled = _bundledPythonPath();

@@ -34,13 +34,31 @@ class SettingsService extends ChangeNotifier {
   static const String _themeModeKey = 'settings_theme_mode';
   static const String _timeoutKey = 'settings_timeout_ms';
   static const String _accentKey = 'settings_accent_id';
+  static const String _fontSizeKey = 'settings_editor_font_size';
+  static const String _indentWidthKey = 'settings_editor_indent_width';
+  static const String _pythonPathKey = 'settings_python_path';
 
   ThemeMode _themeMode = ThemeMode.system;
   int _timeoutMs = 2000;
   String _accentId = 'green';
 
+  // 编辑器外观：字体大小（12–22）与缩进宽度（空格数），默认 14 / 4
+  int _editorFontSize = 14;
+  int _editorIndentWidth = 4;
+  // 自定义 Python 解释器路径（空 = 自动解析：Linux python3 / Windows 捆绑 python.exe）
+  String _pythonPath = '';
+
   ThemeMode get themeMode => _themeMode;
   int get timeoutMs => _timeoutMs;
+
+  /// 编辑器字体大小（px），默认 14
+  int get editorFontSize => _editorFontSize;
+
+  /// 编辑缩进宽度（空格数），默认 4
+  int get editorIndentWidth => _editorIndentWidth;
+
+  /// 自定义 Python 解释器路径；空字符串表示自动
+  String get pythonPath => _pythonPath;
 
   /// 当前强调色 id（默认 green）
   String get accentId => _accentId;
@@ -86,6 +104,30 @@ class SettingsService extends ChangeNotifier {
     _timeoutMs = ms;
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setInt(_timeoutKey, ms);
+    notifyListeners();
+  }
+
+  /// 设置编辑器字体大小（px）并持久化
+  Future<void> setEditorFontSize(int px) async {
+    _editorFontSize = px;
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setInt(_fontSizeKey, px);
+    notifyListeners();
+  }
+
+  /// 设置编辑缩进宽度（空格数）并持久化
+  Future<void> setEditorIndentWidth(int width) async {
+    _editorIndentWidth = width;
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setInt(_indentWidthKey, width);
+    notifyListeners();
+  }
+
+  /// 设置自定义 Python 解释器路径（空 = 自动解析）并持久化
+  Future<void> setPythonPath(String path) async {
+    _pythonPath = path.trim();
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setString(_pythonPathKey, _pythonPath);
     notifyListeners();
   }
 }

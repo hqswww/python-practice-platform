@@ -84,7 +84,7 @@ assets/problems/
 - [x] 测试板块（随机抽题组卷、**自由选题跳题**、逐题判题、交卷汇总得分）
 - [x] 设置板块（主题模式切换、判题超时滑块、真实难度统计详情、清除进度）
 - [x] UI 动画体系（设置卡片 hover、判题结果交错入场、切题滑动、结果庆祝、练习网格入场、导航切换过渡）
-- [ ] 迁移 Windows 构建 .exe
+- [x] 迁移 Windows 构建 .exe
 
 ## 七、后端引擎已验证的技术点
 - `Process.start(python3, [solution.py])` + stdin/stdout 管道判题可行
@@ -163,13 +163,13 @@ final end = (start + 0.35).clamp(0.0, 1.0);
 
 ### P3 深度体验
 - [x] 代码编辑器增强之**语法高亮 + 行号**（自研 `PythonCodeField`，零第三方依赖）
-- [ ] 自动缩进 / 更多高亮细节
-- [ ] 更丰富的判题反馈（显示首个用例差异详情）
-- [ ] 成就/称号系统（连胜、全对勋章）
-- [ ] 深色/浅色主题自定义强调色
+- [x] 自动缩进 / 更多高亮细节
+- [x] 更丰富的判题反馈（显示首个用例差异详情）
+- [x] 成就/称号系统（连胜、全对勋章）
+- [x] 深色/浅色主题自定义强调色
 
 ### P4 工程化
-- [ ] **迁移 Windows**：Windows 分区装 Flutter SDK → `flutter build windows` 出 .exe → 捆绑 Python runtime（方案 A）
+- [x] **迁移 Windows**：Windows 分区装 Flutter SDK → `flutter build windows` 出 .exe → 捆绑 Python runtime（方案 A）
 - [ ] 打包安装器（Windows 用 Inno Setup / MSIX）
 - [ ] 数据库替换 shared_preferences（题目量大/需要复杂查询时，可评估 sqlite / drift 或 hive，先查开源）
 
