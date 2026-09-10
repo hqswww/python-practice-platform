@@ -142,8 +142,14 @@
 ## 🔧 维护备忘
 
 - **改代码**：小步 commit + 可回滚（GitHub 远程是保险箱）
-- **远程仓库**：`git@github.com:hqswww/python-practice-platform.git`
+- **远程仓库**：`https://github.com/hqswww/python-practice-platform.git`（HTTPS，**不是** SSH）
+  - 推送靠 macOS 钥匙串凭据（`credential.helper=osxkeychain`，来自 Xcode 自带 gitconfig）。
+    首次推送要输 GitHub 用户名 + **Personal Access Token**——不是账号密码，GitHub 已不支持密码推送；
+    存进钥匙串后就不必再输。
+  - 本机 `~/.ssh/` 下没有密钥，所以 `git@github.com:...` 那种 SSH 写法目前用不了；
+    想换 SSH 得先 `ssh-keygen` 再把公钥加到 GitHub。
 - **Windows 重新拉最新版**：`git clone` 或 `git pull`（只拉源码，不带缓存）
+- **macOS 打包 / 验收**：`bash tools/build_macos.sh` 出 zip；`bash tools/verify_macos.sh` 出验收报告
 - **判题**：Linux = 系统 `python3`；Windows = 捆绑 `python/python.exe`；
   macOS = 捆绑 `Contents/Resources/python-<arch>/bin/python3`（按 `Abi.current()` 挑架构）
 - **编码**：判题进程已强制 UTF-8（`-X utf8` + `PYTHONIOENCODING`）
