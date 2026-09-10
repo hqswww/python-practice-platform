@@ -75,6 +75,7 @@
 | `interactive_terminal.dart` | 交互式终端 UI（配 interactive_runner 用） |
 | `problem_panel.dart` | 题目展示面板 |
 | `judge_result_panel.dart` | 判题结果面板（对/错/详细提示） |
+| `responsive.dart` ⭐ | **响应式布局**：窗口宽度断点（`Breakpoints.twoPane`=840）+ 自适应左右分栏组件。窗口拉伸时 UI 跟着变 |
 
 ### 📂 `lib/data/`
 | 文件 | 作用 |
@@ -111,10 +112,11 @@
 
 | 目录 | 作用 |
 |------|------|
-| `test/` | Flutter 自动测试（判题引擎 4 项 + 启动 1 项） |
-| `tools/` | 教程批量脚本、Windows 打包脚本（`build_windows.ps1`） |
-| `docs/` | 文档：`WINDOWS_MIGRATION.md` 迁移手册 |
+| `test/` | Flutter 自动测试（判题引擎、进度、响应式布局等 63 项） |
+| `tools/` | 教程批量脚本、打包脚本（`build_windows.ps1` / `build_macos.sh` / `setup_macos_platform.sh`） |
+| `docs/` | 文档：`WINDOWS_MIGRATION.md`、`MACOS_MIGRATION.md` 迁移手册 |
 | `linux/` `windows/` | Flutter 平台构建配置 |
+| `macos/` | Flutter macOS 构建配置（**需先跑 `tools/setup_macos_platform.sh` 生成**） |
 | `build/` | 编译产物（不用管，gitignore） |
 
 ---
@@ -127,8 +129,12 @@
 想知道界面在哪儿？        → lib/pages/*.dart（按三大板块找）
 想知道进度怎么存？        → lib/services/progress_service.dart
 想加新功能/改界面？       → 先看 lib/pages/，再找对应 service/model
+想解释器怎么找？          → lib/services/python_runtime.dart（Win/macOS 捆绑逻辑都在这）
+想改窗口拉伸时的布局？    → lib/pages/widgets/responsive.dart（断点 + 自适应分栏）
 
 Windows 要打包？          → tools/build_windows.ps1 + docs/WINDOWS_MIGRATION.md
+macOS 要打包？            → tools/setup_macos_platform.sh → tools/build_macos.sh
+                            + docs/MACOS_MIGRATION.md（App Sandbox 坑必看！）
 规则全忘了？              → 回看 DESIGN.md（项目圣经）
 ```
 
