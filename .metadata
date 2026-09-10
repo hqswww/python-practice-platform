@@ -4,7 +4,7 @@
 # This file should be version controlled and should not be manually edited.
 
 version:
-  revision: "6b182d2c7585eba26d4edce0f97630effd256c33"
+  revision: "e8113bf45620cbeb8aff64947ee4c93e16adb4cf"
   channel: "stable"
 
 project_type: app
@@ -13,8 +13,14 @@ project_type: app
 migration:
   platforms:
     - platform: root
-      create_revision: 6b182d2c7585eba26d4edce0f97630effd256c33
-      base_revision: 6b182d2c7585eba26d4edce0f97630effd256c33
+      create_revision: e8113bf45620cbeb8aff64947ee4c93e16adb4cf
+      base_revision: e8113bf45620cbeb8aff64947ee4c93e16adb4cf
+    - platform: macos
+      create_revision: e8113bf45620cbeb8aff64947ee4c93e16adb4cf
+      base_revision: e8113bf45620cbeb8aff64947ee4c93e16adb4cf
+    # 注意：flutter create --platforms=macos . 会把既有平台的记录挤掉，
+    # 下面这条是手工恢复的（保留原始 revision，使 Windows 侧行为与之前完全一致）。
+    # 在别的机器上重跑 flutter create 时需再次检查本文件。
     - platform: windows
       create_revision: 6b182d2c7585eba26d4edce0f97630effd256c33
       base_revision: 6b182d2c7585eba26d4edce0f97630effd256c33

@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'python_runtime.dart';
+
 /// 全局错误/日志收集服务单例
 ///
 /// 把运行时的错误与重要事件写到本地日志文件（按天滚动），
@@ -281,16 +283,34 @@ class ErrorLogService {
     }());
   }
 
-  /// 生成平台/环境描述（Windows 版本、Dart 版本）
+  /// 生成平台/环境描述（Windows / macOS 版本、解析到的 Python、Dart 版本）
+  ///
+  /// 带上实际解析出的 Python 解释器：判题失败最常见的原因就是
+  /// 「解释器找不到 / 指错」，有这一行日志能省掉一轮来回排查。
   String _platformInfo() {
     if (kIsWeb) return 'web';
     try {
+      final python = _resolvedPythonForLog();
       if (Platform.isWindows) {
-        return 'Windows (${Platform.operatingSystemVersion}) / Dart ${Platform.version}';
+        return 'Windows (${Platform.operatingSystemVersion}) / '
+            'Dart ${Platform.version}$python';
       }
-      return '${Platform.operatingSystem} / Dart ${Platform.version}';
+      if (Platform.isMacOS) {
+        return 'macOS (${Platform.operatingSystemVersion}) / '
+            'Dart ${Platform.version}$python';
+      }
+      return '${Platform.operatingSystem} / Dart ${Platform.version}$python';
     } catch (_) {
       return 'unknown';
+    }
+  }
+
+  /// 解析出的 Python 解释器，拼成日志片段；解析失败时静默省略
+  String _resolvedPythonForLog() {
+    try {
+      return ' / Python ${PythonRuntime.resolvePythonCommand()}';
+    } catch (_) {
+      return '';
     }
   }
 

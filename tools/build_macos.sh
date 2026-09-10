@@ -1,0 +1,282 @@
+#!/usr/bin/env bash
+# ============================================================
+# Python 练习平台 · macOS 一键打包脚本（对标 tools/build_windows.ps1）
+#
+# 用法（项目根目录）：
+#   bash tools/build_macos.sh
+#   bash tools/build_macos.sh --skip-python          # 不捆绑，用系统 Python（自用）
+#   bash tools/build_macos.sh --sign "Developer ID Application: XXX (TEAMID)"
+#
+# 它做 6 步：
+#   1. flutter build macos --release            → 编译 .app（产物是 universal）
+#   2. 探测产物架构 → 决定要带哪几份 python-build-standalone
+#   3. 每份解包到 <App>.app/Contents/Frameworks/python-<arch>/
+#   4. 裁掉判题用不到的 Tcl/Tk、idlelib 等（每份省 ~12MB）
+#   5. 自底向上签名（先签所有嵌套 Mach-O，再签 .app）
+#   6. ditto 打成可分发 zip → dist/
+#
+# 为什么捆绑 Python：
+#   macOS 的 /usr/bin/python3 只是 Xcode Command Line Tools 的 shim。
+#   目标机器没装 CLT 时，执行它会弹系统安装提示甚至卡住 →
+#   跟 Windows 版「免装 Python」一样，必须自带解释器。
+#
+# 为什么是两份：
+#   `flutter build macos --release` 产出的是 universal 二进制（x86_64 + arm64
+#   在同一份 .app 里，且 flutter 没有架构开关），而 Python 是单架构的。
+#   所以两种架构各带一份，运行时由 python_runtime.dart 按当前架构挑。
+# ============================================================
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# ---- 可调参数 ----
+PY_VER="${PY_VER:-3.12.14}"            # 与 Windows 版同为 3.12 线
+PBS_TAG="${PBS_TAG:-20260901}"         # python-build-standalone 发布 tag
+APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-Python 练习平台}"
+TRIM="${TRIM:-1}"                      # 1=裁减无用组件
+SKIP_PYTHON=0
+SIGN_IDENTITY="${SIGN_IDENTITY:--}"    # 默认 ad-hoc（"-"）
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-python) SKIP_PYTHON=1; shift ;;
+    --sign)        SIGN_IDENTITY="$2"; shift 2 ;;
+    --no-trim)     TRIM=0; shift ;;
+    -h|--help)     sed -n '2,20p' "$0"; exit 0 ;;
+    *) echo "未知参数: $1"; exit 1 ;;
+  esac
+done
+
+RELEASE_DIR="build/macos/Build/Products/Release"
+DIST_DIR="dist"
+CACHE_DIR="build/.pbs-cache"
+
+# ---------------------------------------------------------------- 1. 编译
+
+echo "=== 1/6 编译 macOS Release ==="
+command -v flutter >/dev/null 2>&1 || { echo "❌ 找不到 flutter"; exit 1; }
+flutter build macos --release
+
+APP="$(find "$RELEASE_DIR" -maxdepth 1 -name '*.app' -print -quit)"
+[[ -n "$APP" && -d "$APP" ]] || { echo "❌ 没找到 .app（${RELEASE_DIR}）"; exit 1; }
+echo "产物: $APP"
+
+# ---------------------------------------------------------------- 2. 架构
+#
+# ⚠️ 关键事实（实测）：`flutter build macos --release` 的产物是
+# **universal 二进制**（x86_64 与 arm64 在同一份 .app 里），而且
+# `flutter build macos` **没有**架构开关。
+# 但捆绑的 Python 是单架构的 → 必须两份都带，按架构分目录放：
+#     Contents/Resources/python-x86_64/bin/python3
+#     Contents/Resources/python-arm64/bin/python3
+# 运行时由 python_runtime.dart 的 currentMacArchDirName()（Abi.current()）
+# 挑对应那一份。只带一份的话，另一个架构上会 Bad CPU type in executable。
+#
+# ⚠️ 放 Resources 而不是 Frameworks（实测踩坑）：codesign 会把
+# Frameworks 下**任何目录**当「嵌套代码」解析，Python 这种散文件大树放进去
+# 会直接签名失败（"code object is not signed at all" / "bundle format
+# unrecognized"）。放 Resources 则按资源封存，只需单独签里面的 Mach-O。
+
+echo
+echo "=== 2/6 探测产物架构 ==="
+EXEC_NAME="$(defaults read "$PWD/$APP/Contents/Info.plist" CFBundleExecutable)"
+MAIN_BIN="$APP/Contents/MacOS/$EXEC_NAME"
+[[ -f "$MAIN_BIN" ]] || { echo "❌ 找不到主可执行文件: $MAIN_BIN"; exit 1; }
+
+ARCHS="$(lipo -archs "$MAIN_BIN")"
+echo "主程序架构: $ARCHS"
+
+# 架构 → (python-build-standalone triple, 捆绑目录名)
+TRIPLES=()
+ARCH_DIRS=()
+for a in $ARCHS; do
+  case "$a" in
+    x86_64) TRIPLES+=("x86_64-apple-darwin");  ARCH_DIRS+=("python-x86_64") ;;
+    arm64)  TRIPLES+=("aarch64-apple-darwin"); ARCH_DIRS+=("python-arm64") ;;
+    *) echo "❌ 未知架构: $a"; exit 1 ;;
+  esac
+done
+
+if [[ ${#TRIPLES[@]} -gt 1 ]]; then
+  ARCH_TAG="universal"
+else
+  ARCH_TAG="${ARCHS// /}"
+fi
+echo "将捆绑 ${#TRIPLES[@]} 份 Python ($ARCH_TAG): ${ARCH_DIRS[*]}"
+
+# 本机对应的捆绑目录名（只有这一份能就地执行自检）
+host_py_dir() {
+  case "$(uname -m)" in
+    x86_64) echo "python-x86_64" ;;
+    arm64)  echo "python-arm64" ;;
+    *)      echo "" ;;
+  esac
+}
+
+# ------------------------------------------------------- 3+4. 捆绑 + 裁减
+
+bundle_python() {
+  local triple="$1" arch_dir="$2"
+  local asset="cpython-${PY_VER}+${PBS_TAG}-${triple}-install_only_stripped.tar.gz"
+  local tarball="$CACHE_DIR/$asset"
+  local url="https://github.com/astral-sh/python-build-standalone/releases/download/${PBS_TAG}/${asset}"
+
+  echo "--- $arch_dir ($triple) ---"
+  if [[ -f "$tarball" ]]; then
+    echo "  命中缓存: $asset"
+  else
+    echo "  下载: $url"
+    curl -fSL --retry 3 --connect-timeout 20 -o "$tarball.part" "$url" \
+      || { echo "  ❌ 下载失败，检查网络或 PY_VER/PBS_TAG"; rm -f "$tarball.part"; return 1; }
+    mv "$tarball.part" "$tarball"
+  fi
+
+  local stage
+  stage="$(mktemp -d)"
+  tar xzf "$tarball" -C "$stage"
+  if [[ ! -d "$stage/python" ]]; then
+    echo "  ❌ 压缩包结构与预期不符（应为 python/ 顶层）"; rm -rf "$stage"; return 1
+  fi
+
+  local dest="$APP/Contents/Resources/$arch_dir"
+  rm -rf "$dest"
+  mkdir -p "$APP/Contents/Resources"
+  mv "$stage/python" "$dest"
+  rm -rf "$stage"
+  echo "  已放入: $dest"
+
+  # 裁掉判题用不到的组件（Tcl/Tk 约 8MB，idlelib/2to3 等约 4MB）
+  if [[ "$TRIM" == "1" ]]; then
+    local site
+    site="$(find "$dest/lib" -maxdepth 1 -type d -name 'python3.*' -print -quit)"
+    for p in "$dest/lib"/libtcl*.dylib "$dest/lib"/libtk*.dylib \
+             "$dest/lib"/tcl* "$dest/lib"/tk* "$dest/lib"/itcl* \
+             "$dest/lib"/thread* "$dest/lib"/tdbc* \
+             "$dest/include" "$dest/share" \
+             "$dest/bin"/idle3* "$dest/bin"/2to3* \
+             "$dest/bin"/pydoc3* "$dest/bin"/tclsh* "$dest/bin"/wish*; do
+      [[ -e "$p" ]] && rm -rf "$p"
+    done
+    if [[ -n "$site" ]]; then
+      for p in idlelib tkinter turtledemo lib2to3 turtle.py test; do
+        [[ -e "$site/$p" ]] && rm -rf "$site/$p"
+      done
+    fi
+  fi
+  echo "  体积: $(du -sh "$dest" | cut -f1)"
+
+  # 冒烟测试：只有本机架构那一份能就地跑，另一份必然 Bad CPU type（正常）
+  if [[ "$arch_dir" == "$(host_py_dir)" ]]; then
+    if PYTHONPATH="" "$dest/bin/python3" -X utf8 -c "print('ok')" >/dev/null 2>&1; then
+      echo "  ✅ 本机架构解释器可执行（含 -X utf8）"
+    else
+      echo "  ⚠️  本机架构解释器自检未通过（签名前可能被 Gatekeeper 拦，签名后复查）"
+    fi
+  else
+    echo "  ℹ️  非本机架构，跳过执行自检（本机跑不了，属正常）"
+  fi
+}
+
+if [[ "$SKIP_PYTHON" == "1" ]]; then
+  echo
+  echo "=== 3+4/6 跳过捆绑 Python（--skip-python）==="
+  echo "   注意：目标机器没装 Command Line Tools 时判题会失败（只能回退系统 python3）。"
+else
+  echo
+  echo "=== 3+4/6 下载并捆绑 Python $PY_VER ==="
+  mkdir -p "$CACHE_DIR"
+  for i in "${!TRIPLES[@]}"; do
+    bundle_python "${TRIPLES[$i]}" "${ARCH_DIRS[$i]}" || exit 1
+  done
+fi
+
+# ---------------------------------------------------------------- 5. 签名
+
+echo
+echo "=== 5/6 代码签名（identity: ${SIGN_IDENTITY}）==="
+if [[ "$SIGN_IDENTITY" == "-" ]]; then
+  echo "使用 ad-hoc 签名（本地可分发自用；对外分发建议用 Developer ID + 公证）"
+  TS_FLAG="--timestamp=none"
+  RUNTIME_FLAG=""
+else
+  echo "使用 Developer ID 签名；公证需要 --options runtime"
+  TS_FLAG="--timestamp"
+  RUNTIME_FLAG="--options runtime"
+fi
+
+MACHO_LIST="$(mktemp)"
+trap 'rm -f "$MACHO_LIST"' EXIT
+
+# 收集候选 Mach-O。
+# 刻意**不用** `find "$APP" -print0 | file` 全树扫描：Python 树有几千个 .py，
+# 逐文件调 `file` 会慢到几分钟。按位置/扩展名精准定位就够了。
+collect_candidates() {
+  # Flutter 自己的 framework + 主程序（文件少，直接全收）
+  find "$APP/Contents/MacOS" "$APP/Contents/Frameworks" -type f -print0 2>/dev/null
+  # 捆绑 Python 里的二进制
+  local d
+  for d in "$APP/Contents/Resources"/python-*; do
+    [[ -d "$d" ]] || continue
+    find "$d/bin" -type f ! -name '*.py' -print0 2>/dev/null
+    find "$d/lib" -maxdepth 1 -type f -name '*.dylib' -print0 2>/dev/null
+    find "$d" -type f -name '*.so' -print0 2>/dev/null
+  done
+}
+
+CAND=0
+while IFS= read -r -d '' f; do
+  if file -b "$f" 2>/dev/null | grep -q "Mach-O"; then
+    printf '%s\0' "$f" >> "$MACHO_LIST"
+    CAND=$((CAND + 1))
+  fi
+done < <(collect_candidates)
+echo "待签名 Mach-O: $CAND 个"
+
+SIGNED=0
+while IFS= read -r -d '' f; do
+  # shellcheck disable=SC2086
+  if ! err="$(codesign --force $TS_FLAG $RUNTIME_FLAG --sign "$SIGN_IDENTITY" "$f" 2>&1)"; then
+    echo "❌ 签名失败: ${f#$APP/}"
+    printf '%s\n' "$err" | sed 's/^/    /'
+    exit 1
+  fi
+  SIGNED=$((SIGNED + 1))
+done < "$MACHO_LIST"
+echo "已签名嵌套二进制: $SIGNED 个"
+
+# 最后签 .app 本体（不带 --deep，让它重新封存整个 bundle 的 CodeResources）
+# shellcheck disable=SC2086
+codesign --force $TS_FLAG $RUNTIME_FLAG --sign "$SIGN_IDENTITY" "$APP"
+echo "✅ 签名完成"
+
+echo "--- 校验 ---"
+codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | tail -3 || true
+
+# ---------------------------------------------------------------- 6. 打包
+
+echo
+echo "=== 6/6 打包分发 zip ==="
+mkdir -p "$DIST_DIR"
+NAME_SAFE="Python练习平台"
+ZIP="$DIST_DIR/${NAME_SAFE}-macOS-${ARCH_TAG}.zip"
+rm -f "$ZIP"
+# ditto 才能正确保留符号链接与扩展属性（用 zip 命令会破坏 .app）
+ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
+
+echo
+echo "✅ 完成！"
+echo "  App : $APP  ($(du -sh "$APP" | cut -f1))"
+echo "  Zip : $ZIP  ($(du -sh "$ZIP" | cut -f1))"
+cat <<'EOF'
+
+分发提示：
+  1. 未公证的包在别人机器上首次打开会被 Gatekeeper 拦（"来自身份不明的开发者"）。
+     让对方右键 →「打开」，或执行：
+         xattr -dr com.apple.quarantine "/Applications/Python 练习平台.app"
+  2. 想彻底免提示，需要 Apple Developer 账号（$99/年）走 codesign + notarytool 公证，
+     用 --sign "Developer ID Application: ..." 重跑本脚本，再 notarytool submit。
+  3. universal 包会同时带 x86_64 与 arm64 两份 Python，所以体积比单架构大约一倍。
+     只想给一种架构的人用时，可在 Xcode 里把 ARCHS 设成单一架构后重跑本脚本，
+     体积能省下一份 Python（约 54MB）。
+EOF
