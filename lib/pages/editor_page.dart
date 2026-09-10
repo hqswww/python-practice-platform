@@ -223,8 +223,9 @@ class _EditorPageState extends State<EditorPage> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: PythonCodeField(
             controller: _codeController,
+            language: widget.problem.language,
             minLines: 10,
-            hintText: '在这里输入 Python 代码…',
+            hintText: '在这里输入 ${widget.problem.language.displayName} 代码…',
           ),
         ),
         // 操作栏
@@ -252,7 +253,9 @@ class _EditorPageState extends State<EditorPage> {
                   _showTerminal ? Icons.terminal : Icons.terminal_outlined,
                   size: 16,
                 ),
-                label: Text(_showTerminal ? '收起终端' : '交互式终端'),
+                label: Text(_showTerminal
+                    ? '收起'
+                    : widget.problem.language.runPanelTitle),
                 style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                 ),

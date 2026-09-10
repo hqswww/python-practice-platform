@@ -333,6 +333,7 @@ class _WrongQuestionViewState extends State<_WrongQuestionView> {
             const SizedBox(height: 12),
             PythonCodeField(
               controller: _controller,
+              language: p.language,
               minLines: 8,
               hintText: '在此输入代码…',
             ),
@@ -348,7 +349,7 @@ class _WrongQuestionViewState extends State<_WrongQuestionView> {
                     _showTerminal ? Icons.terminal : Icons.terminal_outlined,
                     size: 16,
                   ),
-                  label: Text(_showTerminal ? '收起终端' : '交互式终端'),
+                  label: Text(_showTerminal ? '收起' : p.language.runPanelTitle),
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                   ),

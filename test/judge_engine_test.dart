@@ -30,7 +30,7 @@ void main() {
     hints: [],
   );
 
-  final engine = JudgeEngine(pythonCommand: 'python3');
+  final engine = JudgeEngine(commandOverride: 'python3');
 
   group('JudgeEngine', () {
     test('正确代码全部通过', () async {

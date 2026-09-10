@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/problem.dart';
 import '../models/problem_category.dart';
 import 'widgets/responsive.dart';
+import 'widgets/language_switcher.dart';
 
 /// 学习板块：按题库顺序，把题目组织成"正经学习笔记"排版。
 ///
@@ -70,6 +71,7 @@ class _LearnPageState extends State<LearnPage> {
     final wide = isTwoPaneWidth(MediaQuery.sizeOf(context).width);
     return Scaffold(
       appBar: AppBar(
+        actions: const [LanguageSwitcher()],
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -9,10 +9,12 @@ import '../services/export_service.dart';
 import '../services/import_service.dart';
 import '../services/progress_service.dart';
 import '../services/settings_service.dart';
+import '../models/programming_language.dart';
+import '../services/language_service.dart';
 import 'achievements_page.dart';
 import 'log_center_page.dart';
+import 'widgets/language_switcher.dart';
 import 'widgets/responsive.dart';
-import '../services/language_service.dart';
 
 /// 设置分类：宽屏时作为左栏条目，窄屏时作为「点进去看详情」的入口
 class _CategoryMeta {
@@ -112,10 +114,11 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _showDetails = false;
   // 宽屏左栏选中的分类（窄屏不用，走 push 进详情页）
   String _selectedCategoryId = _kCategories.first.id;
-  // Python 解释器路径输入框 controller（保持引用避免 rebuild 重建）
-  late final TextEditingController _pythonPathController = TextEditingController(
-    text: settings.pythonPath,
-  );
+  // 各语言运行时路径输入框（保持引用避免 rebuild 重建）
+  final Map<ProgrammingLanguage, TextEditingController> _runtimeControllers = {
+    for (final lang in availableLanguages)
+      lang: TextEditingController(text: settings.runtimePath(lang)),
+  };
 
   Future<(int, int, Map<Difficulty, (int, int)>)>? _statsFuture;
 
@@ -124,12 +127,16 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _refreshSummary();
     // 路径可能提前被外部改过（预留），每次进设置同步一次初始值
-    _pythonPathController.text = settings.pythonPath;
+    for (final entry in _runtimeControllers.entries) {
+      entry.value.text = settings.runtimePath(entry.key);
+    }
   }
 
   @override
   void dispose() {
-    _pythonPathController.dispose();
+    for (final c in _runtimeControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -169,7 +176,10 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
+      appBar: AppBar(
+        title: const Text('设置'),
+        actions: const [LanguageSwitcher()],
+      ),
       // 宽屏：左栏分类 + 右栏详情并排；窄屏：整页分类列表，点进详情页
       body: AdaptiveMasterDetail(
         masterBuilder: (context, isWide) =>
@@ -486,39 +496,11 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(height: 12),
-          _settingsCard(
-            index: 12,
-            icon: Icons.terminal,
-            color: Colors.deepOrange,
-            title: 'Python 解释器',
-            subtitle: '留空自动：Linux 用 python3，Windows 优先捆绑的 python.exe',
-            child: ListenableBuilder(
-              listenable: settings,
-              builder: (context, _) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: _pythonPathController,
-                      decoration: InputDecoration(
-                        hintText: '例如 /usr/bin/python3 或 C:\\python\\python.exe',
-                      ),
-                      onSubmitted: (v) => settings.setPythonPath(v),
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: OutlinedButton(
-                        onPressed: () =>
-                            settings.setPythonPath(_pythonPathController.text),
-                        child: const Text('保存路径'),
-                      ),
-                    ),
-                  ],
-                );
-              },
+          for (var i = 0; i < availableLanguages.length; i++)
+            Padding(
+              padding: EdgeInsets.only(top: i == 0 ? 0 : 12),
+              child: _runtimePathCard(availableLanguages[i], index: 12 + i),
             ),
-          ),
         ];
 
       // ---------------------------------------------------------- 诊断
@@ -813,6 +795,50 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// 某个语言的运行时路径设置卡片
+  ///
+  /// 按语言分开：Python 填的是**解释器**，C/C++ 将来填的是**编译器**
+  /// （clang / gcc），两者语义不同，共用一个输入框会让人困惑。
+  Widget _runtimePathCard(ProgrammingLanguage lang, {required int index}) {
+    // 卡片只为 availableLanguages 里的语言构建，而 map 就是按它建的，必然有值
+    final controller = _runtimeControllers[lang]!;
+    final isCompiler = lang.compiled;
+    final hint = isCompiler
+        ? r'例如 /usr/bin/clang 或 C:\mingw64\bin\gcc.exe'
+        : r'例如 /usr/bin/python3 或 C:\python\python.exe';
+    return _settingsCard(
+      index: index,
+      icon: Icons.terminal,
+      color: Colors.deepOrange,
+      title: '${lang.displayName} ${isCompiler ? '编译器' : '解释器'}',
+      subtitle: '留空则自动查找（含应用内捆绑的运行时）',
+      child: ListenableBuilder(
+        listenable: settings,
+        builder: (context, _) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(hintText: hint),
+                onSubmitted: (v) => settings.setRuntimePath(lang, v),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: OutlinedButton(
+                  onPressed: () =>
+                      settings.setRuntimePath(lang, controller.text),
+                  child: const Text('保存路径'),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

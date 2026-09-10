@@ -14,6 +14,7 @@ import 'test_history_page.dart';
 import 'widgets/interactive_terminal.dart';
 import 'widgets/python_code_field.dart';
 import 'widgets/responsive.dart';
+import 'widgets/language_switcher.dart';
 
 /// 测试中单题状态
 enum Status { none, submitted, correct }
@@ -380,7 +381,10 @@ class _TestPageState extends State<TestPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('测试')),
+      appBar: AppBar(
+        title: const Text('测试'),
+        actions: const [LanguageSwitcher()],
+      ),
       body: _body(),
     );
   }
@@ -1224,6 +1228,7 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
                 const SizedBox(height: 12),
                 PythonCodeField(
                   controller: _controller,
+                  language: p.language,
                   minLines: 8,
                   hintText: '在此输入代码…',
                 ),
@@ -1243,7 +1248,7 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
                         size: 16,
                       ),
                       label: Text(
-                        _showTerminal ? '收起终端' : '交互式终端',
+                        _showTerminal ? '收起' : p.language.runPanelTitle,
                       ),
                       style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,

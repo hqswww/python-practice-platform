@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/programming_language.dart';
+
 /// 全局设置服务单例（供各页面读取/修改）
 final settings = SettingsService();
 
@@ -36,7 +38,11 @@ class SettingsService extends ChangeNotifier {
   static const String _accentKey = 'settings_accent_id';
   static const String _fontSizeKey = 'settings_editor_font_size';
   static const String _indentWidthKey = 'settings_editor_indent_width';
-  static const String _pythonPathKey = 'settings_python_path';
+  /// 旧版单一「Python 解释器路径」的键。保留只为迁移到按语言存储。
+  static const String _legacyPythonPathKey = 'settings_python_path';
+
+  /// 各语言运行时路径的键前缀（实际键为 `settings_runtime_path_<语言 id>`）
+  static const String _runtimePathPrefix = 'settings_runtime_path_';
 
   /// 各测试模式倒计时时长的存储键前缀（实际键为 `settings_test_time_<modeId>`）
   static const String _testTimePrefix = 'settings_test_time_';
@@ -60,8 +66,9 @@ class SettingsService extends ChangeNotifier {
   // 编辑器外观：字体大小（12–22）与缩进宽度（空格数），默认 14 / 4
   int _editorFontSize = 14;
   int _editorIndentWidth = 4;
-  // 自定义 Python 解释器路径（空 = 自动解析：Linux python3 / Windows 捆绑 python.exe）
-  String _pythonPath = '';
+  // 各语言自定义运行时路径（解释器 / 编译器），空 = 自动解析。
+  // 按语言分开存：将来 C 要填的是 clang/gcc 路径，和 Python 的解释器不是一回事。
+  final Map<ProgrammingLanguage, String> _runtimePaths = {};
 
   /// 各测试模式的倒计时时长（秒），0 = 不限时。键为模式 id。
   final Map<String, int> _testTimeLimits = Map.of(defaultTestTimeLimits);
@@ -75,8 +82,9 @@ class SettingsService extends ChangeNotifier {
   /// 编辑缩进宽度（空格数），默认 4
   int get editorIndentWidth => _editorIndentWidth;
 
-  /// 自定义 Python 解释器路径；空字符串表示自动
-  String get pythonPath => _pythonPath;
+  /// 某语言的自定义运行时路径（解释器 / 编译器）；空字符串表示自动解析
+  String runtimePath(ProgrammingLanguage language) =>
+      _runtimePaths[language] ?? '';
 
   /// 某个测试模式的倒计时时长（秒）；0 = 不限时。
   /// 未知模式 id 返回 0（相当于不限时，安全默认）。
@@ -112,7 +120,17 @@ class SettingsService extends ChangeNotifier {
     _accentId = _prefs!.getString(_accentKey) ?? 'green';
     _editorFontSize = _prefs!.getInt(_fontSizeKey) ?? 14;
     _editorIndentWidth = _prefs!.getInt(_indentWidthKey) ?? 4;
-    _pythonPath = _prefs!.getString(_pythonPathKey) ?? '';
+    for (final lang in ProgrammingLanguage.values) {
+      _runtimePaths[lang] =
+          _prefs!.getString('$_runtimePathPrefix${lang.id}') ?? '';
+    }
+    // 迁移：老版本只有一个「Python 解释器路径」，搬进按语言的存储里
+    if ((_runtimePaths[ProgrammingLanguage.python] ?? '').isEmpty) {
+      final legacy = _prefs!.getString(_legacyPythonPathKey)?.trim() ?? '';
+      if (legacy.isNotEmpty) {
+        _runtimePaths[ProgrammingLanguage.python] = legacy;
+      }
+    }
     for (final entry in defaultTestTimeLimits.entries) {
       _testTimeLimits[entry.key] =
           _prefs!.getInt('$_testTimePrefix${entry.key}') ?? entry.value;
@@ -160,11 +178,12 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 设置自定义 Python 解释器路径（空 = 自动解析）并持久化
-  Future<void> setPythonPath(String path) async {
-    _pythonPath = path.trim();
+  /// 设置某语言的自定义运行时路径（空 = 自动解析）并持久化
+  Future<void> setRuntimePath(ProgrammingLanguage language, String path) async {
+    final trimmed = path.trim();
+    _runtimePaths[language] = trimmed;
     _prefs ??= await SharedPreferences.getInstance();
-    await _prefs!.setString(_pythonPathKey, _pythonPath);
+    await _prefs!.setString('$_runtimePathPrefix${language.id}', trimmed);
     notifyListeners();
   }
 

@@ -1,6 +1,7 @@
 import 'dart:ffi' show Abi;
 import 'dart:io';
 
+import '../models/programming_language.dart';
 import 'settings_service.dart';
 
 /// Python 运行时解析与 UTF-8 加固（Windows / macOS 迁移关键）
@@ -104,7 +105,7 @@ class PythonRuntime {
   /// 4. 其他平台（Linux）：`python3`
   static String resolvePythonCommand() {
     // 自定义路径优先（设置页可配，方便引导到指定解释器）
-    final custom = settings.pythonPath.trim();
+    final custom = settings.runtimePath(ProgrammingLanguage.python).trim();
     if (custom.isNotEmpty) return custom;
 
     if (Platform.isMacOS) {

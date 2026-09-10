@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:python_practice/pages/test_page.dart';
 import 'package:python_practice/services/settings_service.dart';
+import 'package:python_practice/models/programming_language.dart';
 
 /// 测试板块「各模式各自的倒计时时长」。
 ///
@@ -86,14 +87,16 @@ void main() {
       final a = SettingsService();
       await a.setEditorFontSize(18);
       await a.setEditorIndentWidth(2);
-      await a.setPythonPath('/opt/homebrew/bin/python3');
+      await a.setRuntimePath(
+          ProgrammingLanguage.python, '/opt/homebrew/bin/python3');
 
       final b = SettingsService();
       await b.load();
 
       expect(b.editorFontSize, 18, reason: '以前漏读，重启会回落成 14');
       expect(b.editorIndentWidth, 2, reason: '以前漏读，重启会回落成 4');
-      expect(b.pythonPath, '/opt/homebrew/bin/python3', reason: '以前漏读，重启会丢失');
+      expect(b.runtimePath(ProgrammingLanguage.python), '/opt/homebrew/bin/python3',
+          reason: '以前漏读，重启会丢失');
     });
 
     test('原有三项照常读回（别改出回归）', () async {

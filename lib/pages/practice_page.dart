@@ -7,6 +7,7 @@ import 'favorite_page.dart';
 import 'problem_list_page.dart';
 import 'wrong_book_page.dart';
 import '../services/language_service.dart';
+import 'widgets/language_switcher.dart';
 
 /// 练习板块：展示所有分类 + 整体进度
 class PracticePage extends StatefulWidget {
@@ -94,8 +95,9 @@ class _PracticePageState extends State<PracticePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Python 练习平台'),
+        title: const Text('练习'),
         actions: [
+          const LanguageSwitcher(),
           IconButton(
             tooltip: '刷新进度',
             onPressed: _loadProgress,

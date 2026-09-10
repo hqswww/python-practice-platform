@@ -16,7 +16,16 @@ import '../models/programming_language.dart';
 /// - **单题**操作一律用对象自带的 `problem.language`
 ///   后者更可靠：即使某页面显示的不是当前语言的题，也不会把进度写到别处
 class LanguageService extends ValueNotifier<ProgrammingLanguage> {
-  LanguageService() : super(ProgrammingLanguage.python);
+  /// [available] 用于覆盖「哪些语言已接入」的判断。
+  /// 生产代码不传（取题库实际情况）；测试传它来验证多语言行为 ——
+  /// 否则在只有 Python 的阶段，切到 C 会被 [_safest] 正确地拒绝，测不到切换逻辑。
+  LanguageService({List<ProgrammingLanguage> Function()? available})
+      : _available = available ?? _bankBackedLanguages,
+        super(ProgrammingLanguage.python);
+
+  static List<ProgrammingLanguage> _bankBackedLanguages() => availableLanguages;
+
+  final List<ProgrammingLanguage> Function() _available;
 
   static const String _key = 'settings_current_language';
 
@@ -42,8 +51,8 @@ class LanguageService extends ValueNotifier<ProgrammingLanguage> {
 
   /// 保证返回的语言确实有题库；否则回退到第一个可用的。
   /// （比如某语言的题库后来被移除了，存下来的选择就失效了）
-  static ProgrammingLanguage _safest(ProgrammingLanguage wanted) {
-    final available = availableLanguages;
+  ProgrammingLanguage _safest(ProgrammingLanguage wanted) {
+    final available = _available();
     if (available.isEmpty) return wanted;
     return available.contains(wanted) ? wanted : available.first;
   }

@@ -41,9 +41,16 @@ enum ProgrammingLanguage {
   /// 源码文件扩展名，判题时临时文件名用（`solution.py` / `solution.c`）
   final String fileExtension;
 
-  /// 是否编译型：决定判题是「一次运行」还是「先编译再运行」，
-  /// 以及运行面板的语义（交互终端 vs 编译运行）
+  /// 是否编译型：决定判题是「一次运行」还是「先编译再运行」
   final bool compiled;
+
+  /// 运行面板的标题。
+  ///
+  /// 刻意放在语言定义里：它是**跟着语言走**的展示文案，而且只有这一处
+  /// 需要知道「Python 有 REPL、C 没有」这件事 —— 散到各页面去判断反而容易漏。
+  /// - 解释型（Python）：常驻进程、可逐行试，叫「交互终端」
+  /// - 编译型（C/C++）：没有 REPL，面板是「编译一次跑一次」，叫「编译运行」
+  String get runPanelTitle => compiled ? '编译运行' : '交互终端';
 
   const ProgrammingLanguage({
     required this.id,

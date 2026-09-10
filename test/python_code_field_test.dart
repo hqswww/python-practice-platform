@@ -3,26 +3,28 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:python_practice/pages/widgets/python_code_field.dart';
+import 'package:python_practice/pages/widgets/language_syntax.dart';
+import 'package:python_practice/models/programming_language.dart';
 
 void main() {
   test('highlight 把 def/return/数字/注释 切成独立着色 span', () {
     final theme = ThemeData.light();
     final code = 'def foo(n):\n    return n + 2  # 注释';
-    final spans = flatten(highlight(code, theme));
+    final spans = flatten(highlight(code, theme, LanguageSyntax.python));
     expect(spans.join(''), code);
     expect(spans, contains('def'));
     expect(spans, contains('return'));
     expect(spans, contains('2'));
     expect(spans, contains('# 注释'));
     // 关键字 span 应带颜色样式
-    final defSpan = uniqueKeywordSpan(highlight(code, theme));
+    final defSpan = uniqueKeywordSpan(highlight(code, theme, LanguageSyntax.python));
     expect(defSpan?.style?.color, isNotNull);
   });
 
   test('highlight 处理三引号多行字符串不炸', () {
     final theme = ThemeData.light();
     final code = 'x = """line1\nline2"""\ny = 1  # end';
-    final spans = flatten(highlight(code, theme));
+    final spans = flatten(highlight(code, theme, LanguageSyntax.python));
     expect(spans.join(''), code);
   });
 
@@ -32,7 +34,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: PythonCodeField(controller: controller, minLines: 2),
+          body: PythonCodeField(controller: controller, language: ProgrammingLanguage.python, minLines: 2),
         ),
       ),
     );
@@ -45,7 +47,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: PythonCodeField(controller: controller, minLines: 1),
+          body: PythonCodeField(controller: controller, language: ProgrammingLanguage.python, minLines: 1),
         ),
       ),
     );
@@ -64,7 +66,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: PythonCodeField(controller: controller, minLines: 1),
+          body: PythonCodeField(controller: controller, language: ProgrammingLanguage.python, minLines: 1),
         ),
       ),
     );
@@ -82,7 +84,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: PythonCodeField(controller: controller, minLines: 1),
+          body: PythonCodeField(controller: controller, language: ProgrammingLanguage.python, minLines: 1),
         ),
       ),
     );
@@ -99,7 +101,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: PythonCodeField(controller: controller, minLines: 2),
+          body: PythonCodeField(controller: controller, language: ProgrammingLanguage.python, minLines: 2),
         ),
       ),
     );

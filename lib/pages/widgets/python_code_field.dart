@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+
+import '../../models/programming_language.dart';
+import 'language_syntax.dart';
 import 'package:flutter/rendering.dart' show RenderEditable;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, KeyRepeatEvent, LogicalKeyboardKey;
 
 import '../../services/settings_service.dart';
 
-/// 简易 Python 语法高亮 + 行号代码输入框。
+/// 简易语法高亮 + 行号代码输入框。
+///
+/// 高亮的词表与注释/字符串规则由 [LanguageSyntax] 按 [language] 提供，
+/// 本组件本身与具体语言无关。
 ///
 /// 方案：外层一个 [SingleChildScrollView]，内含一个 Stack——
 /// 下层是只读的行号 + 高亮 RichText，上层是文字透明的 TextField。
@@ -24,6 +30,9 @@ class PythonCodeField extends StatefulWidget {
   final TextStyle? style;
   final String? hintText;
 
+  /// 代码所属语言（决定语法高亮规则）
+  final ProgrammingLanguage language;
+
   // 调用方只传 minLines 时（maxLines 为 null），默认上限给到很大以强制软换行，
   // 与高亮 RichText 的折行行为一致——否则 TextField 在 maxLines=null 下是
   // “单行无限宽”可横向滚动、RichText 却自动折行，导致长行文字越来越向左错位。
@@ -32,6 +41,7 @@ class PythonCodeField extends StatefulWidget {
   const PythonCodeField({
     super.key,
     required this.controller,
+    required this.language,
     this.minLines = 6,
     this.maxLines,
     this.style,
@@ -385,7 +395,8 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
                           text: TextSpan(
                             style: base,
                             children:
-                                highlight(widget.controller.text, theme),
+                                highlight(widget.controller.text, theme,
+                                    LanguageSyntax.of(widget.language)),
                           ),
                         ),
                       ),
@@ -411,7 +422,11 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
 }
 
 /// 把代码按 Python 词法切分成带颜色的 span（顶层函数，便于单测）。
-List<InlineSpan> highlight(String code, ThemeData theme) {
+List<InlineSpan> highlight(
+  String code,
+  ThemeData theme,
+  LanguageSyntax syntax,
+) {
   final dark = theme.brightness == Brightness.dark;
   final Color kw = dark ? const Color(0xFFC678DD) : const Color(0xFF7C3AED);
   final Color bi = dark ? const Color(0xFF61AFEF) : const Color(0xFF0060AC);
@@ -421,21 +436,9 @@ List<InlineSpan> highlight(String code, ThemeData theme) {
   final Color dc = dark ? const Color(0xFF839987) : const Color(0xFF6A8F6A);
 
   final spans = <InlineSpan>[];
-  // raw 三引号拼接正则；字面引号用 \x22(双) / \x27(单) 十六进制转义。
-  // 此文件由 heredoc 生成，\\n 在源码里是字面反斜杠+n（正则换行），不能是真实换行。
-  final re = RegExp(
-    r'''(#[^\n]*)|''' 
-        r'''(\x22\x22\x22[\s\S]*?\x22\x22\x22|\x27\x27\x27[\s\S]*?\x27\x27\x27|\x22(?:[^\x22\\\n]|\\.)*\x22|\x27(?:[^\x27\\\n]|\\.)*\x27)|''' 
-        r'''(@\w+)|''' 
-        r'''(\b\d[\w.]*\b)|''' 
-        r'''(\b(?:def|return|if|elif|else|for|while|import|from|as|class|try|''' 
-        r'''except|finally|raise|with|pass|break|continue|lambda|yield|global|''' 
-        r'''nonlocal|and|or|not|in|is|None|True|False|del|assert|async|await)\b)|''' 
-        r'''(\b(?:print|len|range|int|str|float|bool|list|dict|tuple|set|input|''' 
-        r'''abs|sum|min|max|sorted|reversed|enumerate|zip|map|filter|type|isinstance|''' 
-        r'''open|super|self|round|any|all|repr|format)\b)''',
-    multiLine: true,
-  );
+  // 正则由 LanguageSyntax 按语言组装（组号固定：
+  // 1=注释 2=字符串 3=扩展 4=数字 5=关键字 6=内置）
+  final re = RegExp(syntax.pattern, multiLine: true);
 
   var last = 0;
   for (final m in re.allMatches(code)) {
@@ -447,7 +450,7 @@ List<InlineSpan> highlight(String code, ThemeData theme) {
         : m.group(2) != null
             ? 'string'
             : m.group(3) != null
-                ? 'decorator'
+                ? 'extra'
                 : m.group(4) != null
                     ? 'number'
                     : m.group(5) != null
@@ -456,7 +459,7 @@ List<InlineSpan> highlight(String code, ThemeData theme) {
     final color = switch (kind) {
       'comment' => cm,
       'string' => st,
-      'decorator' => dc,
+      'extra' => dc,
       'number' => nu,
       'keyword' => kw,
       _ => bi,
