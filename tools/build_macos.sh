@@ -62,6 +62,33 @@ APP="$(find "$RELEASE_DIR" -maxdepth 1 -name '*.app' -print -quit)"
 [[ -n "$APP" && -d "$APP" ]] || { echo "❌ 没找到 .app（${RELEASE_DIR}）"; exit 1; }
 echo "产物: $APP"
 
+# ------------------------------------------- 1.5 重建完整尺寸的 AppIcon.icns
+#
+# ⚠️ Xcode 从 asset catalog 编出来的 AppIcon.icns **只到 256×256**
+# （实测块只有 ic04/ic07/ic11/ic13；原始 Flutter 工程也一样，不是我们改坏的）。
+# 结果是 Finder 大图标视图、App 切换器、Quick Look 下图标发糊。
+# 这里用 iconutil 重新打一份 16→1024 的完整阶梯。
+#
+# 必须放在签名之前：改 Contents/Resources 会让已有签名失效。
+ICON_SRC="macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png"
+if [[ -f "$ICON_SRC" ]] && command -v iconutil >/dev/null 2>&1; then
+  ICONSET="$(mktemp -d)/AppIcon.iconset"
+  mkdir -p "$ICONSET"
+  # sips -z 的参数顺序是「高 宽」，这里都是正方形所以一样
+  for spec in "16:icon_16x16" "32:icon_16x16@2x" "32:icon_32x32" "64:icon_32x32@2x" \
+              "128:icon_128x128" "256:icon_128x128@2x" "256:icon_256x256" \
+              "512:icon_256x256@2x" "512:icon_512x512" "1024:icon_512x512@2x"; do
+    px="${spec%%:*}"; nm="${spec##*:}"
+    sips -z "$px" "$px" "$ICON_SRC" --out "$ICONSET/$nm.png" >/dev/null 2>&1 || true
+  done
+  if iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns" 2>/dev/null; then
+    echo "✅ 已重建 AppIcon.icns（16→1024 完整尺寸）"
+  else
+    echo "⚠️  iconutil 失败，沿用 Xcode 生成的 icns"
+  fi
+  rm -rf "$(dirname "$ICONSET")"
+fi
+
 # ---------------------------------------------------------------- 2. 架构
 #
 # ⚠️ 关键事实（实测）：`flutter build macos --release` 的产物是

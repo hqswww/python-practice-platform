@@ -323,7 +323,43 @@ cat ~/Library/Application\ Support/com.sakiri.python-practice/logs/*.log
 
 ---
 
-## 九、分发与公证
+## 九、应用图标
+
+图标源图要求与处理流程（当前用的是 `~/Documents/icon.png` 的左上方形区域）：
+
+| 步骤 | 做法 | 为什么 |
+|------|------|--------|
+| 方形化 | 裁成正方形再缩到 1024 | 原图 1260×1122 非方形，图标必须方形 |
+| 圆角 | **复用 Flutter 模板的 alpha 通道** | Apple 的连续曲率圆角（squircle）手算难对齐；直接沿用模板像素级一致 |
+| 尺寸 | 16/32/64/128/256/512/1024 | 对应 `AppIcon.appiconset` 的 10 条声明 |
+| Windows | 生成多尺寸 `.ico` | `windows/runner/resources/app_icon.ico` |
+
+> ⚠️ Xcode 从 asset catalog 编出的 `AppIcon.icns` **只到 256×256**
+> （实测只有 `ic04/ic07/ic11/ic13` 四个块；**原始 Flutter 工程也一样**，不是配置问题）。
+> 结果大尺寸下图标发糊。`build_macos.sh` 里加了 1.5 步用 `iconutil`
+> 重打一份 16→1024 的完整 icns —— **必须放在签名之前**，否则改
+> `Contents/Resources` 会让签名失效。
+
+### 重新生成图标
+
+一条命令（默认取 `~/Documents/icon.png` 的左上方形区域）：
+
+```bash
+uv run --with pillow python tools/make_icons.py
+uv run --with pillow python tools/make_icons.py <源图> --region center   # 换区域
+bash tools/build_macos.sh          # 重新打包（会自动重打完整尺寸的 .icns）
+```
+
+`tools/make_icons.py` 会一次写好 macos 的 7 张 + windows 的 `.ico`。
+圆角遮罩取自 **`tools/icon_mask_1024.png`**（从 Flutter 模板图标的 alpha 通道提取并固化），
+所以脚本可以反复重跑、结果完全一致。
+
+> ⚠️ 别把遮罩来源改成「当前 `app_icon_1024.png` 的 alpha」：脚本跑第二遍时
+> 那张图已经是自己生成的产物了，遮罩会越缩越小。这个坑已经写进脚本注释。
+
+---
+
+## 十、分发与公证
 
 **不公证也能分发**，但对方首次打开会被拦：
 
@@ -350,7 +386,7 @@ xattr -dr com.apple.quarantine "/Applications/Python 练习平台.app"
 
 ---
 
-## 十、体积参考（实测值）
+## 十一、体积参考（实测值）
 
 | 项 | 大小 |
 |----|------|
@@ -372,7 +408,7 @@ xattr -dr com.apple.quarantine "/Applications/Python 练习平台.app"
 
 ---
 
-## 十一、环境实测结论（2026-09-10）
+## 十二、环境实测结论（2026-09-10）
 
 本机：macOS 26.0 (25A354) / Intel x86_64 / Xcode 26.3 / Flutter 3.47.3 (`~/Develop/flutter`)
 
