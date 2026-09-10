@@ -18,6 +18,33 @@ import 'widgets/responsive.dart';
 /// 测试中单题状态
 enum Status { none, submitted, correct }
 
+/// 测试模式定义
+///
+/// [id] 用于持久化「该模式的倒计时时长」——刻意用稳定 id 而不是题量做键：
+/// 以后题量变了（比如全题库从 72 变 100），用户已保存的时长不会跟着丢。
+class _TestModeDef {
+  final String id;
+  final String label;
+
+  /// 题量；0 表示「全题库」（用实际题库总数）
+  final int count;
+
+  const _TestModeDef(this.id, this.label, this.count);
+}
+
+const List<_TestModeDef> _kTestModes = [
+  _TestModeDef('quick', '快速测验', 5),
+  _TestModeDef('standard', '标准测验', 10),
+  _TestModeDef('intensive', '强化测验', 15),
+  _TestModeDef('full', '全题库', 0),
+];
+
+/// 可选的倒计时时长（秒），0 = 不限时。
+/// 0 / 5 / 10 / 15 / 20 / 30 / 45 / 60 / 90 / 120 分钟。
+const List<int> kTestDurationChoices = [
+  0, 300, 600, 900, 1200, 1800, 2700, 3600, 5400, 7200,
+];
+
 /// 单题最近一次判题的详情（供解题界面显示）
 class _JudgeRecord {
   final int passedCases;
@@ -83,9 +110,6 @@ class _TestPageState extends State<TestPage> {
   bool _countdownEnabled = false;
   int _remainingSeconds = 0; // 剩余秒数
   Timer? _timer;
-
-  // 设置页选择的倒计时时长（秒），0 = 不限时
-  int _setupCountdownSec = 0;
 
   @override
   void initState() {
@@ -381,15 +405,98 @@ class _TestPageState extends State<TestPage> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  /// 设置界面：选题目数量
+  /// 一个测试模式：开始按钮 + 它自己的倒计时选择器
+  Widget _buildModeRow(_TestModeDef mode, int total) {
+    final count = mode.count == 0 ? total : mode.count;
+    final sec = settings.testTimeLimit(mode.id);
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+            ),
+            onPressed: () => _startTest(count, countdownSec: sec),
+            child: Text('${mode.label}（$count 题）'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        _buildDurationPicker(mode.id, sec),
+      ],
+    );
+  }
+
+  /// 单个模式的倒计时选择器：显示当前值，点击弹出候选时长
+  Widget _buildDurationPicker(String modeId, int currentSec) {
+    final scheme = Theme.of(context).colorScheme;
+    final active = currentSec > 0;
+    final fg = active ? scheme.primary : scheme.onSurfaceVariant;
+
+    return PopupMenuButton<int>(
+      tooltip: '设置「该模式」的倒计时时长',
+      initialValue: currentSec,
+      onSelected: (v) => settings.setTestTimeLimit(modeId, v),
+      itemBuilder: (context) => [
+        for (final sec in kTestDurationChoices)
+          PopupMenuItem<int>(
+            value: sec,
+            child: Row(
+              children: [
+                Icon(
+                  sec > 0 ? Icons.timer_outlined : Icons.timer_off_outlined,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(_fmtDuration(sec)),
+                if (sec == currentSec) ...[
+                  const Spacer(),
+                  const Icon(Icons.check, size: 16),
+                ],
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        height: 40,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: active ? scheme.primary : scheme.outlineVariant,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              active ? Icons.timer_outlined : Icons.timer_off_outlined,
+              size: 16,
+              color: fg,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _fmtDuration(currentSec),
+              style: TextStyle(
+                fontSize: 13,
+                color: fg,
+                fontWeight: active ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 设置界面：每个测试模式一行 —— 左侧按钮开始测试，右侧是该模式自己的倒计时时长。
+  ///
+  /// 刻意不再用「一个全局开关 + 一个全局时长」：题量差太多（5 题 vs 全题库），
+  /// 同一个时长对快速测验太松、对全题库又根本不够。现在各模式互不影响，
+  /// 且时长里直接含「不限时」，少一层开关概念。
   Widget _buildSetup() {
     final total = _allProblems!.length;
-    final options = [
-      (5, '快速测验（5 题）'),
-      (10, '标准测验（10 题）'),
-      (15, '强化测验（15 题）'),
-      (total, '全题库（$total 题）'),
-    ];
     return MaxWidthBody(
       maxWidth: ContentWidth.list,
       child: ListView(
@@ -412,74 +519,29 @@ class _TestPageState extends State<TestPage> {
                     '随机从题库抽题，逐题编写代码并判题，结束后汇总得分。已做对过的题会正常计分。',
                     style: TextStyle(height: 1.5),
                   ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    '右侧 ⏱ 是每个模式**各自**的倒计时，互不影响：选「不限时」就是普通练习；'
+                    '设了时间则进入测试即开始计时，时间到自动交卷。',
+                    style:
+                        TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
+                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-          for (final (count, label) in options)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                ),
-                onPressed: () => _startTest(count,
-                    countdownSec: _setupCountdownSec),
-                child: Text(label),
-              ),
-            ),
-          const SizedBox(height: 4),
-          // 倒计时压力模式设置
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.timer_outlined, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        '倒计时压力模式',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const Spacer(),
-                      Switch(
-                        value: _setupCountdownSec > 0,
-                        onChanged: (v) => setState(() {
-                          _setupCountdownSec = v ? 600 : 0; // 默认 10 分钟
-                        }),
-                      ),
-                    ],
+          // 用 ListenableBuilder 监听 settings：改完时长后选择器要立刻显示新值
+          ListenableBuilder(
+            listenable: settings,
+            builder: (context, _) => Column(
+              children: [
+                for (final mode in _kTestModes)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildModeRow(mode, total),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '开启后，测试进入就计时，时间到会自动交卷。适合限时训练上机手感。',
-                    style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
-                  ),
-                  if (_setupCountdownSec > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Wrap(
-                        spacing: 8,
-                        children: [
-                          for (final sec in const [300, 600, 900, 1200])
-                            ChoiceChip(
-                              label: Text(_fmtDuration(sec)),
-                              selected: _setupCountdownSec == sec,
-                              onSelected: (_) =>
-                                  setState(() => _setupCountdownSec = sec),
-                            ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
           const SizedBox(height: 4),

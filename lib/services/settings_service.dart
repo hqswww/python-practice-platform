@@ -38,6 +38,21 @@ class SettingsService extends ChangeNotifier {
   static const String _indentWidthKey = 'settings_editor_indent_width';
   static const String _pythonPathKey = 'settings_python_path';
 
+  /// 各测试模式倒计时时长的存储键前缀（实际键为 `settings_test_time_<modeId>`）
+  static const String _testTimePrefix = 'settings_test_time_';
+
+  /// 各测试模式的默认倒计时时长（秒），0 = 不限时。
+  ///
+  /// 之所以逐模式配置而不是一个全局值：题量差太多（5 题 vs 72 题），
+  /// 同一个时长对「快速测验」太松、对「全题库」又根本不够。
+  /// 全题库默认不限时 —— 它更像完整模拟考，不是限时训练。
+  static const Map<String, int> defaultTestTimeLimits = {
+    'quick': 600, // 快速测验（5 题）→ 10 分钟
+    'standard': 900, // 标准测验（10 题）→ 15 分钟
+    'intensive': 1200, // 强化测验（15 题）→ 20 分钟
+    'full': 0, // 全题库 → 不限时
+  };
+
   ThemeMode _themeMode = ThemeMode.system;
   int _timeoutMs = 2000;
   String _accentId = 'green';
@@ -47,6 +62,9 @@ class SettingsService extends ChangeNotifier {
   int _editorIndentWidth = 4;
   // 自定义 Python 解释器路径（空 = 自动解析：Linux python3 / Windows 捆绑 python.exe）
   String _pythonPath = '';
+
+  /// 各测试模式的倒计时时长（秒），0 = 不限时。键为模式 id。
+  final Map<String, int> _testTimeLimits = Map.of(defaultTestTimeLimits);
 
   ThemeMode get themeMode => _themeMode;
   int get timeoutMs => _timeoutMs;
@@ -59,6 +77,13 @@ class SettingsService extends ChangeNotifier {
 
   /// 自定义 Python 解释器路径；空字符串表示自动
   String get pythonPath => _pythonPath;
+
+  /// 某个测试模式的倒计时时长（秒）；0 = 不限时。
+  /// 未知模式 id 返回 0（相当于不限时，安全默认）。
+  int testTimeLimit(String modeId) => _testTimeLimits[modeId] ?? 0;
+
+  /// 该模式的时长是否生效（>0 才倒计时）
+  bool hasTestTimeLimit(String modeId) => testTimeLimit(modeId) > 0;
 
   /// 当前强调色 id（默认 green）
   String get accentId => _accentId;
@@ -74,12 +99,24 @@ class SettingsService extends ChangeNotifier {
   SharedPreferences? _prefs;
 
   /// 加载设置（应用启动时调用一次）
+  ///
+  /// ⚠️ 这里必须把**每个**持久化字段都读回来。
+  /// 之前漏读了字体大小 / 缩进宽度 / Python 解释器路径三项 ——
+  /// setter 老老实实写进了 SharedPreferences，但 load 从不读回，
+  /// 于是重启后静默回落到默认值（14 / 4 / 空），用户会以为"设置没保存"。
   Future<void> load() async {
     _prefs ??= await SharedPreferences.getInstance();
     final modeIndex = _prefs!.getInt(_themeModeKey) ?? 0;
     _themeMode = ThemeMode.values[modeIndex % ThemeMode.values.length];
     _timeoutMs = _prefs!.getInt(_timeoutKey) ?? 2000;
     _accentId = _prefs!.getString(_accentKey) ?? 'green';
+    _editorFontSize = _prefs!.getInt(_fontSizeKey) ?? 14;
+    _editorIndentWidth = _prefs!.getInt(_indentWidthKey) ?? 4;
+    _pythonPath = _prefs!.getString(_pythonPathKey) ?? '';
+    for (final entry in defaultTestTimeLimits.entries) {
+      _testTimeLimits[entry.key] =
+          _prefs!.getInt('$_testTimePrefix${entry.key}') ?? entry.value;
+    }
     notifyListeners();
   }
 
@@ -128,6 +165,15 @@ class SettingsService extends ChangeNotifier {
     _pythonPath = path.trim();
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setString(_pythonPathKey, _pythonPath);
+    notifyListeners();
+  }
+
+  /// 设置某个测试模式的倒计时时长（秒，0 = 不限时）并持久化。
+  /// 各模式互不影响 —— 这正是「不再一刀切」的关键。
+  Future<void> setTestTimeLimit(String modeId, int seconds) async {
+    _testTimeLimits[modeId] = seconds < 0 ? 0 : seconds;
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setInt('$_testTimePrefix$modeId', _testTimeLimits[modeId]!);
     notifyListeners();
   }
 }
