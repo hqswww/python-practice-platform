@@ -11,6 +11,84 @@ import '../services/progress_service.dart';
 import '../services/settings_service.dart';
 import 'achievements_page.dart';
 import 'log_center_page.dart';
+import 'widgets/responsive.dart';
+
+/// 设置分类：宽屏时作为左栏条目，窄屏时作为「点进去看详情」的入口
+class _CategoryMeta {
+  final String id;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+
+  const _CategoryMeta({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+  });
+}
+
+/// 分类清单（顺序即左栏显示顺序，与原扁平布局保持一致）
+const List<_CategoryMeta> _kCategories = [
+  _CategoryMeta(
+    id: 'appearance',
+    title: '外观',
+    subtitle: '主题模式与强调色',
+    icon: Icons.palette_outlined,
+    color: Colors.purple,
+  ),
+  _CategoryMeta(
+    id: 'growth',
+    title: '成长',
+    subtitle: '成就与称号',
+    icon: Icons.emoji_events_outlined,
+    color: Colors.amber,
+  ),
+  _CategoryMeta(
+    id: 'judge',
+    title: '判题',
+    subtitle: '超时时间',
+    icon: Icons.timer_outlined,
+    color: Colors.teal,
+  ),
+  _CategoryMeta(
+    id: 'editor',
+    title: '代码编辑',
+    subtitle: '字体、缩进、Python 解释器',
+    icon: Icons.code_outlined,
+    color: Colors.blueGrey,
+  ),
+  _CategoryMeta(
+    id: 'diagnostics',
+    title: '诊断',
+    subtitle: '日志中心',
+    icon: Icons.bug_report_outlined,
+    color: Colors.purple,
+  ),
+  _CategoryMeta(
+    id: 'data',
+    title: '数据',
+    subtitle: '导出 / 导入 / 清除进度',
+    icon: Icons.storage_outlined,
+    color: Colors.indigo,
+  ),
+  _CategoryMeta(
+    id: 'progress',
+    title: '我的进度',
+    subtitle: '完成情况统计',
+    icon: Icons.insights_outlined,
+    color: Colors.green,
+  ),
+  _CategoryMeta(
+    id: 'about',
+    title: '关于',
+    subtitle: '版本与项目信息',
+    icon: Icons.info_outline,
+    color: Colors.blueGrey,
+  ),
+];
 
 /// 设置板块
 class SettingsPage extends StatefulWidget {
@@ -31,6 +109,8 @@ class _SettingsPageState extends State<SettingsPage> {
   // 动画控制
   int _hoveredCard = -1;
   bool _showDetails = false;
+  // 宽屏左栏选中的分类（窄屏不用，走 push 进详情页）
+  String _selectedCategoryId = _kCategories.first.id;
   // Python 解释器路径输入框 controller（保持引用避免 rebuild 重建）
   late final TextEditingController _pythonPathController = TextEditingController(
     text: settings.pythonPath,
@@ -87,11 +167,145 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('设置')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // ---- 外观 ----
-          _sectionTitle(context, '外观'),
+      // 宽屏：左栏分类 + 右栏详情并排；窄屏：整页分类列表，点进详情页
+      body: AdaptiveMasterDetail(
+        masterBuilder: (context, isWide) =>
+            _buildCategoryList(context, showChevron: !isWide),
+        detailBuilder: (context, _) =>
+            _buildDetailPane(context, _selectedCategoryId),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------- 分类列表
+
+  Widget _buildCategoryList(BuildContext context, {required bool showChevron}) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _kCategories.length,
+      itemBuilder: (context, i) {
+        final meta = _kCategories[i];
+        final selected = meta.id == _selectedCategoryId;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Material(
+            color: selected ? scheme.secondaryContainer : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _openCategory(context, meta),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: meta.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(meta.icon, size: 20, color: meta.color),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            meta.title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: selected
+                                  ? scheme.onSecondaryContainer
+                                  : scheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            meta.subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                TextStyle(fontSize: 12, color: scheme.outline),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 只有窄屏才提示「点进去」，宽屏是直接换右栏
+                    if (showChevron)
+                      Icon(Icons.chevron_right,
+                          size: 20, color: scheme.outline),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 宽屏 → 换右栏内容；窄屏 → push 一个详情页
+  ///
+  /// 用 `MediaQuery.sizeOf` 而不是再次 LayoutBuilder：设置页占满整个窗口，
+  /// 两者宽度一致；且 LayoutBuilder 在 build 期间拿不到，点击回调里也得用这个。
+  void _openCategory(BuildContext context, _CategoryMeta meta) {
+    if (isTwoPaneWidth(MediaQuery.sizeOf(context).width)) {
+      setState(() => _selectedCategoryId = meta.id);
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _SettingsDetailPage(
+          meta: meta,
+          cards: _detailCards(context, meta.id),
+        ),
+      ),
+    );
+  }
+
+  /// 宽屏右栏：分类标题 + 该分类的卡片
+  Widget _buildDetailPane(BuildContext context, String id) {
+    final meta = _kCategories.firstWhere(
+      (m) => m.id == id,
+      orElse: () => _kCategories.first,
+    );
+    final scheme = Theme.of(context).colorScheme;
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          children: [
+            Icon(meta.icon, color: meta.color),
+            const SizedBox(width: 8),
+            Text(
+              meta.title,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(meta.subtitle, style: TextStyle(color: scheme.outline)),
+        const SizedBox(height: 20),
+        ..._detailCards(context, id),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------- 详情内容
+
+  /// 某个分类下的全部卡片。
+  /// 宽屏直接铺进右栏，窄屏交给 [_SettingsDetailPage]。
+  List<Widget> _detailCards(BuildContext context, String id) {
+    switch (id) {
+      // ---------------------------------------------------------- 外观
+      case 'appearance':
+        return [
           _settingsCard(
             index: 0,
             icon: Icons.palette_outlined,
@@ -120,7 +334,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(height: 12),
-          // ---- 主题强调色 ----
           _settingsCard(
             index: 0,
             icon: Icons.color_lens_outlined,
@@ -128,10 +341,11 @@ class _SettingsPageState extends State<SettingsPage> {
             title: '主题强调色',
             child: _accentColorPicker(context),
           ),
-          const SizedBox(height: 16),
+        ];
 
-          // ---- 成就与称号 ----
-          _sectionTitle(context, '成长'),
+      // ---------------------------------------------------------- 成长
+      case 'growth':
+        return [
           _settingsCard(
             index: 1,
             icon: Icons.emoji_events_outlined,
@@ -147,10 +361,11 @@ class _SettingsPageState extends State<SettingsPage> {
               );
             },
           ),
-          const SizedBox(height: 16),
+        ];
 
-          // ---- 判题 ----
-          _sectionTitle(context, '判题'),
+      // ---------------------------------------------------------- 判题
+      case 'judge':
+        return [
           _settingsCard(
             index: 2,
             icon: Icons.timer_outlined,
@@ -195,10 +410,11 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
           ),
-          const SizedBox(height: 16),
+        ];
 
-          // ---- 代码编辑 ----
-          _sectionTitle(context, '代码编辑'),
+      // ---------------------------------------------------------- 代码编辑
+      case 'editor':
+        return [
           _settingsCard(
             index: 10,
             icon: Icons.format_size,
@@ -300,10 +516,11 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
           ),
-          const SizedBox(height: 16),
+        ];
 
-          // ---- 诊断 ----
-          _sectionTitle(context, '诊断'),
+      // ---------------------------------------------------------- 诊断
+      case 'diagnostics':
+        return [
           _settingsCard(
             index: 13,
             icon: Icons.bug_report_outlined,
@@ -319,10 +536,11 @@ class _SettingsPageState extends State<SettingsPage> {
               );
             },
           ),
-          const SizedBox(height: 16),
+        ];
 
-          // ---- 数据 ----
-          _sectionTitle(context, '数据'),
+      // ---------------------------------------------------------- 数据
+      case 'data':
+        return [
           _settingsCard(
             index: 3,
             icon: Icons.ios_share,
@@ -387,10 +605,11 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             onTap: _confirmReset,
           ),
-          const SizedBox(height: 24),
+        ];
 
-          // ---- 进度统计 ----
-          _sectionTitle(context, '我的进度'),
+      // ---------------------------------------------------------- 我的进度
+      case 'progress':
+        return [
           Card(
             elevation: 2,
             child: Padding(
@@ -456,8 +675,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             child: _showDetails
                                 ? Padding(
                                     padding: const EdgeInsets.only(top: 12),
-                                    child:
-                                        _buildDifficultyBreakdown(diff),
+                                    child: _buildDifficultyBreakdown(diff),
                                   )
                                 : const SizedBox.shrink(),
                           ),
@@ -469,11 +687,15 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          _buildAbout(context),
-        ],
-      ),
-    );
+        ];
+
+      // ---------------------------------------------------------- 关于
+      case 'about':
+        return [_buildAbout(context)];
+
+      default:
+        return const [];
+    }
   }
 
   /// 主题强调色选择器（色板圆点，点选即切）
@@ -514,20 +736,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _sectionTitle(BuildContext context, String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-      ),
     );
   }
 
@@ -876,5 +1084,27 @@ class _SettingsPageState extends State<SettingsPage> {
         const SnackBar(content: Text('已清除全部进度')),
       );
     }
+  }
+}
+
+/// 窄屏用的分类详情页
+///
+/// 宽屏时同一个分类的内容直接铺在右栏（见 [_buildDetailPane]），
+/// 这里只是把它包一层 AppBar 变成可 push 的独立页面。
+class _SettingsDetailPage extends StatelessWidget {
+  const _SettingsDetailPage({required this.meta, required this.cards});
+
+  final _CategoryMeta meta;
+  final List<Widget> cards;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(meta.title)),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: cards,
+      ),
+    );
   }
 }

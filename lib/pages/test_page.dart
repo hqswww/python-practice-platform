@@ -13,6 +13,7 @@ import '../services/settings_service.dart';
 import 'test_history_page.dart';
 import 'widgets/interactive_terminal.dart';
 import 'widgets/python_code_field.dart';
+import 'widgets/responsive.dart';
 
 /// 测试中单题状态
 enum Status { none, submitted, correct }
@@ -389,112 +390,115 @@ class _TestPageState extends State<TestPage> {
       (15, '强化测验（15 题）'),
       (total, '全题库（$total 题）'),
     ];
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '开始一次测试',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+    return MaxWidthBody(
+      maxWidth: ContentWidth.list,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '开始一次测试',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  '随机从题库抽题，逐题编写代码并判题，结束后汇总得分。已做对过的题会正常计分。',
-                  style: TextStyle(height: 1.5),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        for (final (count, label) in options)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '随机从题库抽题，逐题编写代码并判题，结束后汇总得分。已做对过的题会正常计分。',
+                    style: TextStyle(height: 1.5),
+                  ),
+                ],
               ),
-              onPressed: () => _startTest(count,
-                  countdownSec: _setupCountdownSec),
-              child: Text(label),
             ),
           ),
-        const SizedBox(height: 4),
-        // 倒计时压力模式设置
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.timer_outlined, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      '倒计时压力模式',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const Spacer(),
-                    Switch(
-                      value: _setupCountdownSec > 0,
-                      onChanged: (v) => setState(() {
-                        _setupCountdownSec = v ? 600 : 0; // 默认 10 分钟
-                      }),
-                    ),
-                  ],
+          const SizedBox(height: 16),
+          for (final (count, label) in options)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  '开启后，测试进入就计时，时间到会自动交卷。适合限时训练上机手感。',
-                  style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
-                ),
-                if (_setupCountdownSec > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Wrap(
-                      spacing: 8,
-                      children: [
-                        for (final sec in const [300, 600, 900, 1200])
-                          ChoiceChip(
-                            label: Text(_fmtDuration(sec)),
-                            selected: _setupCountdownSec == sec,
-                            onSelected: (_) =>
-                                setState(() => _setupCountdownSec = sec),
-                          ),
-                      ],
-                    ),
+                onPressed: () => _startTest(count,
+                    countdownSec: _setupCountdownSec),
+                child: Text(label),
+              ),
+            ),
+          const SizedBox(height: 4),
+          // 倒计时压力模式设置
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.timer_outlined, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        '倒计时压力模式',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const Spacer(),
+                      Switch(
+                        value: _setupCountdownSec > 0,
+                        onChanged: (v) => setState(() {
+                          _setupCountdownSec = v ? 600 : 0; // 默认 10 分钟
+                        }),
+                      ),
+                    ],
                   ),
-              ],
+                  const SizedBox(height: 8),
+                  const Text(
+                    '开启后，测试进入就计时，时间到会自动交卷。适合限时训练上机手感。',
+                    style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
+                  ),
+                  if (_setupCountdownSec > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Wrap(
+                        spacing: 8,
+                        children: [
+                          for (final sec in const [300, 600, 900, 1200])
+                            ChoiceChip(
+                              label: Text(_fmtDuration(sec)),
+                              selected: _setupCountdownSec == sec,
+                              onSelected: (_) =>
+                                  setState(() => _setupCountdownSec = sec),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 4),
-        // 回顾测试入口
-        OutlinedButton.icon(
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const TestHistoryPage()),
-            );
-          },
-          icon: const Icon(Icons.history),
-          label: const Text('回顾测试：查看历史记录与题解'),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+          const SizedBox(height: 4),
+          // 回顾测试入口
+          OutlinedButton.icon(
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TestHistoryPage()),
+              );
+            },
+            icon: const Icon(Icons.history),
+            label: const Text('回顾测试：查看历史记录与题解'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

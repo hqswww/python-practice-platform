@@ -144,11 +144,15 @@ class _PracticePageState extends State<PracticePage> {
               ),
               const SizedBox(height: 16),
               // 分类网格（每卡片交错滑入）
+              //
+              // 用 MaxCrossAxisExtent 而不是固定 3 列：桌面窗口可以拉很宽，
+              // 固定列数会让卡片在大窗口下被撑成巨型方块、小窗口下挤成一团。
+              // 按「每张卡片最多 280 宽」反推列数，卡片尺寸就始终保持在合理区间。
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 280,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
                   childAspectRatio: 1.6,

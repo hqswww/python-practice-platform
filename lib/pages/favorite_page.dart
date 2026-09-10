@@ -4,6 +4,7 @@ import '../models/problem.dart';
 import '../models/problem_category.dart';
 import '../services/progress_service.dart';
 import 'editor_page.dart';
+import 'widgets/responsive.dart';
 
 /// 收藏与复习页：列出所有被收藏（⭐）的题目，点开即进入编辑器复习
 class FavoritePage extends StatefulWidget {
@@ -110,18 +111,21 @@ class _FavoritePageState extends State<FavoritePage> {
               ),
             );
           }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: favs.length + 1,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, i) {
-              if (i == 0) {
-                return _header(favs.length);
-              }
-              final idx = i - 1;
-              final p = favs[idx];
-              return _favTile(p, favs, idx);
-            },
+          return MaxWidthBody(
+            maxWidth: ContentWidth.list,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: favs.length + 1,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, i) {
+                if (i == 0) {
+                  return _header(favs.length);
+                }
+                final idx = i - 1;
+                final p = favs[idx];
+                return _favTile(p, favs, idx);
+              },
+            ),
           );
         },
       ),

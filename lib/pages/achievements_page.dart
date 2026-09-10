@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
 import '../services/achievement_service.dart';
+import 'widgets/responsive.dart';
 
 /// 成就与称号页面
 ///
@@ -63,51 +64,55 @@ class _AchievementsPageState extends State<AchievementsPage> {
           final unlocked = kAchievements
               .where((a) => _svc.isUnlockedAchievement(a, snap))
               .length;
-          return ListView(
-            padding: const EdgeInsets.all(12),
-            children: [
-              // ---- 当前称号卡片 ----
-              _titleCard(context, title, snapshot: snap),
-              const SizedBox(height: 16),
-              // ---- 成就统计 ----
-              Row(
-                children: [
-                  Text(
-                    '成就',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '$unlocked / ${kAchievements.length}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+          return MaxWidthBody(
+            maxWidth: ContentWidth.list,
+            child: ListView(
+              padding: const EdgeInsets.all(12),
+              children: [
+                // ---- 当前称号卡片 ----
+                _titleCard(context, title, snapshot: snap),
+                const SizedBox(height: 16),
+                // ---- 成就统计 ----
+                Row(
+                  children: [
+                    Text(
+                      '成就',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // ---- 成就宫格 ----
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 0.98,
+                    const Spacer(),
+                    Text(
+                      '$unlocked / ${kAchievements.length}',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-                itemCount: kAchievements.length,
-                itemBuilder: (context, i) {
-                  final a = kAchievements[i];
-                  return _achievementTile(context, a, snap);
-                },
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 8),
+                // ---- 成就宫格 ----
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  // 按最大宽度自适应列数：固定 3 列在宽窗口下会把卡片撑成巨块
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 200,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 0.98,
+                  ),
+                  itemCount: kAchievements.length,
+                  itemBuilder: (context, i) {
+                    final a = kAchievements[i];
+                    return _achievementTile(context, a, snap);
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           );
         },
       ),

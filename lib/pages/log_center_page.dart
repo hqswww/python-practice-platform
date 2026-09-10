@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/error_log_service.dart';
+import 'widgets/responsive.dart';
 
 /// 日志中心：查看错误日志 / 导出 / 清空
 class LogCenterPage extends StatefulWidget {
@@ -127,56 +128,59 @@ class _LogCenterPageState extends State<LogCenterPage> {
           final errors = entries
               .where((e) => e.level == LogLevel.error)
               .length;
-          return Column(
-            children: [
-              // 顶部摘要条
-              FutureBuilder<String>(
-                future: errorLog.logDir().then((d) => d.path),
-                builder: (context, snap) {
-                  final dir = snap.data ?? '…';
-                  return Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '共 ${entries.length} 条日志，其中 error $errors 条',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '日志目录：$dir',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
-                            fontFamily: 'monospace',
+          return MaxWidthBody(
+            maxWidth: ContentWidth.log,
+            child: Column(
+              children: [
+                // 顶部摘要条
+                FutureBuilder<String>(
+                  future: errorLog.logDir().then((d) => d.path),
+                  builder: (context, snap) {
+                    final dir = snap.data ?? '…';
+                    return Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '共 ${entries.length} 条日志，其中 error $errors 条',
+                            style: theme.textTheme.bodyMedium,
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              Expanded(
-                child: ListView.separated(
-                  controller: _scroll,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: entries.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final e = entries[index];
-                    return _LogTile(entry: e);
+                          const SizedBox(height: 6),
+                          Text(
+                            '日志目录：$dir',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   },
                 ),
-              ),
-            ],
+                Expanded(
+                  child: ListView.separated(
+                    controller: _scroll,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: entries.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final e = entries[index];
+                      return _LogTile(entry: e);
+                    },
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),

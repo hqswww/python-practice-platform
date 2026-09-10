@@ -4,6 +4,7 @@ import '../models/problem.dart';
 import '../models/problem_category.dart';
 import '../services/progress_service.dart';
 import 'editor_page.dart';
+import 'widgets/responsive.dart';
 
 /// 题目列表页：展示某分类下的所有题目（带完成状态）
 class ProblemListPage extends StatefulWidget {
@@ -43,20 +44,23 @@ class _ProblemListPageState extends State<ProblemListPage> {
         title: Text('${widget.category.name} · ${widget.category.problems.length} 题'),
         backgroundColor: Theme.of(context).colorScheme.surface,
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(12),
-        itemCount: widget.category.problems.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (context, index) {
-          final problem = widget.category.problems[index];
-          return _ProblemTile(
-            problem: problem,
-            allProblems: widget.category.problems,
-            index: index,
-            solved: _solvedIds.contains(problem.id),
-            onEntered: _loadStatus,
-          );
-        },
+      body: MaxWidthBody(
+        maxWidth: ContentWidth.list,
+        child: ListView.separated(
+          padding: const EdgeInsets.all(12),
+          itemCount: widget.category.problems.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final problem = widget.category.problems[index];
+            return _ProblemTile(
+              problem: problem,
+              allProblems: widget.category.problems,
+              index: index,
+              solved: _solvedIds.contains(problem.id),
+              onEntered: _loadStatus,
+            );
+          },
+        ),
       ),
     );
   }

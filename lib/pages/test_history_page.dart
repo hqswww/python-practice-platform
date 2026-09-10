@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/test_record.dart';
 import '../services/progress_service.dart';
+import 'widgets/responsive.dart';
 
 /// 回顾测试：查看历史测试记录，点开逐题回看“我的代码 + 参考代码”
 class TestHistoryPage extends StatefulWidget {
@@ -51,30 +52,33 @@ class _TestHistoryPageState extends State<TestHistoryPage> {
               ),
             );
           }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: records.length + 1,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (context, i) {
-              if (i == 0) {
-                return _StatsCard(records: records);
-              }
-              final idx = i - 1;
-              return _RecordCard(
-                record: records[idx],
-                rank: idx + 1,
-                onOpen: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          TestRecordDetailPage(record: records[idx]),
-                    ),
-                  );
-                  _reload();
-                },
-              );
-            },
+          return MaxWidthBody(
+            maxWidth: ContentWidth.list,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: records.length + 1,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, i) {
+                if (i == 0) {
+                  return _StatsCard(records: records);
+                }
+                final idx = i - 1;
+                return _RecordCard(
+                  record: records[idx],
+                  rank: idx + 1,
+                  onOpen: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            TestRecordDetailPage(record: records[idx]),
+                      ),
+                    );
+                    _reload();
+                  },
+                );
+              },
+            ),
           );
         },
       ),
@@ -306,58 +310,61 @@ class TestRecordDetailPage extends StatelessWidget {
     final pct = (record.score * 100).round();
     return Scaffold(
       appBar: AppBar(title: const Text('测试回看')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // 顶部概要
-          Card(
-            elevation: 0,
-            color: theme.colorScheme.surfaceContainerLow,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(
-                    record.passed ? Icons.emoji_events : Icons.track_changes,
-                    size: 40,
-                    color: record.passed ? Colors.amber : theme.colorScheme.error,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '得分 ${record.correctCount} / ${record.totalCount}  ($pct%)',
-                          style: theme.textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          record.passed ? '表现很棒，继续冲刺！🎉' : '再接再厉，去练习板块多练练～',
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
+      body: MaxWidthBody(
+        maxWidth: ContentWidth.list,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // 顶部概要
+            Card(
+              elevation: 0,
+              color: theme.colorScheme.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      record.passed ? Icons.emoji_events : Icons.track_changes,
+                      size: 40,
+                      color: record.passed ? Colors.amber : theme.colorScheme.error,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '得分 ${record.correctCount} / ${record.totalCount}  ($pct%)',
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            record.passed ? '表现很棒，继续冲刺！🎉' : '再接再厉，去练习板块多练练～',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text('逐题回看',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          // 每题一张可展开卡片
-          ...record.items.asMap().entries.map((e) => _ReviewItemCard(
-                number: e.key + 1,
-                item: e.value,
-              )),
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: 16),
+            Text('逐题回看',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            // 每题一张可展开卡片
+            ...record.items.asMap().entries.map((e) => _ReviewItemCard(
+                  number: e.key + 1,
+                  item: e.value,
+                )),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

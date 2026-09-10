@@ -6,6 +6,7 @@ import '../services/progress_service.dart';
 import '../services/settings_service.dart';
 import 'widgets/interactive_terminal.dart';
 import 'widgets/python_code_field.dart';
+import 'widgets/responsive.dart';
 
 /// 错题本：从错题中自由选题重练，做对即移出错题本
 class WrongBookPage extends StatefulWidget {
@@ -291,137 +292,140 @@ class _WrongQuestionViewState extends State<_WrongQuestionView> {
   @override
   Widget build(BuildContext context) {
     final p = widget.problem;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                '第 ${widget.number}/${widget.total} 题',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+    return MaxWidthBody(
+      maxWidth: ContentWidth.workspace,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  '第 ${widget.number}/${widget.total} 题',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                child: Text(
-                  widget.isUnanswered ? '未作答' : '错了 ${widget.wrongCount} 次',
-                  style: const TextStyle(fontSize: 12, color: Colors.red),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    widget.isUnanswered ? '未作答' : '错了 ${widget.wrongCount} 次',
+                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(p.title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(p.description),
-          const SizedBox(height: 8),
-          if (p.sampleInput.isNotEmpty)
-            Text('示例输入: ${p.sampleInput.replaceAll('\n', ' ⏎ ')}'),
-          if (p.sampleOutput.isNotEmpty)
-            Text('示例输出: ${p.sampleOutput.replaceAll('\n', ' ⏎ ')}'),
-          const SizedBox(height: 12),
-          PythonCodeField(
-            controller: _controller,
-            minLines: 8,
-            hintText: '在此输入代码…',
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              // 交互式终端开关
-              OutlinedButton.icon(
-                onPressed: _judging
-                    ? null
-                    : () => setState(() => _showTerminal = !_showTerminal),
-                icon: Icon(
-                  _showTerminal ? Icons.terminal : Icons.terminal_outlined,
-                  size: 16,
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(p.title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Text(p.description),
+            const SizedBox(height: 8),
+            if (p.sampleInput.isNotEmpty)
+              Text('示例输入: ${p.sampleInput.replaceAll('\n', ' ⏎ ')}'),
+            if (p.sampleOutput.isNotEmpty)
+              Text('示例输出: ${p.sampleOutput.replaceAll('\n', ' ⏎ ')}'),
+            const SizedBox(height: 12),
+            PythonCodeField(
+              controller: _controller,
+              minLines: 8,
+              hintText: '在此输入代码…',
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                // 交互式终端开关
+                OutlinedButton.icon(
+                  onPressed: _judging
+                      ? null
+                      : () => setState(() => _showTerminal = !_showTerminal),
+                  icon: Icon(
+                    _showTerminal ? Icons.terminal : Icons.terminal_outlined,
+                    size: 16,
+                  ),
+                  label: Text(_showTerminal ? '收起终端' : '交互式终端'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ),
-                label: Text(_showTerminal ? '收起终端' : '交互式终端'),
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
+                const Spacer(),
+                FilledButton.icon(
+                  onPressed: _judging ? null : _submit,
+                  icon: _judging
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.play_arrow),
+                  label: Text(_judging ? '判题中…' : '判题'),
                 ),
-              ),
-              const Spacer(),
-              FilledButton.icon(
-                onPressed: _judging ? null : _submit,
-                icon: _judging
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.play_arrow),
-                label: Text(_judging ? '判题中…' : '判题'),
-              ),
-            ],
-          ),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: widget.feedback == null
-                ? const SizedBox.shrink()
-                : Container(
-                    key: ValueKey(widget.feedback),
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(top: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color:
-                          (widget.feedback!.startsWith('✔')
-                                  ? Colors.green
-                                  : Colors.orange)
-                              .withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
+              ],
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: widget.feedback == null
+                  ? const SizedBox.shrink()
+                  : Container(
+                      key: ValueKey(widget.feedback),
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(top: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
                         color:
                             (widget.feedback!.startsWith('✔')
                                     ? Colors.green
                                     : Colors.orange)
-                                .withValues(alpha: 0.4),
+                                .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color:
+                              (widget.feedback!.startsWith('✔')
+                                      ? Colors.green
+                                      : Colors.orange)
+                                  .withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            widget.feedback!.startsWith('✔')
+                                ? Icons.check_circle
+                                : Icons.info_outline,
+                            color: widget.feedback!.startsWith('✔')
+                                ? Colors.green
+                                : Colors.orange,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              widget.feedback!,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          widget.feedback!.startsWith('✔')
-                              ? Icons.check_circle
-                              : Icons.info_outline,
-                          color: widget.feedback!.startsWith('✔')
-                              ? Colors.green
-                              : Colors.orange,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            widget.feedback!,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-        // 交互式终端：展开时作为页面内容的一部分排在下方（网页式下滑）
-        if (_showTerminal)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: InteractiveTerminal(
-              getCode: () => _controller.text,
-              sampleInput: widget.problem.sampleInput,
-              isJudging: _judging,
-              onJudge: _submit,
             ),
-          ),
-        ],
+          // 交互式终端：展开时作为页面内容的一部分排在下方（网页式下滑）
+          if (_showTerminal)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: InteractiveTerminal(
+                getCode: () => _controller.text,
+                sampleInput: widget.problem.sampleInput,
+                isJudging: _judging,
+                onJudge: _submit,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

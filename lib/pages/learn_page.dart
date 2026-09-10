@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/problem.dart';
 import '../models/problem_category.dart';
+import 'widgets/responsive.dart';
 
 /// 学习板块：按题库顺序，把题目组织成"正经学习笔记"排版。
 ///
@@ -62,6 +63,11 @@ class _LearnPageState extends State<LearnPage> {
     }
 
     final current = _current;
+    // 窗口是否够宽到并排放「侧栏 + 正文」。
+    // 这里用 MediaQuery 而不是 LayoutBuilder：Scaffold 的 drawer 参数在
+    // build 阶段就要定，LayoutBuilder 的约束那时还拿不到。
+    // 学习页占满窗口宽度，两者数值一致。
+    final wide = isTwoPaneWidth(MediaQuery.sizeOf(context).width);
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -75,33 +81,50 @@ class _LearnPageState extends State<LearnPage> {
           ],
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Row(
-            key: const ValueKey('bodyRow'),
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 左侧导航（分类+题目树）
-              SizedBox(
-                width: 230,
-                child: _buildSidebar(),
+      // 窄屏：侧栏收进抽屉。原来固定 230px 侧栏会把正文挤到只剩 ~190px。
+      // 宽屏：侧栏常驻，不需要抽屉（AppBar 也就不会出现汉堡按钮）。
+      drawer: wide
+          ? null
+          : Drawer(
+              child: Builder(
+                builder: (drawerContext) => SafeArea(
+                  child: _buildSidebar(
+                    onSelect: () => Navigator.of(drawerContext).pop(),
+                  ),
+                ),
               ),
-              // 分隔线
-              VerticalDivider(width: 1, thickness: 1),
-              // 右侧笔记
-              Expanded(
-                child: _buildNoteContent(current.problem),
-              ),
-            ],
-          );
-        },
-      ),
+            ),
+      body: wide
+          ? Row(
+              key: const ValueKey('bodyRow'),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 左侧导航（分类+题目树）
+                SizedBox(
+                  width: 230,
+                  child: _buildSidebar(),
+                ),
+                // 分隔线
+                const VerticalDivider(width: 1, thickness: 1),
+                // 右侧笔记
+                Expanded(
+                  child: _buildNoteContent(current.problem),
+                ),
+              ],
+            )
+          : SizedBox.expand(
+              key: const ValueKey('bodyRow'),
+              child: _buildNoteContent(current.problem),
+            ),
     );
   }
 
   // ---------- 左侧导航树 ----------
 
-  Widget _buildSidebar() {
+  /// 侧栏（分类 + 题目树）
+  ///
+  /// [onSelect] 在窄屏抽屉里用来「选完自动收起」——宽屏常驻侧栏时传 null。
+  Widget _buildSidebar({VoidCallback? onSelect}) {
     final kids = <Widget>[];
     for (final cat in widget.categories) {
       kids.add(_CategoryHeader(
@@ -115,7 +138,7 @@ class _LearnPageState extends State<LearnPage> {
       ));
       if (_expandedCategories.contains(cat.key)) {
         for (final p in cat.problems) {
-          kids.add(_buildProblemTile(cat, p));
+          kids.add(_buildProblemTile(cat, p, onSelect: onSelect));
         }
       }
     }
@@ -125,7 +148,8 @@ class _LearnPageState extends State<LearnPage> {
     );
   }
 
-  Widget _buildProblemTile(ProblemCategory cat, Problem p) {
+  Widget _buildProblemTile(ProblemCategory cat, Problem p,
+      {VoidCallback? onSelect}) {
     final selected = _entries[_index].problem.id == p.id;
     final color = switch (p.difficulty) {
       Difficulty.easy => Colors.green,
@@ -136,6 +160,7 @@ class _LearnPageState extends State<LearnPage> {
       onTap: () {
         final idx = _entries.indexWhere((e) => e.problem.id == p.id);
         _goTo(idx);
+        onSelect?.call();
       },
       child: Container(
         color: selected
@@ -186,198 +211,201 @@ class _LearnPageState extends State<LearnPage> {
 
   Widget _buildNoteContent(Problem p) {
     final scheme = Theme.of(context).colorScheme;
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        // 笔记头部卡片
-        _NoteCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _difficultyChip(p.difficulty),
-                  const SizedBox(width: 8),
-                  Text(
-                    '#${p.id}',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                p.title,
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                height: 3,
-                width: 48,
-                decoration: BoxDecoration(
-                  color: scheme.primary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // 📖 详细教程（runoob 风格分节）
-        if (p.hasTutorial) ...[
-          _NoteCard(
-            child: _NoteSection(
-              icon: Icons.school_outlined,
-              title: '详细教程',
-              child: Builder(builder: (context) {
-                final scheme = Theme.of(context).colorScheme;
-                final children = <Widget>[];
-                for (var i = 0; i < p.tutorial.length; i++) {
-                  final sec = p.tutorial[i];
-                  children.add(Row(
-                    children: [
-                      Container(
-                        width: 22,
-                        height: 22,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: scheme.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '${i + 1}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          sec.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ));
-                  if (sec.body.isNotEmpty) {
-                    children.add(const SizedBox(height: 8));
-                    children.add(_NoteParagraph(sec.body));
-                  }
-                  if (sec.code.isNotEmpty) {
-                    children.add(const SizedBox(height: 10));
-                    children.add(_CodeBlock(label: '代码', code: sec.code));
-                  }
-                  if (sec.output.isNotEmpty) {
-                    children.add(const SizedBox(height: 8));
-                    children.add(_CodeBlock(label: '运行结果', code: sec.output));
-                  }
-                  if (i < p.tutorial.length - 1) {
-                    children.add(const SizedBox(height: 16));
-                    children.add(Divider(height: 1));
-                    children.add(const SizedBox(height: 16));
-                  }
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: children,
-                );
-              }),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-
-        // 题目描述卡片
-        if (p.description.isNotEmpty)
-          _NoteCard(
-            child: _NoteSection(
-              icon: Icons.menu_book_outlined,
-              title: '题目',
-              child: _NoteParagraph(p.description),
-            ),
-          ),
-
-        if (p.description.isNotEmpty) const SizedBox(height: 16),
-
-        // 输入/输出格式（并排卡片）
-        if (p.inputFormat.isNotEmpty || p.outputFormat.isNotEmpty)
-          _NoteCard(
-            child: _NoteSection(
-              icon: Icons.keyboard_alt_outlined,
-              title: '输入 / 输出格式',
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (p.inputFormat.isNotEmpty)
-                    Expanded(
-                      child: _FormatBox(
-                        title: '输入',
-                        content: p.inputFormat.isEmpty ? '（无）' : p.inputFormat,
-                      ),
-                    ),
-                  if (p.inputFormat.isNotEmpty && p.outputFormat.isNotEmpty)
-                    const SizedBox(width: 12),
-                  if (p.outputFormat.isNotEmpty)
-                    Expanded(
-                      child: _FormatBox(
-                        title: '输出',
-                        content: p.outputFormat.isEmpty ? '（无）' : p.outputFormat,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-
-        if (p.inputFormat.isNotEmpty || p.outputFormat.isNotEmpty)
-          const SizedBox(height: 16),
-
-        // 示例（代码块风格）
-        if (p.sampleInput.isNotEmpty || p.sampleOutput.isNotEmpty)
+    return MaxWidthBody(
+      maxWidth: ContentWidth.article,
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          // 笔记头部卡片
           _NoteCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _NoteSectionHeader(icon: Icons.terminal, title: '示例'),
-                const SizedBox(height: 10),
-                _CodeBlock(
-                  label: '输入',
-                  code: p.sampleInput.isEmpty ? '(无)' : p.sampleInput,
+                Row(
+                  children: [
+                    _difficultyChip(p.difficulty),
+                    const SizedBox(width: 8),
+                    Text(
+                      '#${p.id}',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
-                _CodeBlock(
-                  label: '输出',
-                  code: p.sampleOutput.isEmpty ? '(无)' : p.sampleOutput,
+                Text(
+                  p.title,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  height: 3,
+                  width: 48,
+                  decoration: BoxDecoration(
+                    color: scheme.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ],
             ),
           ),
-
-        if (p.sampleInput.isNotEmpty || p.sampleOutput.isNotEmpty)
+  
           const SizedBox(height: 16),
-
-        // 提示（折叠）
-        if (p.hints.isNotEmpty) ...[
-          _HintCard(hints: p.hints),
-          if (p.solution.isNotEmpty) const SizedBox(height: 16),
+  
+          // 📖 详细教程（runoob 风格分节）
+          if (p.hasTutorial) ...[
+            _NoteCard(
+              child: _NoteSection(
+                icon: Icons.school_outlined,
+                title: '详细教程',
+                child: Builder(builder: (context) {
+                  final scheme = Theme.of(context).colorScheme;
+                  final children = <Widget>[];
+                  for (var i = 0; i < p.tutorial.length; i++) {
+                    final sec = p.tutorial[i];
+                    children.add(Row(
+                      children: [
+                        Container(
+                          width: 22,
+                          height: 22,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: scheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${i + 1}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            sec.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ));
+                    if (sec.body.isNotEmpty) {
+                      children.add(const SizedBox(height: 8));
+                      children.add(_NoteParagraph(sec.body));
+                    }
+                    if (sec.code.isNotEmpty) {
+                      children.add(const SizedBox(height: 10));
+                      children.add(_CodeBlock(label: '代码', code: sec.code));
+                    }
+                    if (sec.output.isNotEmpty) {
+                      children.add(const SizedBox(height: 8));
+                      children.add(_CodeBlock(label: '运行结果', code: sec.output));
+                    }
+                    if (i < p.tutorial.length - 1) {
+                      children.add(const SizedBox(height: 16));
+                      children.add(Divider(height: 1));
+                      children.add(const SizedBox(height: 16));
+                    }
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: children,
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+  
+          // 题目描述卡片
+          if (p.description.isNotEmpty)
+            _NoteCard(
+              child: _NoteSection(
+                icon: Icons.menu_book_outlined,
+                title: '题目',
+                child: _NoteParagraph(p.description),
+              ),
+            ),
+  
+          if (p.description.isNotEmpty) const SizedBox(height: 16),
+  
+          // 输入/输出格式（并排卡片）
+          if (p.inputFormat.isNotEmpty || p.outputFormat.isNotEmpty)
+            _NoteCard(
+              child: _NoteSection(
+                icon: Icons.keyboard_alt_outlined,
+                title: '输入 / 输出格式',
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (p.inputFormat.isNotEmpty)
+                      Expanded(
+                        child: _FormatBox(
+                          title: '输入',
+                          content: p.inputFormat.isEmpty ? '（无）' : p.inputFormat,
+                        ),
+                      ),
+                    if (p.inputFormat.isNotEmpty && p.outputFormat.isNotEmpty)
+                      const SizedBox(width: 12),
+                    if (p.outputFormat.isNotEmpty)
+                      Expanded(
+                        child: _FormatBox(
+                          title: '输出',
+                          content: p.outputFormat.isEmpty ? '（无）' : p.outputFormat,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+  
+          if (p.inputFormat.isNotEmpty || p.outputFormat.isNotEmpty)
+            const SizedBox(height: 16),
+  
+          // 示例（代码块风格）
+          if (p.sampleInput.isNotEmpty || p.sampleOutput.isNotEmpty)
+            _NoteCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _NoteSectionHeader(icon: Icons.terminal, title: '示例'),
+                  const SizedBox(height: 10),
+                  _CodeBlock(
+                    label: '输入',
+                    code: p.sampleInput.isEmpty ? '(无)' : p.sampleInput,
+                  ),
+                  const SizedBox(height: 10),
+                  _CodeBlock(
+                    label: '输出',
+                    code: p.sampleOutput.isEmpty ? '(无)' : p.sampleOutput,
+                  ),
+                ],
+              ),
+            ),
+  
+          if (p.sampleInput.isNotEmpty || p.sampleOutput.isNotEmpty)
+            const SizedBox(height: 16),
+  
+          // 提示（折叠）
+          if (p.hints.isNotEmpty) ...[
+            _HintCard(hints: p.hints),
+            if (p.solution.isNotEmpty) const SizedBox(height: 16),
+          ],
+  
+          // 参考代码（折叠）
+          if (p.solution.isNotEmpty) _SolutionCard(solution: p.solution),
+  
+          const SizedBox(height: 20),
         ],
-
-        // 参考代码（折叠）
-        if (p.solution.isNotEmpty) _SolutionCard(solution: p.solution),
-
-        const SizedBox(height: 20),
-      ],
+      ),
     );
   }
 
