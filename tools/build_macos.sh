@@ -232,6 +232,22 @@ else
   RUNTIME_FLAG="--options runtime"
 fi
 
+# ⚠️ 必须显式带上 entitlements。
+# `codesign --force` 重新签名会把 Xcode 原本应用的 entitlements **整个丢掉**——
+# 不传这个参数，最终产物 `codesign -d --entitlements -` 就是空的（实测确认过）。
+# 后果分两种情况：
+#   · app-sandbox=false 丢了无所谓：entitlements 里 false 等价于不存在，沙盒仍是关的
+#   · 但 disable-library-validation=true 丢了会出事：走 Developer ID + 公证时会开
+#     Hardened Runtime，捆绑 Python 的 .so/.dylib 不是同一团队签的，库校验会拒绝
+#     加载 → 判题直接跑不起来。而这个坑 ad-hoc 本地测试**测不出来**。
+ENT_FILE="macos/Runner/Release.entitlements"
+if [[ -f "$ENT_FILE" ]]; then
+  echo "签名附带 entitlements: $ENT_FILE"
+else
+  echo "⚠️  找不到 $ENT_FILE，将以无 entitlements 方式签名"
+  ENT_FILE=""
+fi
+
 MACHO_LIST="$(mktemp)"
 trap 'rm -f "$MACHO_LIST"' EXIT
 
@@ -273,9 +289,26 @@ done < "$MACHO_LIST"
 echo "已签名嵌套二进制: $SIGNED 个"
 
 # 最后签 .app 本体（不带 --deep，让它重新封存整个 bundle 的 CodeResources）
+# entitlements 加在这一步：签 bundle 时会一并应用到主可执行文件，是标准做法；
+# 嵌套的 .dylib/.so 不需要各自的 entitlements。
 # shellcheck disable=SC2086
-codesign --force $TS_FLAG $RUNTIME_FLAG --sign "$SIGN_IDENTITY" "$APP"
+if [[ -n "$ENT_FILE" ]]; then
+  codesign --force $TS_FLAG $RUNTIME_FLAG --entitlements "$ENT_FILE" \
+    --sign "$SIGN_IDENTITY" "$APP"
+else
+  codesign --force $TS_FLAG $RUNTIME_FLAG --sign "$SIGN_IDENTITY" "$APP"
+fi
 echo "✅ 签名完成"
+
+# 回读校验：entitlements 必须真的嵌进去了。
+# 这里踩过坑——漏传 --entitlements 时签名照样"成功"，只有回读才发现是空的。
+echo "--- entitlements 回读 ---"
+if codesign -d --entitlements - --xml "$APP" 2>/dev/null | \
+   python3 -c "import sys,plistlib;d=plistlib.loads(sys.stdin.buffer.read());print('  app-sandbox =',d.get('com.apple.security.app-sandbox'));print('  disable-library-validation =',d.get('com.apple.security.cs.disable-library-validation'))" 2>/dev/null; then
+  :
+else
+  echo "  ⚠️  未能读出嵌入的 entitlements（ad-hoc 下可能被省略），请人工核对"
+fi
 
 echo "--- 校验 ---"
 codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | tail -3 || true
