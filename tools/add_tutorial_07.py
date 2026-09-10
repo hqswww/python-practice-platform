@@ -2,7 +2,7 @@
 """给 07_lists.json 的 6 题（701-706）加详细教程（列表，核心分类写详细）。"""
 import json
 
-PATH = "assets/problems/07_lists.json"
+PATH = "assets/problems/python/07_lists.json"
 
 tutorials = {
 701: [

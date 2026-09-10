@@ -2,7 +2,7 @@
 """给 10_functions.json 的 6 题（1001-1006）加详细教程（函数，核心分类写详细）。"""
 import json
 
-PATH = "assets/problems/10_functions.json"
+PATH = "assets/problems/python/10_functions.json"
 
 tutorials = {
 1001: [

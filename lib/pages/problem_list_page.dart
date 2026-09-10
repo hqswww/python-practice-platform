@@ -30,7 +30,7 @@ class _ProblemListPageState extends State<ProblemListPage> {
 
   Future<void> _loadStatus() async {
     final ids = widget.category.problems.map((p) => p.id).toList();
-    final map = await _progress.solvedMap(ids);
+    final map = await _progress.solvedMap(widget.category.language, ids);
     if (!mounted) return;
     setState(() {
       _solvedIds = map.entries.where((e) => e.value).map((e) => e.key).toSet();

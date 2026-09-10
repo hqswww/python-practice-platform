@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:python_practice/models/test_record.dart';
 import 'package:python_practice/services/import_service.dart';
 import 'package:python_practice/services/progress_service.dart';
+import 'package:python_practice/models/programming_language.dart';
 
 /// 用假 path_provider，避免真实文件系统依赖。
 class _FakePathProvider extends PathProviderPlatform {
@@ -59,7 +60,7 @@ void main() {
 
   test('导入标记未解决的题（已解决并集）', () async {
     // 当前：题1已解决，题2未解决
-    await progress.markSolved(1);
+    await progress.markSolved(ProgrammingLanguage.python, 1);
     final f = writeJson(exportLike(problems: [
       {'id': 1, 'solved': true},
       {'id': 2, 'solved': true}, // 导入里题2解决了
@@ -67,15 +68,15 @@ void main() {
 
     final s = await import.importFromFile(f.path);
 
-    expect(await progress.isSolved(1), isTrue);
-    expect(await progress.isSolved(2), isTrue);
+    expect(await progress.isSolved(ProgrammingLanguage.python, 1), isTrue);
+    expect(await progress.isSolved(ProgrammingLanguage.python, 2), isTrue);
     expect(s.solvedMarked, 1); // 只新标记了题2
     expect(s.message, contains('解决 1 题'));
   });
 
   test('错题次数取较大值合并', () async {
     // 当前：题1错2次
-    await progress.setWrongCount(1, 2);
+    await progress.setWrongCount(ProgrammingLanguage.python, 1, 2);
     // 导入：题1错5次（更大）→ 应为5；题2错3次 → 应为3
     final f = writeJson(exportLike(problems: [
       {'id': 1, 'wrongTimes': 5},
@@ -85,12 +86,12 @@ void main() {
     await import.importFromFile(f.path);
 
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getInt('wrong_1'), 5);
-    expect(prefs.getInt('wrong_2'), 3);
+    expect(prefs.getInt('wrong_python_1'), 5);
+    expect(prefs.getInt('wrong_python_2'), 3);
   });
 
   test('错题次数不会被导入减小', () async {
-    await progress.setWrongCount(1, 10);
+    await progress.setWrongCount(ProgrammingLanguage.python, 1, 10);
     final f = writeJson(exportLike(problems: [
       {'id': 1, 'wrongTimes': 3}, // 比当前小，不应回退
     ]));
@@ -98,11 +99,11 @@ void main() {
     await import.importFromFile(f.path);
 
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getInt('wrong_1'), 10);
+    expect(prefs.getInt('wrong_python_1'), 10);
   });
 
   test('收藏取并集', () async {
-    await progress.setFavorite(1, true); // 当前已收藏1
+    await progress.setFavorite(ProgrammingLanguage.python, 1, true); // 当前已收藏1
     final f = writeJson(exportLike(problems: [
       {'id': 1, 'favorite': false}, // 导入里没收藏1 → 不应取消
       {'id': 9, 'favorite': true}, // 导入新增收藏9
@@ -110,8 +111,8 @@ void main() {
 
     final s = await import.importFromFile(f.path);
 
-    expect(await progress.isFavorite(1), isTrue);
-    expect(await progress.isFavorite(9), isTrue);
+    expect(await progress.isFavorite(ProgrammingLanguage.python, 1), isTrue);
+    expect(await progress.isFavorite(ProgrammingLanguage.python, 9), isTrue);
     expect(s.favoritesAdded, 1);
   });
 

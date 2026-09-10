@@ -60,7 +60,8 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/problems/
+    # 题库按语言分目录；新增语言时记得在这里加一行
+    - assets/problems/python/
 
   fonts:
     - family: SarasaGothicSC

@@ -7,6 +7,7 @@ import '../services/settings_service.dart';
 import 'widgets/interactive_terminal.dart';
 import 'widgets/python_code_field.dart';
 import 'widgets/responsive.dart';
+import '../services/language_service.dart';
 
 /// 错题本：从错题中自由选题重练，做对即移出错题本
 class WrongBookPage extends StatefulWidget {
@@ -46,7 +47,8 @@ class _WrongBookPageState extends State<WrongBookPage> {
     };
     // 加载未作答标记，供界面区分展示
     _progress
-        .unansweredSet(_questions.map((q) => q.id).toList())
+        .unansweredSet(
+            languageService.value, _questions.map((q) => q.id).toList())
         .then((s) {
       if (mounted) setState(() => _unanswered = s);
     });
@@ -65,7 +67,7 @@ class _WrongBookPageState extends State<WrongBookPage> {
     );
     if (passed) {
       // 做对：标记解决 + 移出错题本
-      await _progress.markSolved(p.id);
+      await _progress.markSolved(p.language, p.id);
       if (!mounted) return;
       setState(() {
         _drafts[p.id] = code;
@@ -81,7 +83,7 @@ class _WrongBookPageState extends State<WrongBookPage> {
         }
       });
     } else {
-      await _progress.recordWrong(p.id);
+      await _progress.recordWrong(p.language, p.id);
       if (!mounted) return;
       setState(() {
         _unanswered.remove(p.id); // 已作答（但判错），不再算“未作答”

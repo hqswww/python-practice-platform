@@ -58,7 +58,7 @@ class _EditorPageState extends State<EditorPage> {
     // 预填一段示例代码模板，学生可改
     _codeController.text = _templateFor(widget.problem);
     // 读取收藏状态
-    ProgressService().isFavorite(widget.problem.id).then((v) {
+    ProgressService().isFavorite(widget.problem.language, widget.problem.id).then((v) {
       if (mounted) setState(() => _isFavorite = v);
     });
   }
@@ -97,7 +97,8 @@ class _EditorPageState extends State<EditorPage> {
     });
     // 判题通过：记录进度
     if (result.allPassed) {
-      await ProgressService().markSolved(widget.problem.id);
+      await ProgressService()
+          .markSolved(widget.problem.language, widget.problem.id);
       await _checkAchievements();
     }
   }
@@ -159,7 +160,7 @@ class _EditorPageState extends State<EditorPage> {
             tooltip: _isFavorite ? '取消收藏' : '收藏本题，方便以后复习',
             onPressed: () async {
               final now = await ProgressService()
-                  .toggleFavorite(widget.problem.id);
+                  .toggleFavorite(widget.problem.language, widget.problem.id);
               if (!mounted) return;
               setState(() => _isFavorite = now);
               if (!context.mounted) return;

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:python_practice/models/problem.dart';
 import 'package:python_practice/models/judge_result.dart';
 import 'package:python_practice/services/judge_engine.dart';
+import 'package:python_practice/models/programming_language.dart';
 
 void main() {
   const codeCorrect = 'a, b = map(int, input().split())\nprint(a + b)\n';
@@ -11,6 +12,7 @@ void main() {
   const codeFormatExtraSpace = 'a, b = map(int, input().split())\nprint(" " + str(a + b) + " ")\n';
 
   final problem = Problem(
+    language: ProgrammingLanguage.python,
     id: 1,
     title: '两数之和',
     difficulty: Difficulty.easy,
@@ -60,6 +62,7 @@ void main() {
 
     test('全角/半角标点等价：期望全角！，输出半角! 也该判对', () async {
       final p = Problem(
+        language: ProgrammingLanguage.python,
         id: 999,
         title: '标点容错',
         difficulty: Difficulty.easy,

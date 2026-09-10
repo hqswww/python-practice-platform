@@ -2,8 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:python_practice/models/judge_result.dart';
 import 'package:python_practice/models/problem.dart';
 import 'package:python_practice/services/judge_engine.dart';
+import 'package:python_practice/models/programming_language.dart';
 
 Problem _make203() => Problem(
+  language: ProgrammingLanguage.python,
       id: 203,
       title: '余数和整除',
       difficulty: Difficulty.easy,
@@ -51,6 +53,7 @@ print(f"{a//b} {a%b}")
 ''';
     // 用单 token 输入（本来就该读不到 b）→ 应判 runtimeError
     final p = Problem(
+      language: ProgrammingLanguage.python,
       id: 1, title: 't', difficulty: Difficulty.easy,
       description: '', inputFormat: '', outputFormat: '',
       sampleInput: 'x', sampleOutput: 'y',
@@ -65,6 +68,7 @@ print(f"{a//b} {a%b}")
   test('普通无输入争议的题不受影响', () async {
     const code = 'n=int(input())\nprint(n*2)';
     final p = Problem(
+      language: ProgrammingLanguage.python,
       id: 2, title: 't', difficulty: Difficulty.easy,
       description: '', inputFormat: '', outputFormat: '',
       sampleInput: '5', sampleOutput: '10',

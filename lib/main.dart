@@ -10,6 +10,7 @@ import 'pages/test_page.dart';
 import 'pages/settings_page.dart';
 import 'services/error_log_service.dart';
 import 'services/settings_service.dart';
+import 'services/language_service.dart';
 
 /// 全局设置服务单例（供各页面读取/修改）
 // main.dart 顶部不再重复定义，统一用 services/settings_service.dart 里的全局 settings
@@ -19,6 +20,8 @@ void main() async {
   // 先挂全局错误收集（越早越好，能捞到启动期异常）
   errorLog.installGlobalHandlers();
   await settings.load();
+  // 恢复上次选的语言。必须在加载题库之前 —— 题库会按语言过滤
+  await languageService.load();
 
   // runZonedGuarded 兜底：捕获 Zone 内异步/微任务异常（Dart 层最全的一层）
   await runZonedGuarded(() async {

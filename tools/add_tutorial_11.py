@@ -2,7 +2,7 @@
 """给 11_advanced.json 的 6 题（1101-1106）加详细教程（进阶：推导式/lambda/异常/矩阵转置/多行计数）。"""
 import json
 
-PATH = "assets/problems/11_advanced.json"
+PATH = "assets/problems/python/11_advanced.json"
 
 tutorials = {
 1101: [

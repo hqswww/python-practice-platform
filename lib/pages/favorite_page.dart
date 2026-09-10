@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/problem.dart';
+import '../models/programming_language.dart';
 import '../models/problem_category.dart';
 import '../services/progress_service.dart';
 import 'editor_page.dart';
@@ -26,6 +27,12 @@ class _FavoritePageState extends State<FavoritePage> {
   List<Problem> get _allProblems =>
       widget.categories.expand((c) => c.problems).toList();
 
+  /// 本页所属语言。收藏是**按语言分开**统计的 ——
+  /// 传进来的 categories 已被仓库按语言过滤，所以取第一个即可。
+  ProgrammingLanguage get _lang => widget.categories.isEmpty
+      ? ProgrammingLanguage.python
+      : widget.categories.first.language;
+
   @override
   void initState() {
     super.initState();
@@ -37,7 +44,7 @@ class _FavoritePageState extends State<FavoritePage> {
   }
 
   Future<List<Problem>> _loadFavorites() async {
-    final ids = await _progress.favoriteIds();
+    final ids = await _progress.favoriteIds(_lang);
     // 保持题库顺序（并按原分类顺序展示）
     final result = _allProblems.where((p) => ids.contains(p.id)).toList();
     _favorites = result;
@@ -63,10 +70,11 @@ class _FavoritePageState extends State<FavoritePage> {
     setState(() => _future = _loadFavorites());
   }
 
-  Future<void> _toggle(int id) async {
-    final now = await _progress.toggleFavorite(id);
+  Future<void> _toggle(Problem problem) async {
+    final now =
+        await _progress.toggleFavorite(problem.language, problem.id);
     if (!mounted) return;
-    setState(() => _favorites.removeWhere((p) => p.id == id));
+    setState(() => _favorites.removeWhere((p) => p.id == problem.id));
     if (!now) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -190,7 +198,7 @@ class _FavoritePageState extends State<FavoritePage> {
         trailing: IconButton(
           tooltip: '取消收藏',
           icon: const Icon(Icons.star, color: Colors.amber),
-          onPressed: () => _toggle(p.id),
+          onPressed: () => _toggle(p),
         ),
         onTap: () => _open(favs, index),
       ),

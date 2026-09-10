@@ -1,4 +1,5 @@
 import 'problem.dart';
+import 'programming_language.dart';
 
 /// 一次测试的逐题作答项（用于历史回看）
 class TestRecordItem {
@@ -51,11 +52,16 @@ class TestRecord {
   final int totalCount;
   final List<TestRecordItem> items;
 
+  /// 这次测试考的是哪门语言。
+  /// 老记录里没有这个字段 —— 加语言之前只有 Python，所以回退到 python 是对的。
+  final ProgrammingLanguage language;
+
   const TestRecord({
     required this.timestamp,
     required this.correctCount,
     required this.totalCount,
     required this.items,
+    this.language = ProgrammingLanguage.python,
   });
 
   double get score =>
@@ -66,6 +72,7 @@ class TestRecord {
         'timestamp': timestamp.toIso8601String(),
         'correctCount': correctCount,
         'totalCount': totalCount,
+        'language': language.id,
         'items': items.map((e) => e.toJson()).toList(),
       };
 
@@ -74,6 +81,7 @@ class TestRecord {
             DateTime.now(),
         correctCount: json['correctCount'] as int? ?? 0,
         totalCount: json['totalCount'] as int? ?? 0,
+        language: ProgrammingLanguage.fromId(json['language'] as String?),
         items: (json['items'] as List? ?? [])
             .map((e) => TestRecordItem.fromJson(e as Map<String, dynamic>))
             .toList(),

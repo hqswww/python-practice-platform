@@ -2,7 +2,7 @@
 """给 09_dicts.json 的 6 题（901-906）加详细教程（字典，核心分类写详细）。"""
 import json
 
-PATH = "assets/problems/09_dicts.json"
+PATH = "assets/problems/python/09_dicts.json"
 
 tutorials = {
 901: [

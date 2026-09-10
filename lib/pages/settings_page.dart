@@ -12,6 +12,7 @@ import '../services/settings_service.dart';
 import 'achievements_page.dart';
 import 'log_center_page.dart';
 import 'widgets/responsive.dart';
+import '../services/language_service.dart';
 
 /// 设置分类：宽屏时作为左栏条目，窄屏时作为「点进去看详情」的入口
 class _CategoryMeta {
@@ -138,13 +139,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
   /// 加载进度统计：返回 (完成数, 总数, 各难度完成/总数)
   Future<(int, int, Map<Difficulty, (int, int)>)> _loadStats() async {
-    final cats = await ProblemRepository().loadCategories();
+    final lang = languageService.value;
+    final cats =
+        await ProblemRepository().loadCategories(language: lang);
     final all = <Problem>[];
     for (final c in cats) {
       all.addAll(c.problems);
     }
     final ids = all.map((p) => p.id).toList();
-    final solvedMap = await _progress.solvedMap(ids);
+    final solvedMap = await _progress.solvedMap(lang, ids);
 
     final diffStats = <Difficulty, int>{for (final d in Difficulty.values) d: 0};
     final diffTotal = <Difficulty, int>{for (final d in Difficulty.values) d: 0};

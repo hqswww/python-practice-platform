@@ -585,7 +585,7 @@ def solve_testcases(id_, code, tests):
     return ok_all, detail
 
 def main():
-    files = sorted(glob.glob('assets/problems/*.json'))
+    files = sorted(glob.glob('assets/problems/python/*.json'))
     all_ok = True
     for f in files:
         with open(f, encoding='utf-8') as fh:

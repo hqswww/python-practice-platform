@@ -2,7 +2,7 @@
 """给 02_datatype.json 的 6 题（201-206）加 runoob 风格详细教程。"""
 import json
 
-PATH = "assets/problems/02_datatype.json"
+PATH = "assets/problems/python/02_datatype.json"
 
 tutorials = {
 201: [

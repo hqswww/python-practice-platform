@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:python_practice/models/problem.dart';
 import 'package:python_practice/models/problem_category.dart';
 import 'package:python_practice/pages/practice_page.dart';
+import 'package:python_practice/models/programming_language.dart';
 
 /// 练习页分类网格的自适应行为。
 ///
@@ -43,12 +44,14 @@ void main() {
     return [
       for (var i = 0; i < names.length; i++)
         ProblemCategory(
+          language: ProgrammingLanguage.python,
           key: 'c${i + 1}',
           name: names[i].$1,
           description: names[i].$2,
           problems: [
             for (var j = 1; j <= 6; j++)
               Problem(
+                language: ProgrammingLanguage.python,
                 id: i * 100 + j,
                 title: '题 $j',
                 difficulty: Difficulty.easy,

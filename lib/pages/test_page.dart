@@ -188,7 +188,7 @@ class _TestPageState extends State<TestPage> {
     });
     for (final item in reviewItems) {
       if (!item.wasCorrect && _status[item.problem.id] == null) {
-        await _progress.markUnanswered(item.problem.id);
+        await _progress.markUnanswered(item.problem.language, item.problem.id);
       }
     }
     _progress.addTestRecord(TestRecord(
@@ -253,7 +253,7 @@ class _TestPageState extends State<TestPage> {
     // 没做的题一并收入错题本（判对/判错的已在判题时处理，这里只补漏并标记“未作答”）
     for (final item in reviewItems) {
       if (!item.wasCorrect && _status[item.problem.id] == null) {
-        await _progress.markUnanswered(item.problem.id);
+        await _progress.markUnanswered(item.problem.language, item.problem.id);
       }
     }
     // 持久化到测试历史（供“回顾测试”查看）
@@ -365,9 +365,11 @@ class _TestPageState extends State<TestPage> {
       }
     });
     if (passed) {
-      await _progress.markSolved(problem.id); // 做对：标记已解决 + 清除错题
+      await _progress
+          .markSolved(problem.language, problem.id); // 做对：标记已解决 + 清除错题
     } else {
-      await _progress.recordWrong(problem.id); // 做错：计入错题本
+      await _progress
+          .recordWrong(problem.language, problem.id); // 做错：计入错题本
     }
     return record;
   }

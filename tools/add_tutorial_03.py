@@ -2,7 +2,7 @@
 """给 03_operators.json 的 6 题（301-306）加 runoob 风格详细教程。"""
 import json
 
-PATH = "assets/problems/03_operators.json"
+PATH = "assets/problems/python/03_operators.json"
 
 tutorials = {
 301: [

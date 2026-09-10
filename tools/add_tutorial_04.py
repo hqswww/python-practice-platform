@@ -2,7 +2,7 @@
 """给 04_conditionals.json 的 6 题（401-406）加详细教程（核心分类，写更详细）。"""
 import json
 
-PATH = "assets/problems/04_conditionals.json"
+PATH = "assets/problems/python/04_conditionals.json"
 
 tutorials = {
 401: [

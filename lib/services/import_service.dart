@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../models/programming_language.dart';
 import '../models/test_record.dart';
 import 'progress_service.dart';
 
@@ -47,7 +48,12 @@ class ImportService {
   }
 
   /// 合并一份解析后的进度数据到当前进度。
+  ///
+  /// 语言从数据里的 `language` 字段读；**老导出文件没有这个字段**，
+  /// 那时平台上只有 Python，所以 [ProgrammingLanguage.fromId] 会回退到 Python，
+  /// 老文件照样能正确导入。
   Future<ProgressImportSummary> _merge(Map<String, dynamic> data) async {
+    final lang = ProgrammingLanguage.fromId(data['language'] as String?);
     final problems = data['problems'] as List? ?? [];
     var solvedMarked = 0;
     var favoritesAdded = 0;
@@ -63,29 +69,29 @@ class ImportService {
       final importedFavorite = raw['favorite'] == true;
 
       // 已解决：取并集（导入里有且当前未解决 → 标记；已解决则顺带清错题）
-      final isSolvedNow = await _progress.isSolved(id);
+      final isSolvedNow = await _progress.isSolved(lang, id);
       if (importedSolved && !isSolvedNow) {
-        await _progress.markSolved(id);
+        await _progress.markSolved(lang, id);
         solvedMarked++;
       } else if (importedSolved && isSolvedNow) {
         // 已解决但可能残留错题记录 → 清掉
-        await _progress.markSolved(id);
+        await _progress.markSolved(lang, id);
       }
 
       // 错题次数：取较大值合并（未解决/导入有错题数时才写）
-      final wrongNow = await _progress.wrongCountFor(id);
+      final wrongNow = await _progress.wrongCountFor(lang, id);
       if (importedWrong > wrongNow) {
-        await _progress.setWrongCount(id, importedWrong);
+        await _progress.setWrongCount(lang, id, importedWrong);
       }
 
       // 未作答标志：取并集
       if (importedUnanswered) {
-        await _progress.setUnanswered(id, true);
+        await _progress.setUnanswered(lang, id, true);
       }
 
       // 收藏：取并集
-      if (importedFavorite && !(await _progress.isFavorite(id))) {
-        await _progress.setFavorite(id, true);
+      if (importedFavorite && !(await _progress.isFavorite(lang, id))) {
+        await _progress.setFavorite(lang, id, true);
         favoritesAdded++;
       }
     }

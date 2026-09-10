@@ -4,6 +4,8 @@
 /// JSON 字段与模型字段一一对应（见 DESIGN.md 第四节）。
 library;
 
+import 'programming_language.dart';
+
 /// 难度分级：easy / medium / hard
 enum Difficulty {
   easy('easy'),
@@ -97,8 +99,19 @@ class Problem {
   /// 详细教程（runoob 风格分节）；未提供时为空列表
   final List<TutorialSection> tutorial;
 
+  /// 这道题属于哪门语言。
+  ///
+  /// **必填**，刻意不给默认值：给默认值的话，将来新加的 C 题忘了传
+  /// 就会静默变成 Python 题（进度键、判题运行时、语法高亮全跟着错），
+  /// 而且这种错很难在测试里发现。宁可让每个构造点都显式写出来。
+  final ProgrammingLanguage language;
+
   /// 是否有可展示的详细教程
   bool get hasTutorial => tutorial.isNotEmpty;
+
+  /// 进度存储键里用的唯一标识：语言 + 题号。
+  /// 题号只在同一语言内唯一，跨语言会撞（比如 C 和 Python 都有 101 题）。
+  String get progressKey => '${language.id}_$id';
 
   Problem({
     required this.id,
@@ -111,11 +124,15 @@ class Problem {
     required this.sampleOutput,
     required this.testCases,
     required this.hints,
+    required this.language,
     this.solution = '',
     this.tutorial = const [],
   });
 
-  factory Problem.fromJson(Map<String, dynamic> json) {
+  factory Problem.fromJson(
+    Map<String, dynamic> json, {
+    ProgrammingLanguage? language,
+  }) {
     return Problem(
       id: (json['id'] as num).toInt(),
       title: json['title'] as String,
@@ -131,6 +148,7 @@ class Problem {
       hints: (json['hints'] as List<dynamic>? ?? [])
           .map((e) => e as String)
           .toList(),
+      language: language ?? ProgrammingLanguage.fromId(json['language'] as String?),
       solution: (json['solution'] ?? '') as String,
       tutorial: (json['tutorial'] as List<dynamic>? ?? [])
           .map((e) => TutorialSection.fromJson(e as Map<String, dynamic>))

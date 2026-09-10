@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/problem_repository.dart';
 import '../models/problem.dart';
+import '../models/programming_language.dart';
+import 'language_service.dart';
 import 'progress_service.dart';
 
 /// 进度导出服务
@@ -16,8 +18,12 @@ class ExportService {
   final ProblemRepository _repo = ProblemRepository();
 
   /// 收集完整进度数据供导出使用。
-  Future<Map<String, dynamic>> collect() async {
-    final cats = await _repo.loadCategories();
+  ///
+  /// [language] 为空时导出**当前语言**。导出的 JSON 里带 `language` 字段，
+  /// 导入时据此归位（老导出文件没有该字段，按 Python 处理）。
+  Future<Map<String, dynamic>> collect({ProgrammingLanguage? language}) async {
+    final lang = language ?? languageService.value;
+    final cats = await _repo.loadCategories(language: lang);
     final all = <Problem>[];
     final catOf = <int, String>{};
     for (final c in cats) {
@@ -27,16 +33,18 @@ class ExportService {
       }
     }
     final ids = all.map((p) => p.id).toList();
-    final solved = await _progress.solvedMap(ids);
-    final wrong = await _progress.allWrong();
-    final unans = await _progress.unansweredSet(ids);
-    final favs = await _progress.favoriteIds();
-    final records = await _progress.testRecords();
+    final solved = await _progress.solvedMap(lang, ids);
+    final wrong = await _progress.allWrong(lang);
+    final unans = await _progress.unansweredSet(lang, ids);
+    final favs = await _progress.favoriteIds(lang);
+    final records = await _progress.testRecords(language: lang);
 
     final solvedNow = ids.where((id) => solved[id] == true).length;
 
     return {
       'exportedAt': DateTime.now().toIso8601String(),
+      // 语言标识：导入时据此把进度写回对应语言（老文件缺这个字段 → Python）
+      'language': lang.id,
       'summary': {
         'totalProblems': all.length,
         'solved': solvedNow,
@@ -90,7 +98,7 @@ class ExportService {
 
     final buf = StringBuffer();
     buf.writeln('id,title,category,difficulty,solved,wrongTimes,unanswered,'
-        'favorite');
+        'favorite,language');
     for (final p in data['problems'] as List) {
       final m = p as Map;
       buf.writeln([
@@ -102,6 +110,7 @@ class ExportService {
         _csvCell(m['wrongTimes'].toString()),
         _csvCell(m['unanswered'].toString()),
         _csvCell(m['favorite'].toString()),
+        _csvCell((data['language'] ?? '').toString()),
       ].join(','));
     }
     await file.writeAsString(buf.toString());

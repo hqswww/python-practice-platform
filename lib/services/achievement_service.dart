@@ -7,6 +7,7 @@ import '../data/problem_repository.dart';
 import '../models/achievement.dart';
 import '../models/problem.dart';
 import 'progress_service.dart';
+import 'language_service.dart';
 
 /// 成就数据单独登记，避免把条件判定塞进模型（模型保持「定义即数据」）
 final List<Achievement> kAchievements = [
@@ -166,13 +167,15 @@ class AchievementService {
 
   /// 计算进度快照
   Future<ProgressSnapshot> snapshot() async {
-    final cats = await ProblemRepository().loadCategories();
+    final lang = languageService.value;
+    final cats =
+        await ProblemRepository().loadCategories(language: lang);
     final all = <Problem>[];
     for (final c in cats) {
       all.addAll(c.problems);
     }
     final ids = all.map((p) => p.id).toList();
-    final solvedMap = await _progress.solvedMap(ids);
+    final solvedMap = await _progress.solvedMap(lang, ids);
 
     final solvedByDiff = <Difficulty, int>{
       for (final d in Difficulty.values) d: 0,
@@ -190,9 +193,9 @@ class AchievementService {
     }
 
     // 收藏 / 错题 / 测试历史
-    final favoriteCount = await _progress.favoriteCount();
-    final wrongCount = await _progress.wrongCount();
-    final records = await _progress.testRecords();
+    final favoriteCount = await _progress.favoriteCount(lang);
+    final wrongCount = await _progress.wrongCount(lang);
+    final records = await _progress.testRecords(language: lang);
     var testCount = 0;
     var hasPerfect = false;
     var totalCorrect = 0;

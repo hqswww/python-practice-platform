@@ -2,7 +2,7 @@
 """给 05_loops.json 的 6 题（501-506）加详细教程（循环，核心分类写详细）。"""
 import json
 
-PATH = "assets/problems/05_loops.json"
+PATH = "assets/problems/python/05_loops.json"
 
 tutorials = {
 501: [

@@ -6,6 +6,7 @@ import '../services/progress_service.dart';
 import 'favorite_page.dart';
 import 'problem_list_page.dart';
 import 'wrong_book_page.dart';
+import '../services/language_service.dart';
 
 /// 练习板块：展示所有分类 + 整体进度
 class PracticePage extends StatefulWidget {
@@ -40,14 +41,15 @@ class _PracticePageState extends State<PracticePage> {
     var done = 0;
     for (final cat in widget.categories) {
       final solved = await _progress.solvedMap(
+        cat.language,
         cat.problems.map((p) => p.id).toList(),
       );
       final count = solved.values.where((v) => v).length;
       map[cat.key] = count;
       done += count;
     }
-    final wrongCount = await _progress.wrongCount();
-    final favCount = await _progress.favoriteCount();
+    final wrongCount = await _progress.wrongCount(languageService.value);
+    final favCount = await _progress.favoriteCount(languageService.value);
     if (!mounted) return;
     setState(() {
       _solvedByCategory = map;
@@ -58,7 +60,7 @@ class _PracticePageState extends State<PracticePage> {
   }
 
   void _openWrongBook() async {
-    final wrong = await _progress.allWrong();
+    final wrong = await _progress.allWrong(languageService.value);
     if (!mounted) return;
     if (wrong.isEmpty) {
       ScaffoldMessenger.of(

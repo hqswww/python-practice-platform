@@ -5,6 +5,7 @@
 library;
 
 import 'problem.dart';
+import 'programming_language.dart';
 
 /// 一个题目分类，内含加载后的题目列表
 class ProblemCategory {
@@ -17,12 +18,17 @@ class ProblemCategory {
   /// 分类说明（简短描述，展示在分类卡片上）
   final String description;
 
+  /// 这门分类属于哪门语言。与内部每道题的 `language` 保持一致
+  /// （由 ProblemRepository 统一赋值，避免两处各写各的）。
+  final ProgrammingLanguage language;
+
   final List<Problem> problems;
 
   ProblemCategory({
     required this.key,
     required this.name,
     required this.description,
+    required this.language,
     required this.problems,
   });
 

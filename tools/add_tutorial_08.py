@@ -2,7 +2,7 @@
 """给 08_tuples_sets.json 的 6 题（801-806）加详细教程。"""
 import json
 
-PATH = "assets/problems/08_tuples_sets.json"
+PATH = "assets/problems/python/08_tuples_sets.json"
 
 tutorials = {
 801: [

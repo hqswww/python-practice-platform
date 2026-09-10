@@ -2,7 +2,7 @@
 """给 101/102/103 题添加 runoob 风格 tutorial 字段（试水）。"""
 import json, sys
 
-PATH = "assets/problems/01_syntax.json"
+PATH = "assets/problems/python/01_syntax.json"
 
 with open(PATH, encoding="utf-8") as f:
     data = json.load(f)

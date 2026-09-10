@@ -2,7 +2,7 @@
 """给 12_challenges.json 的 6 题（1201-1206）加详细教程（综合挑战：质数/斐波那契/回文/元音/数根/最大公约数）。"""
 import json
 
-PATH = "assets/problems/12_challenges.json"
+PATH = "assets/problems/python/12_challenges.json"
 
 tutorials = {
 1201: [

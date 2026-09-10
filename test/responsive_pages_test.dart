@@ -8,6 +8,7 @@ import 'package:python_practice/pages/achievements_page.dart';
 import 'package:python_practice/pages/learn_page.dart';
 import 'package:python_practice/pages/problem_list_page.dart';
 import 'package:python_practice/pages/widgets/responsive.dart';
+import 'package:python_practice/models/programming_language.dart';
 
 /// 各页面的响应式行为。
 ///
@@ -31,11 +32,13 @@ void main() {
 
   List<ProblemCategory> fakeCategories() => [
         ProblemCategory(
+          language: ProgrammingLanguage.python,
           key: 'c1',
           name: '基础语法',
           description: '变量、输入输出',
           problems: [
             Problem(
+              language: ProgrammingLanguage.python,
               id: 101,
               title: '认识 print()',
               difficulty: Difficulty.easy,
@@ -51,6 +54,7 @@ void main() {
               ],
             ),
             Problem(
+              language: ProgrammingLanguage.python,
               id: 102,
               title: '变量',
               difficulty: Difficulty.easy,

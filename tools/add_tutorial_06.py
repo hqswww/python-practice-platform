@@ -2,7 +2,7 @@
 """给 06_strings.json 的 6 题（601-606）加详细教程（字符串，核心分类写详细）。"""
 import json
 
-PATH = "assets/problems/06_strings.json"
+PATH = "assets/problems/python/06_strings.json"
 
 tutorials = {
 601: [

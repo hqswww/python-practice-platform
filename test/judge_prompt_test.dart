@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:python_practice/models/problem.dart';
 import 'package:python_practice/services/judge_engine.dart';
+import 'package:python_practice/models/programming_language.dart';
 
 void main() {
   Problem makeProblem() => Problem(
+    language: ProgrammingLanguage.python,
         id: 1,
         title: '含 prompt 的 input',
         difficulty: Difficulty.easy,
@@ -34,6 +36,7 @@ n = int(input())
 print(n * 2)
 ''';
     final p2 = Problem(
+      language: ProgrammingLanguage.python,
       id: 2, title: 't', difficulty: Difficulty.easy,
       description: '', inputFormat: '', outputFormat: '',
       sampleInput: '5', sampleOutput: '10',
