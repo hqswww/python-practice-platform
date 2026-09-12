@@ -1,4 +1,4 @@
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+﻿[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 # ============================================================
 # 编程练习册 · Windows 一键打包脚本
@@ -69,9 +69,22 @@ Copy-Item -Path "$RELEASE_DIR\*" -Destination $DIST_DIR -Recurse -Force
 New-Item -ItemType Directory -Path "$DIST_DIR\python" -Force | Out-Null
 Copy-Item -Path "$PY_TMP\*" -Destination "$DIST_DIR\python" -Recurse -Force
 
+# 把 C/C++ 编译器的一键安装脚本一起发出去。
+# 应用启动时会找 exe 同目录下的 install_mingw.ps1（见 runtime_installer.dart），
+# 找到就在首次运行向导 / 设置页给出「一键安装」按钮；找不到就只给下载页指引。
+# 注意 Python 是捆绑的，C/C++ 走系统编译器 —— 所以这个脚本是必要的补充。
+$MINGW = Join-Path $PWD "tools\install_mingw.ps1"
+if (Test-Path $MINGW) {
+  Copy-Item -Path $MINGW -Destination $DIST_DIR -Force
+  Write-Host " 已附带编译器安装脚本: install_mingw.ps1"
+} else {
+  Write-Host " 未找到 tools\install_mingw.ps1，分发版将只能引导用户手动安装编译器" -ForegroundColor Yellow
+}
+
 # 清理临时 python 解压目录
 Remove-Item -Recurse -Force $PY_TMP
 
 Write-Host "`n✅ 完成！分发目录: $DIST_DIR" -ForegroundColor Green
 Write-Host " 直接把整个『编程练习册』文件夹拷给用户即可。"
-Write-Host " 用户双击 编程练习册.exe 即可运行（判题用捆绑 python 无需装 Python）。"
+Write-Host " 用户双击 code_workbook.exe 即可运行（判题用捆绑 python 无需装 Python）。"
+Write-Host " C / C++ 需要编译器：首次运行向导里可一键安装，或跑 install_mingw.ps1。"

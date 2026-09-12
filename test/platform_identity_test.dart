@@ -66,4 +66,33 @@ void main() {
     expect(sh, contains('uname -s'), reason: '护栏要按 uname 判断');
     expect(sh, contains('只能在 Linux 上运行'));
   });
+
+  group('PowerShell 脚本的编码', () {
+    // 这条是中文的命门，而且**极易被静默破坏**：任何一次用普通 UTF-8 编辑器
+    // 存盘都会把 BOM 丢掉，而本机（macOS/Linux）完全看不出问题 ——
+    // 只有中文 Windows 用户会看到满屏乱码，甚至脚本直接语法报错。
+    const scripts = ['tools/install_mingw.ps1', 'tools/build_windows.ps1'];
+
+    test('都必须是 UTF-8 with BOM', () {
+      for (final path in scripts) {
+        final bytes = File(path).readAsBytesSync();
+        expect(bytes.length, greaterThan(3), reason: '$path 是空文件？');
+        expect(bytes.sublist(0, 3), [0xEF, 0xBB, 0xBF],
+            reason: '$path 少了 UTF-8 BOM。\n'
+                'Windows PowerShell 5.1 读无 BOM 的 .ps1 时按系统 ANSI 代码页\n'
+                '（中文系统 = GBK）解码，UTF-8 的中文会变成乱码；更糟的是乱码\n'
+                '字节里可能撞出引号，使整个脚本语法报错。BOM 是 5.1 判断编码\n'
+                '的唯一可靠依据。修法：\n'
+                '  python3 -c "p=\'$path\';d=open(p,\'rb\').read();'
+                'open(p,\'wb\').write(b\'\\xef\\xbb\\xbf\'+d)"');
+      }
+    });
+
+    test('都显式把控制台输出设成 UTF-8', () {
+      for (final path in scripts) {
+        expect(read(path), contains('[Console]::OutputEncoding'),
+            reason: '$path 没设控制台输出编码，中文会按控制台代码页编码而变花');
+      }
+    });
+  });
 }
