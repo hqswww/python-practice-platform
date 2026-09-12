@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../models/programming_language.dart';
 import 'c_runtime.dart';
 import 'python_runtime.dart';
@@ -288,21 +290,72 @@ abstract class CompiledLanguageRuntime extends LanguageRuntime {
   /// `-O0`：判题不需要优化，编得越快越好（C++ 尤其明显）。
   /// `-lm`：链接数学库，否则用了 sqrt/pow 的学生会莫名其妙链接失败。
   @override
-  RunSpec? compileSpec(Directory workDir, File sourceFile) => RunSpec(
-        command: resolveCompiler(),
-        args: [
-          sourceFile.absolute.path,
-          '-o',
-          '${workDir.path}${Platform.pathSeparator}$binaryName',
-          stdFlag,
-          '-O0',
-          '-lm',
-        ],
-        // 把编译器的临时文件（gcc 的中间 .s、链接前的 .o）也钉在 ASCII 路径下：
-        // as.exe / ld.exe 不带 UTF-8 清单，是整条链里最怕非 ASCII 路径的一环。
-        // 详见 temp_workspace.dart 的开头说明。
-        environment: TempWorkspace.compilerEnv(workDir),
-      );
+  RunSpec? compileSpec(Directory workDir, File sourceFile) {
+    final compiler = resolveCompiler();
+    return RunSpec(
+      command: compiler,
+      args: compileArgs(
+        workDir: workDir,
+        sourceFile: sourceFile,
+        compiler: compiler,
+      ),
+      // 把编译器的临时文件（gcc 的中间 .s、链接前的 .o）也钉在 ASCII 路径下：
+      // as.exe / ld.exe 不带 UTF-8 清单，是整条链里最怕非 ASCII 路径的一环。
+      // 详见 temp_workspace.dart 的开头说明。
+      environment: TempWorkspace.compilerEnv(workDir),
+    );
+  }
+
+  /// 组装编译参数。
+  ///
+  /// 抽成公开方法（带 [onWindows] 注入）只为**测试能覆盖 Windows 分支** ——
+  /// 本机是 macOS，那条路永远跑不到。
+  @visibleForTesting
+  List<String> compileArgs({
+    required Directory workDir,
+    required File sourceFile,
+    required String compiler,
+    bool? onWindows,
+  }) {
+    final windows = onWindows ?? Platform.isWindows;
+    return [
+      // -B：显式告诉编译器「你自己的子程序（as / ld / cc1）在哪个目录」。
+      //
+      // **只在 Windows 上加**。macOS / Linux 上这条链本来就是好的，不该动 ——
+      // 保持原样还有个额外好处：题库自检（144 道真题真编译）验证的就是
+      // 这两个平台用户实际拿到的行为。
+      //
+      // Windows 上实测到的报错：
+      //   gcc.exe: fatal error: cannot execute 'as' CreateProcess: No such file or directory
+      // 注意报的是**裸名** 'as' —— 说明 GCC 在所有搜索位置都没找到它，而 cc1 是
+      // 找到了的（否则会先报 cc1）。所以不是工具链整个丢了，而是「装在 bin 里、
+      // 由 gcc 转手调起的那几个程序」没被搜到。
+      //
+      // 根因：gcc 找子程序最终要靠 PATH，而应用可能是在用户装编译器**之前**
+      // 启动的 —— 比如在首次运行向导里点了「一键安装」，脚本把 bin 写进了用户
+      // PATH，但**已经跑着的进程读不到**（Windows 只对新开进程生效）。
+      // 于是我们靠绝对路径找到了 gcc，gcc 却找不到隔壁的 as。
+      //
+      // 路径用正斜杠并保留结尾斜杠：Windows 命令行里参数结尾的反斜杠会转义掉
+      // 后面的引号（经典 Win32 引号坑），正斜杠没这个问题，而 MinGW 两种都认。
+      if (windows)
+        if (_compilerDir(compiler) case final dir?) '-B$dir',
+      sourceFile.absolute.path,
+      '-o',
+      '${workDir.path}${Platform.pathSeparator}$binaryName',
+      stdFlag,
+      '-O0',
+      '-lm',
+    ];
+  }
+
+  /// 编译器所在目录，**以正斜杠结尾**；编译器是裸命令名（交给 PATH 找）时返回 null。
+  static String? _compilerDir(String compiler) {
+    final i = compiler.lastIndexOf(RegExp(r'[/\\]'));
+    if (i <= 0) return null; // 没有任何分隔符 = 裸命令名
+    return '${compiler.substring(0, i).replaceAll(r'\', '/')}/';
+  }
+
 
   @override
   RunSpec runSpec(Directory workDir, File sourceFile) => RunSpec(

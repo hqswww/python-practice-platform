@@ -134,6 +134,19 @@ class JudgeEngine {
         source: LogSource.judge,
       );
       if (cleaned.isEmpty) return '编译失败，但编译器没有给出任何信息。';
+
+      // 有些「编译失败」压根不是学生代码的问题，而是运行环境缺东西。
+      // 一律说「代码没通过编译」会把人引到错误的方向 —— 他会去改本来没错的代码。
+      final envHint = _environmentFailureHint(cleaned);
+      if (envHint != null) {
+        errorLog.logError(
+          '编译环境异常（${runtime.language.displayName}）:\n$cleaned',
+          source: LogSource.judge,
+        );
+        return '❌ 编译没能进行下去。\n\n$envHint\n\n'
+            '编译器原始输出：\n$cleaned';
+      }
+
       // 加一句抬头：C 的编译报错和 Python 的 traceback 长得完全不一样，
       // 初学者需要被告知「这是编译器在说话，不是你的程序输出」。
       return '❌ 代码没通过编译。下面是编译器给出的报错：\n\n$cleaned';
@@ -157,6 +170,32 @@ class JudgeEngine {
       return '❌ 找不到 ${runtime.language.displayName} 编译器'
           '（尝试执行 `${spec.command}`）。\n$hint';
     }
+  }
+
+  /// 判断这次「编译失败」是不是运行环境的问题（而非学生代码的问题）。
+  /// 是的话返回一段**可操作**的说明，否则返回 null。
+  ///
+  /// 为什么值得单独分辨：环境故障伪装成「代码没通过编译」时，学生会去改本来
+  /// 没错的代码，而真正该做的事（补装工具链 / 修 PATH）永远想不到。
+  String? _environmentFailureHint(String cleaned) {
+    // gcc 找不到自己的子程序（as / ld / cc1）。Windows 上实测到：
+    //   gcc.exe: fatal error: cannot execute 'as' CreateProcess: No such file or directory
+    // 报的是**裸名**，说明所有搜索位置都没找到它 —— 而 cc1 是找到了的
+    // （否则会先报 cc1），所以不是「工具链整个丢了」。
+    if (cleaned.contains('cannot execute')) {
+      return '⚠️ 这不是你代码的问题：编译器找不到它自己的子程序（as / ld / cc1）。\n'
+          '· 最常见的原因：编译器**没装完整** —— `as.exe` 不在 `gcc.exe` 旁边\n'
+          '· 到「设置 → 代码编辑」看实际用的是哪个路径，再去那个目录确认\n'
+          '  `as.exe` / `ld.exe` 在不在\n'
+          '· 确实缺文件就重跑一次安装脚本，或换一个完整的 MinGW-w64 发行版';
+    }
+    // 磁盘满 / 没权限写工作目录
+    if (cleaned.contains('No space left') || cleaned.contains('Permission denied')) {
+      return '⚠️ 这不是你代码的问题：编译过程写文件失败（磁盘空间或权限）。\n'
+          '· 检查系统盘剩余空间\n'
+          '· 若开了杀毒软件，把本应用的临时目录加进白名单';
+    }
+    return null;
   }
 
   /// 运行单个测试用例

@@ -74,10 +74,20 @@ done
 
 # ---------------------------------------------------------------- 2. 签名
 head_ "2. 代码签名与 entitlements"
+# 失败时把 codesign 的明细直接打出来。
+#
+# 原先只写一句「跑 codesign … 看详情」，真出问题时还得手动再跑一遍才知道原因。
+# 而这里的失败几乎总是同一类：**签名之后有人往包里加了文件** ——
+# codesign 会把包内资源封存，事后新增任何文件都报 sealed resource 缺失。
+# 踩过的实例：捆绑 Python 运行时写 __pycache__（已修）。那几行 `file added:` 就是答案。
 if codesign --verify --deep --strict "$APP" 2>/dev/null; then
-  ok "codesign 校验通过（valid on disk / satisfies Designated Requirement）"
+  ok "codesign 校验通过（valid on disk / satisfies its Designated Requirement）"
 else
-  bad "签名校验失败 —— 跑 codesign --verify --deep --strict --verbose=2 看详情"
+  bad "签名校验失败 —— 下面是明细："
+  codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 |
+    grep -E "file (added|missing)|a sealed resource|resource fork|not signed" |
+    head -8 | sed 's/^/       /'
+  echo "       （完整输出：codesign --verify --deep --strict --verbose=2 \"$APP\"）"
 fi
 
 # entitlements 回读：这一项必须查。
@@ -194,10 +204,13 @@ LOG_DIR="$HOME/Library/Application Support/com.sakiri.python-practice/logs"
 OLD_LOG="$(cat "$LOG_DIR"/*.log 2>/dev/null | wc -l | tr -d ' ')"
 open "$APP" 2>/dev/null
 sleep 10
+# ⚠️ 这一项假设「没人动那个窗口」。验收期间手动关掉应用窗口，进程就会退出，
+#    于是这里报失败、下面两条日志检查也跟着跳过 —— 那是**误报不是 bug**
+#    （实际发生过：一度被当成间歇性签名问题去查）。所以提示里把这种可能写明。
 if pgrep -f "$(basename "$APP")" >/dev/null; then
   ok "应用启动后进程存活（未崩溃）"
 else
-  bad "应用没能保持运行 —— 可能是崩溃"
+  bad "应用没能保持运行 —— 可能是崩溃；**也可能是验收期间窗口被手动关掉了**"
 fi
 
 NEW_LOG="$(cat "$LOG_DIR"/*.log 2>/dev/null | tail -n +$((OLD_LOG + 1)))"

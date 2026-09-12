@@ -59,6 +59,78 @@ void main() {
       expect(spec.command, endsWith(rt.binaryName));
     });
 
+    group('编译参数带 -B（告诉 gcc 去哪找 as / ld / cc1）', () {
+      // 回归：Windows 上实测到
+      //   gcc.exe: fatal error: cannot execute 'as' CreateProcess: No such file or directory
+      // 报的是**裸名** 'as'，说明 GCC 没在自己所在目录找到它 —— 而 cc1 是找到了的
+      // （否则会先报 cc1）。gcc 找子程序最终要靠 PATH，但应用可能是在用户装编译器
+      // **之前**启动的（比如在向导里点了「一键安装」），进程的 PATH 不会更新。
+      // -B 就是干这个的：显式指定「编译器自己的可执行文件在哪」。
+      List<String> argsFor(String compiler, {required bool onWindows}) =>
+          (runtimeFor(ProgrammingLanguage.c)
+                  as CompiledLanguageRuntime)
+              .compileArgs(
+        workDir: Directory.systemTemp,
+        sourceFile: File('solution.c'),
+        compiler: compiler,
+        onWindows: onWindows,
+      );
+
+      test('Windows：加上 -B，且路径转成正斜杠并保留结尾斜杠', () {
+        final args = argsFor(r'C:\mingw64\bin\gcc.exe', onWindows: true);
+        expect(args, contains('-BC:/mingw64/bin/'),
+            reason: '结尾的反斜杠会转义掉命令行里的引号（经典 Win32 坑），'
+                '必须用正斜杠。实际：$args');
+      });
+
+      test('Windows：用户自定义的安装位置也一样', () {
+        expect(
+          argsFor(
+            r'C:\Users\xiao\AppData\Local\code_workbook\w64devkit\bin\gcc.exe',
+            onWindows: true,
+          ),
+          contains('-BC:/Users/xiao/AppData/Local/code_workbook/w64devkit/bin/'),
+        );
+      });
+
+      test('Windows：裸命令名（交给 PATH 找）时不加 -B', () {
+        // 没有目录信息，加了反而会指向错误的位置
+        for (final bare in ['gcc', 'gcc.exe', 'clang++']) {
+          final args = argsFor(bare, onWindows: true);
+          expect(args.any((a) => a.startsWith('-B')), isFalse,
+              reason: '「$bare」没有目录，不该加 -B。实际：$args');
+        }
+      });
+
+      test('macOS / Linux：**完全不加** -B（这两个平台本来是好的，不该动）', () {
+        // 保持原样还有个额外好处：题库自检（144 道真题真编译）验证的
+        // 就是这两个平台用户实际拿到的行为。
+        for (final compiler in ['/usr/bin/clang', '/opt/homebrew/bin/g++-14', 'gcc']) {
+          final args = argsFor(compiler, onWindows: false);
+          expect(args.any((a) => a.startsWith('-B')), isFalse,
+              reason: '$compiler 在非 Windows 上不该加 -B。实际：$args');
+        }
+      });
+
+      test('本机实际用的编译参数里没有 -B（确认没影响到 macOS）', () {
+        if (Platform.isWindows) return;
+        final rt = runtimeFor(ProgrammingLanguage.c) as CompiledLanguageRuntime;
+        final args = rt.compileSpec(Directory.systemTemp, File('solution.c'))!.args;
+        expect(args.any((a) => a.startsWith('-B')), isFalse, reason: '$args');
+      });
+
+      test('-B 排在源文件之前，且不影响其它参数', () {
+        final args = argsFor(r'C:\mingw64\bin\gcc.exe', onWindows: true);
+        // 源文件用的是 absolute.path，所以按结尾匹配
+        final srcIndex = args.indexWhere((a) => a.endsWith('solution.c'));
+        expect(srcIndex, greaterThan(0), reason: '实际：$args');
+        expect(args.indexOf('-BC:/mingw64/bin/'), lessThan(srcIndex));
+        expect(args, contains('-O0'));
+        expect(args, contains('-lm'));
+        expect(args, contains('-std=c11'));
+      });
+    });
+
     test('找不到编译器时给出可操作的安装指引，而不是空话', () {
       final hint = CRuntime.installHint(ProgrammingLanguage.c);
       expect(hint, isNotEmpty);
@@ -165,6 +237,45 @@ int main() {
           reason: '不该出现临时目录名：$msg');
       // 行号应被翻译
       expect(msg.contains('第 1 行'), isTrue, reason: '应标出行号：$msg');
+    });
+
+    test('编译器找不到 as：必须说清是环境问题，不是代码问题', () async {
+      // 用假编译器复现 Windows 上实测到的报错，不需要真的 MinGW：
+      //   gcc.exe: fatal error: cannot execute 'as' CreateProcess: No such file or directory
+      //
+      // 为什么要专门测：这种失败会被普通的「代码没通过编译」抬头带偏，
+      // 学生于是去改本来没错的代码，而真正该做的事（补装工具链）永远想不到。
+      final dir = await Directory.systemTemp.createTemp('fakecc_');
+      addTearDown(() {
+        try {
+          dir.deleteSync(recursive: true);
+        } catch (_) {}
+      });
+      final fake = File('${dir.path}/fake-gcc.sh');
+      await fake.writeAsString('#!/bin/sh\n'
+          'echo "gcc.exe: fatal error: cannot execute \'as\' CreateProcess: No such file or directory" >&2\n'
+          'echo "compilation terminated." >&2\n'
+          'exit 1\n');
+      await Process.run('chmod', ['+x', fake.path]);
+
+      final result =
+          await JudgeEngine(timeoutMs: 5000, commandOverride: fake.path).judge(
+        cProblem(cases: [TestCase(input: '', output: '')]),
+        'int main(void) { return 0; }',
+      );
+
+      final r = result.caseResults.first;
+      expect(r.status, JudgeStatus.compileError);
+      expect(r.message, contains('这不是你代码的问题'),
+          reason: '环境故障不能被说成学生的代码问题：${r.message}');
+      expect(r.message, contains('as.exe'),
+          reason: '要具体说出缺的是什么：${r.message}');
+      expect(r.message, contains('设置'),
+          reason: '要给可操作的方向（去哪儿看实际路径）：${r.message}');
+      expect(r.message, isNot(contains('代码没通过编译')),
+          reason: '不该用「代码没通过编译」这个抬头：${r.message}');
+      // 原始输出仍要保留，方便排查
+      expect(r.message, contains('cannot execute'), reason: r.message);
     });
 
     test('程序崩溃（段错误）→ 给出 C 特有的排查方向', () async {
