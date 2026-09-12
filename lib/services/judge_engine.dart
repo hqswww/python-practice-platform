@@ -18,6 +18,7 @@ import '../models/problem.dart';
 import 'error_log_service.dart';
 import 'c_runtime.dart';
 import 'language_runtime.dart';
+import 'temp_workspace.dart';
 
 class JudgeEngine {
   /// 判题超时时间（毫秒）
@@ -45,7 +46,9 @@ class JudgeEngine {
       problem.language,
       commandOverride: commandOverride,
     );
-    final tempDir = await Directory.systemTemp.createTemp('judge_');
+    // 用 TempWorkspace 而不是 Directory.systemTemp：Windows 上 %TEMP% 可能
+    // 落在中文用户名下，而 as.exe / ld.exe 不带 UTF-8 清单，见 temp_workspace.dart
+    final tempDir = await TempWorkspace.create('judge_');
     final solutionFile = File('${tempDir.path}/${runtime.sourceFileName}');
     await solutionFile.writeAsString(code);
     // 语言相关的前置准备（Python 要写 sitecustomize 把 input 提示挪到 stderr）
@@ -231,8 +234,8 @@ class JudgeEngine {
       final actualOutput = await stdoutFuture;
       final stderr = await stderrFuture;
 
-      return _evaluate(
-          runtime, testCase, exitCode, actualOutput, stderr, elapsedMs);
+      return _evaluate(runtime, testCase, exitCode, actualOutput, stderr,
+          elapsedMs, solutionFile.parent);
     } on TimeoutException {
       // **必须真的杀掉进程**：只返回超时结果而不杀，学生的 while(1)
       // 会在后台一直跑下去吃满 CPU（提示里写着"已强制终止"，实际并没有）。
@@ -313,6 +316,7 @@ class JudgeEngine {
     String actualOutput,
     String stderr,
     int timeMs,
+    Directory workDir,
   ) {
     final expected = testCase.output;
     final actual = actualOutput;
@@ -327,7 +331,7 @@ class JudgeEngine {
         stderr: stderr.isEmpty ? actualOutput : stderr,
         timeMs: timeMs,
         message: _runtimeErrorMessage(
-            runtime, stderr, actualOutput, exitCode),
+            runtime, stderr, actualOutput, exitCode, workDir),
       );
     }
 
@@ -402,8 +406,12 @@ class JudgeEngine {
     String stderr,
     String output,
     int exitCode,
+    Directory workDir,
   ) {
-    final cleaned = runtime.cleanDiagnostics(stderr, Directory.systemTemp);
+    // ⚠️ 必须传**真实**的工作目录：cleanDiagnostics 靠它把报错里的绝对路径
+    // 换成 `.`。工作目录挪到 ASCII 位置后，这里若还写 Directory.systemTemp，
+    // 替换就匹配不上，学生的报错里会漏出一长串 `C:\ProgramData\...`。
+    final cleaned = runtime.cleanDiagnostics(stderr, workDir);
     return runtime.explainRuntimeError(cleaned, output, exitCode: exitCode) ??
         '程序运行出错：\n\n$cleaned\n$output';
   }

@@ -137,6 +137,58 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 | C / C++ 提示「找不到编译器」 | 跑首次运行向导里的「一键安装」，或 `install_mingw.ps1` |
 | 装完编译器应用还是说找不到 | 点该语言的「重新检测」；仍不行就把 `gcc.exe` 完整路径填进设置页 |
 | 下载安装包被 SmartScreen 拦 | 脚本已 `Unblock-File`；手动下载的话右键属性勾「解除锁定」 |
+| **构建报 `Unable to read file: ...app.dill`** | 路径含非 ASCII 字符（多是中文用户名）→ 见第六节 |
+| **判 C/C++ 报「找不到文件」但代码没问题** | 同一根因，只是发生在编译器而不是 Flutter 里 → 见第六节 |
+
+---
+
+## 六、非 ASCII 路径（中文用户名）
+
+这是个**很容易被误判成「代码有问题」**的坑，单独说清楚。
+
+### 症状
+
+- `flutter build windows` 跑到一半报
+  `error : Unable to read file: ...\.dart_tool\flutter_build\<hash>\app.dill`，外加 MSB8066
+- 或者判题时 C / C++ 报「找不到源文件」，但代码明明是对的
+
+两者**都不是项目代码的问题**，根源都是**路径里有非 ASCII 字符** ——
+最常见的就是用户名是中文：`C:\Users\笑\...`。
+
+### 为什么
+
+| 环节 | 问题 |
+|------|------|
+| Flutter 引擎 | 改用 C++20 后 `std::filesystem::path` 转字符串的编码变了；读 `.dill` 走 C 库 `open()`，它期望 ANSI 编码的路径 → 非 ASCII 路径直接失败。见 flutter/flutter#178896（修复 PR #191360） |
+| MinGW 编译链 | `as.exe` / `ld.exe` **不带 UTF-8 清单**，仍按系统 ANSI 代码页解析路径。实测 w64devkit 2.9.1 的 244 个 exe 里只有 8 个带清单（`gcc.exe`/`g++.exe` 有，`as.exe`/`ld.exe` 没有）。见 niXman/mingw-builds-binaries#61 |
+
+### 已经做了什么
+
+**编译期**（开发机）：
+- `tools/build_windows.ps1` 加了预检，开跑前就查项目路径和 `%TEMP%`，
+  命中直接说明原因和两个办法，不必等几十秒后对着 MSB8066 猜
+
+**运行期**（用户机器 —— 这个更要紧，用户名不受我们控制）：
+- `lib/services/temp_workspace.dart`：Windows 上判题的工作目录**刻意避开用户目录**，
+  优先 `%ProgramData%\code_workbook\tmp`，其次 `%SystemRoot%\Temp\code_workbook`
+- 编译型语言的 `compileSpec` 把 `TMPDIR`/`TMP`/`TEMP` 一起指过去，
+  让 gcc 的中间文件（`.s` / `.o`）也落在 ASCII 路径下 —— **`as`/`ld` 正是最怕
+  非 ASCII 的那一环**
+- 系统临时目录本身就是纯 ASCII 时行为完全不变；Linux / macOS 不做任何改动
+
+> 这条防御**不依赖「某个工具链有没有把清单打全」**，因为整条链根本看不到
+> 非 ASCII 路径。这也是选它、而不是「换个 MinGW 分发版」的原因。
+
+### 开发者侧的两个办法
+
+1. **升级 Flutter** 到已修复的版本（`flutter/flutter#178896` 已标记 fixed）
+2. **把项目和临时目录都挪到纯英文路径**：
+   ```powershell
+   mkdir D:\dev
+   # 把项目复制到 D:\dev\python-practice-platform
+   $env:TEMP='D:\dev\tmp'; $env:TMP='D:\dev\tmp'
+   ```
+   只挪项目可能不够 —— `%TEMP%` 同样在用户目录下，要一起改。
 
 ---
 

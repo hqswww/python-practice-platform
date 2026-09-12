@@ -3,6 +3,7 @@ import 'dart:io';
 import '../models/programming_language.dart';
 import 'c_runtime.dart';
 import 'python_runtime.dart';
+import 'temp_workspace.dart';
 
 /// 一次外部进程调用的完整描述
 class RunSpec {
@@ -167,6 +168,25 @@ builtins.input = _judge_input
     );
   }
 
+  /// 抹掉临时目录的绝对路径。
+  ///
+  /// Python 的 traceback 一定带脚本的完整路径：
+  /// ```
+  /// File "/var/folders/bh/…/T/judge_ErlEDr/solution.py", line 3, in <module>
+  /// ```
+  /// 那串随机目录名对学生毫无意义，还会让提示显得很"系统"、很吓人。
+  /// 编译型语言那边一直在做同样的清洗（见 CompiledLanguageRuntime 的同名方法，
+  /// 还有测试盯着不许漏路径），Python 这边一直漏了。
+  ///
+  /// 清洗后变成 `File "solution.py", line 3, in <module>` —— 学生一眼能对上自己的代码。
+  @override
+  String cleanDiagnostics(String raw, Directory workDir) {
+    var out = raw;
+    out = out.replaceAll('${workDir.path}${Platform.pathSeparator}', '');
+    out = out.replaceAll(workDir.path, '');
+    return out;
+  }
+
   static const List<String> _errorMarkers = [
     'Traceback', 'SyntaxError', 'NameError', 'TypeError', 'ValueError',
     'IndexError', 'KeyError', 'ZeroDivisionError', 'EOFError',
@@ -278,6 +298,10 @@ abstract class CompiledLanguageRuntime extends LanguageRuntime {
           '-O0',
           '-lm',
         ],
+        // 把编译器的临时文件（gcc 的中间 .s、链接前的 .o）也钉在 ASCII 路径下：
+        // as.exe / ld.exe 不带 UTF-8 清单，是整条链里最怕非 ASCII 路径的一环。
+        // 详见 temp_workspace.dart 的开头说明。
+        environment: TempWorkspace.compilerEnv(workDir),
       );
 
   @override

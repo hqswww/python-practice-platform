@@ -79,5 +79,23 @@ void main() {
       final result = await engine.judge(p, codeHalf);
       expect(result.allPassed, isTrue);
     });
+
+    test('运行时错误的提示里不能漏出临时目录路径', () async {
+      // Python 的 traceback 天然带脚本完整路径：
+      //   File "/var/folders/…/T/judge_ErlEDr/solution.py", line 3, in <module>
+      // 那串随机目录名对学生毫无意义，还会让提示显得很"系统"。
+      // 编译型语言早就在清洗这个（且早有测试盯着），Python 一直漏着。
+      final result = await engine.judge(problem, 'a = 1\nb = 0\nprint(a / b)\n');
+      final msg = result.caseResults.first.message;
+
+      expect(msg, contains('除以 0'), reason: '实际：$msg');
+      expect(msg, isNot(contains('judge_')),
+          reason: '不该出现判题临时目录名：$msg');
+      expect(msg.contains('/var/folders') || msg.contains('/tmp'), isFalse,
+          reason: '不该出现临时目录绝对路径：$msg');
+      // 但有用的信息要留着：文件名与学生自己那行代码
+      expect(msg, contains('solution.py'));
+      expect(msg, contains('print(a / b)'));
+    });
   });
 }

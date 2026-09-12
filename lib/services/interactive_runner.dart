@@ -21,6 +21,7 @@ import 'dart:io';
 
 import '../models/programming_language.dart';
 import 'language_runtime.dart';
+import 'temp_workspace.dart';
 
 /// 一次交互运行的生命周期事件
 enum RunnerEventKind {
@@ -113,7 +114,9 @@ class InteractiveRunner {
     }
 
     final runtime = _runtime;
-    final tempDir = await Directory.systemTemp.createTemp('run_interactive_');
+    // 同判题：Windows 上 %TEMP% 可能在中文用户名下，而 as/ld 不带 UTF-8 清单。
+    // 交互运行也会编译（C/C++），所以这里同样要走 ASCII 安全的工作目录。
+    final tempDir = await TempWorkspace.create('run_interactive_');
     _tempDir = tempDir;
     final file = File(
         '${tempDir.path}${Platform.pathSeparator}${runtime.sourceFileName}');

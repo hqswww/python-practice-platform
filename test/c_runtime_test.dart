@@ -222,6 +222,35 @@ int main() {
           reason: '除零不该被指去查指针：${r.message}');
     });
 
+    test('运行时报错里的临时目录路径要被清洗掉', () async {
+      if (!compilerReady) return;
+      // __FILE__ 就是编译器看到的源码路径 —— 用它能**真的**验出
+      // 清洗函数拿到的是不是正确的工作目录。
+      //
+      // 为什么值得专门测：judge_engine 曾经把 Directory.systemTemp（工作目录的
+      // 父目录）传给 cleanDiagnostics，只能剥掉长前缀、留下 judge_xxxx/ 那一段。
+      // 在 macOS 上这两者长得很像，不这么构造就测不出来。
+      const code = r'''
+#include <stdio.h>
+int main(void) {
+    fprintf(stderr, "source: %s\n", __FILE__);
+    return 1;
+}
+''';
+      final result = await engine.judge(
+        cProblem(cases: [TestCase(input: '', output: '')]),
+        code,
+      );
+
+      final msg = result.caseResults.first.message;
+      expect(msg, contains('source:'), reason: '实际：$msg');
+      expect(msg, contains('solution.c'), reason: '文件名该留着：$msg');
+      expect(msg, isNot(contains('judge_')),
+          reason: '不该出现判题临时目录名：$msg');
+      expect(msg.contains('/var/folders') || msg.contains('/tmp'), isFalse,
+          reason: '不该出现临时目录绝对路径：$msg');
+    });
+
     test('用了 math.h 也能链接（-lm 生效）', () async {
       if (!compilerReady) return;
       const code = r'''
