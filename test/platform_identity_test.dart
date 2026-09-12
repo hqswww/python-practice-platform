@@ -157,4 +157,40 @@ void main() {
           reason: '构建期跑一次解释器就会把 .pyc 打进包并封存');
     });
   });
+
+  group('Shell 脚本', () {
+    final scripts = (Directory('tools')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.sh'))
+            .map((f) => f.path)
+            .toList()
+          ..sort());
+
+    test('能找到脚本（防止路径写错导致下面几条空跑）', () {
+      expect(scripts.length, greaterThanOrEqualTo(5), reason: '实际：$scripts');
+    });
+
+    test('都能被 bash 解析 —— 语法错误不该等到运行时才发现', () {
+      for (final s in scripts) {
+        final r = Process.runSync('bash', ['-n', s]);
+        expect(r.exitCode, 0, reason: '$s 有语法错误：\n${r.stderr}');
+      }
+    });
+
+    test('都带「用真正的 bash 重跑自己」的守卫', () {
+      // 用户实际踩过：`sh tools/build_macos.sh` 报
+      // 「syntax error near unexpected token `<'」，位置在第 284 行的进程替换。
+      // bash 是**边解析边执行**的，所以前几步会正常跑完、错误在中途突然冒出来，
+      // 看起来像「跑到一半随机坏掉」。守卫本身是 POSIX 语法、能被 sh 执行，
+      // 于是它能在解析器走到那些 bash 专有构造之前把自己换成 bash。
+      for (final s in scripts) {
+        expect(File(s).readAsStringSync(), contains('CODE_WORKBOOK_BASH'),
+            reason: '$s 缺少 bash 重跑守卫。\n'
+                '· macOS 的 /bin/sh 是 bash 的 POSIX 模式 → 进程替换直接语法报错\n'
+                '· Linux 的 /bin/sh 往往是 dash → `[[ ]]` 会变成 command not found\n'
+                '（不能用 BASH_VERSION 判断：sh 本身就是 bash 时它照样有值）');
+      }
+    });
+  });
 }
