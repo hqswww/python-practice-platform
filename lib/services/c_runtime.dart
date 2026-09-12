@@ -56,17 +56,25 @@ class CRuntime {
           : ['/usr/bin/gcc', '/usr/bin/cc', '/usr/local/bin/gcc'];
     }
     if (Platform.isWindows) {
-      return cpp
-          ? [
-              r'C:\mingw64\bin\g++.exe',
-              r'C:\msys64\mingw64\bin\g++.exe',
-              r'C:\Program Files\mingw-w64\mingw64\bin\g++.exe',
-            ]
+      // 前两条是「一键安装」（tools/install_mingw.ps1）装出来的位置 —— 必须列在
+      // 这里：脚本虽然把 bin 写进了用户 PATH，但**已经跑着的应用进程读不到**新
+      // PATH（Windows 只对新开的进程生效）。少了这两条，用户点完「一键安装」、
+      // 回到应用仍然是「未找到编译器」，会以为装失败了。
+      // 后两条对应脚本里「包里直接是 bin/」与「多了层 w64devkit/」两种解压结果。
+      final localAppData = Platform.environment['LOCALAPPDATA'] ?? '';
+      final installed = localAppData.isEmpty
+          ? <String>[]
           : [
-              r'C:\mingw64\bin\gcc.exe',
-              r'C:\msys64\mingw64\bin\gcc.exe',
-              r'C:\Program Files\mingw-w64\mingw64\bin\gcc.exe',
+              '$localAppData\\code_workbook\\w64devkit\\bin',
+              '$localAppData\\code_workbook\\w64devkit\\w64devkit\\bin',
             ];
+      final exe = cpp ? 'g++.exe' : 'gcc.exe';
+      return [
+        for (final dir in installed) '$dir\\$exe',
+        'C:\\mingw64\\bin\\$exe',
+        'C:\\msys64\\mingw64\\bin\\$exe',
+        'C:\\Program Files\\mingw-w64\\mingw64\\bin\\$exe',
+      ];
     }
     return const [];
   }

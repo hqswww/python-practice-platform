@@ -14,8 +14,11 @@ import '../services/language_service.dart';
 import '../services/language_runtime.dart';
 import 'achievements_page.dart';
 import 'log_center_page.dart';
+import 'setup_wizard_page.dart';
+import 'widgets/accent_color_picker.dart';
 import 'widgets/language_switcher.dart';
 import 'widgets/responsive.dart';
+import 'widgets/runtime_status_row.dart';
 
 /// 设置分类：宽屏时作为左栏条目，窄屏时作为「点进去看详情」的入口
 class _CategoryMeta {
@@ -376,7 +379,7 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.color_lens_outlined,
             color: settings.accentColor,
             title: '主题强调色',
-            child: _accentColorPicker(context),
+            child: const AccentColorPicker(),
           ),
         ];
 
@@ -700,52 +703,33 @@ class _SettingsPageState extends State<SettingsPage> {
 
       // ---------------------------------------------------------- 关于
       case 'about':
-        return [_buildAbout(context)];
+        return [
+          // 放在「关于」里而不是另开一栏：它属于「应用本身的说明」这一类，
+          // 而且向导应当可重复进入，不能被「已完成」标记挡在外面。
+          _settingsCard(
+            index: 14,
+            icon: Icons.assistant_navigation,
+            color: Colors.indigo,
+            title: '重新运行设置向导',
+            subtitle: '再走一遍运行环境检查与初始设置',
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (routeContext) => SetupWizardPage(
+                    onFinished: () => Navigator.of(routeContext).pop(),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildAbout(context),
+        ];
 
       default:
         return const [];
     }
-  }
-
-  /// 主题强调色选择器（色板圆点，点选即切）
-  Widget _accentColorPicker(BuildContext context) {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 8,
-      children: [
-        for (final opt in kAccentColors)
-          InkWell(
-            key: ValueKey('accent_${opt.id}'),
-            onTap: () => settings.setAccent(opt.id),
-            borderRadius: BorderRadius.circular(24),
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: opt.color,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: settings.accentId == opt.id
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Colors.transparent,
-                  width: 2.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: opt.color.withValues(alpha: 0.4),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: settings.accentId == opt.id
-                  ? const Icon(Icons.check,
-                      color: Colors.white, size: 16)
-                  : null,
-            ),
-          ),
-      ],
-    );
   }
 
   /// 带悬浮/点击动画的设置卡片
@@ -855,7 +839,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 },
               ),
               const SizedBox(height: 8),
-              _runtimeStatusRow(lang),
+              RuntimeStatusRow(language: lang, status: _runtimeStatus[lang]),
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
@@ -871,53 +855,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// 运行时自检结果那一行。
-  ///
-  /// 为什么值得放在这儿：环境缺件的失败发生在**判题时**，而那时学生已经写完
-  /// 代码了 —— 明明代码是对的，却弹一句「运行环境有问题」，最打击人。
-  /// 把「有没有编译器/解释器」提前摆在这一页，缺什么就直说缺什么、怎么补。
-  /// （Windows 没装 MinGW、Linux 没装 build-essential 都会走到这里。）
-  Widget _runtimeStatusRow(ProgrammingLanguage lang) {
-    final st = _runtimeStatus[lang];
-    if (st == null) return const SizedBox.shrink();
-
-    final ok = st.available;
-    final color = ok ? Colors.green : Colors.orange;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(ok ? Icons.check_circle_outline : Icons.error_outline,
-                  size: 16, color: color),
-              const SizedBox(width: 6),
-              Text(
-                ok ? '已就绪' : '未找到${lang.compiled ? '编译器' : '解释器'}',
-                style: TextStyle(
-                    color: color, fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          // 不可用时给出的是「怎么补」，可用时给出的是「实际用的是哪一个」——
-          // 装了多个版本时（系统 python3 vs Homebrew python3）这句很关键。
-          SelectableText(
-            ok ? '实际使用：${st.resolved}' : (st.hint ?? ''),
-            style: TextStyle(
-                fontSize: 12, height: 1.5, color: Colors.grey[800]),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// 难度分布详情（真实数据）
   Widget _buildDifficultyBreakdown(Map<Difficulty, (int, int)> diff) {

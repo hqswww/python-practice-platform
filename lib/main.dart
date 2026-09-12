@@ -6,6 +6,7 @@ import 'data/problem_repository.dart';
 import 'models/problem_category.dart';
 import 'pages/learn_page.dart';
 import 'pages/practice_page.dart';
+import 'pages/setup_wizard_page.dart';
 import 'pages/test_page.dart';
 import 'pages/settings_page.dart';
 import 'services/error_log_service.dart';
@@ -50,7 +51,14 @@ class PythonPracticeApp extends StatelessWidget {
           theme: _buildTheme(Brightness.light),
           darkTheme: _buildTheme(Brightness.dark),
           themeMode: settings.themeMode, // 主题模式可切换
-          home: const HomePage(),
+          // 首次运行先走向导：这台机器上有没有编译器/解释器，直接决定学生能不能
+          // 做题，值得在第一次打开时说清楚。
+          //
+          // 不需要在这里 setState 切换 —— 向导完成时会 settings.setSetupWizardDone(true)，
+          // 而外面这层 ListenableBuilder 监听的就是 settings，自然重建到这里。
+          home: shouldShowSetupWizard()
+              ? SetupWizardPage(onFinished: () {})
+              : const HomePage(),
         );
       },
     );

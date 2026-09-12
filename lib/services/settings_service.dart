@@ -38,6 +38,13 @@ class SettingsService extends ChangeNotifier {
   static const String _accentKey = 'settings_accent_id';
   static const String _fontSizeKey = 'settings_editor_font_size';
   static const String _indentWidthKey = 'settings_editor_indent_width';
+
+  /// 首次运行向导是否已完成。
+  ///
+  /// 用「已完成」而不是「未完成」做键：键不存在时默认 false（= 该显示向导），
+  /// 这样老用户升级上来也会看到一次向导 —— 他们那台机器上编译器可能确实没配好，
+  /// 顺带补上是有价值的。
+  static const String _setupDoneKey = 'settings_setup_wizard_done';
   /// 旧版单一「Python 解释器路径」的键。保留只为迁移到按语言存储。
   static const String _legacyPythonPathKey = 'settings_python_path';
 
@@ -66,6 +73,9 @@ class SettingsService extends ChangeNotifier {
   // 编辑器外观：字体大小（12–22）与缩进宽度（空格数），默认 14 / 4
   int _editorFontSize = 14;
   int _editorIndentWidth = 4;
+
+  /// 首次运行向导是否已完成（false = 启动时进向导）
+  bool _setupWizardDone = false;
   // 各语言自定义运行时路径（解释器 / 编译器），空 = 自动解析。
   // 按语言分开存：将来 C 要填的是 clang/gcc 路径，和 Python 的解释器不是一回事。
   final Map<ProgrammingLanguage, String> _runtimePaths = {};
@@ -81,6 +91,9 @@ class SettingsService extends ChangeNotifier {
 
   /// 编辑缩进宽度（空格数），默认 4
   int get editorIndentWidth => _editorIndentWidth;
+
+  /// 首次运行向导是否已完成
+  bool get setupWizardDone => _setupWizardDone;
 
   /// 某语言的自定义运行时路径（解释器 / 编译器）；空字符串表示自动解析
   String runtimePath(ProgrammingLanguage language) =>
@@ -120,6 +133,7 @@ class SettingsService extends ChangeNotifier {
     _accentId = _prefs!.getString(_accentKey) ?? 'green';
     _editorFontSize = _prefs!.getInt(_fontSizeKey) ?? 14;
     _editorIndentWidth = _prefs!.getInt(_indentWidthKey) ?? 4;
+    _setupWizardDone = _prefs!.getBool(_setupDoneKey) ?? false;
     for (final lang in ProgrammingLanguage.values) {
       _runtimePaths[lang] =
           _prefs!.getString('$_runtimePathPrefix${lang.id}') ?? '';
@@ -175,6 +189,14 @@ class SettingsService extends ChangeNotifier {
     _editorIndentWidth = width;
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setInt(_indentWidthKey, width);
+    notifyListeners();
+  }
+
+  /// 标记首次运行向导已完成（或重新打开：传 false）
+  Future<void> setSetupWizardDone(bool done) async {
+    _setupWizardDone = done;
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setBool(_setupDoneKey, done);
     notifyListeners();
   }
 
