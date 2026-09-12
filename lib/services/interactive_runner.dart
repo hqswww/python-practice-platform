@@ -86,9 +86,20 @@ class InteractiveRunner {
     return [trim(command), ...args.map(trim)].join(' ');
   }
 
+  /// 一次运行结束后的收尾（清掉临时目录、停止发事件）。
+  ///
+  /// ⚠️ **绝不能在这里关掉事件流** `_events`。
+  ///
+  /// 终端面板只在 initState 里订阅一次 `events`。这里一关，界面那个订阅就永久
+  /// 结束了；下一次 start() 会因为「旧 controller 已关闭」而**新建一个**，
+  /// 可界面还订阅着旧的那个 —— 于是第二次运行：`_running` 被设成 true
+  /// （面板自己设的，所以界面显示「运行中」），但程序输出和 exit 事件
+  /// **全都到不了**，看起来就是「点了没反应」。
+  ///
+  /// 这正是用户报的「交互终端只能跑一次，三门语言、两个平台都一样」。
+  /// 事件流的生命周期应该和 runner 一致，只在 [dispose] 里关。
   void _finish(Directory tempDir) {
-    _ioClosed = true;
-    _events?.close();
+    _ioClosed = true; // 本次运行不再发事件，挡掉迟到的回调
     try {
       tempDir.delete(recursive: true);
     } catch (_) {}

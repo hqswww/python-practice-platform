@@ -90,6 +90,76 @@ sys.stderr.write("boom\\n")
     expect(runner.isRunning, false);
   });
 
+  /// 轮询等待条件成立（跑的是真实进程，时间不好精确断言）
+  Future<void> waitUntil(bool Function() cond,
+      {Duration timeout = const Duration(seconds: 15)}) async {
+    final end = DateTime.now().add(timeout);
+    while (!cond()) {
+      if (DateTime.now().isAfter(end)) throw StateError('等待超时');
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+  }
+
+  test('回归：连续运行两次，第二次的事件也必须收得到', () async {
+    // 用户报告：交互终端只能跑一次，之后再点「运行」或「停止再运行」都没反应 ——
+    // 界面会从「空闲」变成「运行中」，但实际什么都没发生。三门语言、两个平台都这样。
+    //
+    // 根因：runner 每次运行结束都**关掉事件流**，而终端面板只在 initState 里
+    // 订阅一次。第二次 start() 会新建一个 controller，界面却还订阅着旧的那个
+    // （已关闭的）—— 于是 _running 被设成 true、事件却永远到不了。
+    //
+    // 这个测试刻意只用**一次订阅**，模拟界面的真实行为。
+    final runner = InteractiveRunner();
+    final outputs = <String>[];
+    final exitCodes = <int>[];
+    final sub = runner.events.listen((e) {
+      if (e.kind == RunnerEventKind.output) outputs.add(e.text);
+      if (e.kind == RunnerEventKind.error) outputs.add('[stderr]${e.text}');
+      if (e.kind == RunnerEventKind.exit) exitCodes.add(e.exitCode ?? -1);
+    });
+
+    expect(await runner.start("print('first')"), isTrue);
+    await waitUntil(() => exitCodes.isNotEmpty);
+
+    expect(await runner.start("print('second')"), isTrue);
+    await waitUntil(() => exitCodes.length >= 2);
+
+    final all = outputs.join();
+    expect(all, contains('first'), reason: '第一次的输出：$all');
+    expect(all, contains('second'),
+        reason: '第二次运行的输出没收到 —— 事件流在第一次结束时被关掉了。'
+            '实际收到：$all');
+    expect(exitCodes.length, 2, reason: '两次运行都该有 exit 事件');
+
+    await sub.cancel();
+    runner.dispose();
+  });
+
+  test('回归：编译型语言连跑三次也稳定', () async {
+    if (!cReady) return;
+    const code = r'''
+#include <stdio.h>
+int main(void) { printf("hi\n"); return 0; }
+''';
+    final runner = InteractiveRunner(language: ProgrammingLanguage.c);
+    final outputs = <String>[];
+    var exits = 0;
+    final sub = runner.events.listen((e) {
+      if (e.kind == RunnerEventKind.output) outputs.add(e.text);
+      if (e.kind == RunnerEventKind.exit) exits++;
+    });
+
+    for (var i = 1; i <= 3; i++) {
+      expect(await runner.start(code), isTrue, reason: '第 $i 次应能启动');
+      await waitUntil(() => exits >= i, timeout: const Duration(seconds: 40));
+    }
+    expect(outputs.join().split('hi').length - 1, 3,
+        reason: '三次运行都该有输出。实际：${outputs.join()}');
+
+    await sub.cancel();
+    runner.dispose();
+  });
+
   // ============================================================
   // 语言维度必须一路贯到这一层
   //
