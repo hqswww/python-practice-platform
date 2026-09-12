@@ -70,15 +70,11 @@ class _EditorPageState extends State<EditorPage> {
     super.dispose();
   }
 
-  String _templateFor(Problem p) {
-    // 有样例输入时给一个 input() 模板，否则空模板
-    if (p.sampleInput.isNotEmpty) {
-      return '# 在此编写你的代码\n'
-          'data = input().split()\n'
-          '# 根据题目提示处理 data，然后 print 输出结果\n';
-    }
-    return '# 在此编写你的代码\n';
-  }
+  /// 起步代码按**题目所属语言**给（定义在 ProgrammingLanguage 上）。
+  /// 这里曾经写死了 Python 模板，C/C++ 题目也会被塞进 `#` 注释。
+  String _templateFor(Problem p) => p.language.starterCode(
+        hasSampleInput: p.sampleInput.isNotEmpty,
+      );
 
   Future<void> _runJudge() async {
     setState(() {
@@ -352,6 +348,8 @@ class _EditorPageState extends State<EditorPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
             child: InteractiveTerminal(
+              // 必须把语言带上：曾经没有这个参数，C/C++ 题目上起的是 Python
+              language: widget.problem.language,
               getCode: () => _codeController.text,
               sampleInput: widget.problem.sampleInput,
               isJudging: _isJudging,

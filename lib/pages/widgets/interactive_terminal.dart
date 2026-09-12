@@ -2,16 +2,25 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../models/programming_language.dart';
 import '../../services/interactive_runner.dart';
 
-/// 交互式终端面板 —— 模拟真实 Python REPL：
-/// - 程序输出实时滚入黑底终端
-/// - 用户敲一行回车喂给程序（input()）并回显（像真终端）
-/// - 底部一排操作按钮：开始运行 / 自动喂样例 / 提交判题 / 停止
+/// 交互式运行面板。
+///
+/// - 解释型语言（Python）：等价于一个常驻 REPL 进程
+/// - 编译型语言（C / C++）：**先编译再运行产物**，编译报错直接显示在终端里
+///
+/// 无论哪种，程序读到输入停下时用户都能在这儿敲一行回车喂进去 ——
+/// 这是让学生看懂「多个 input / scanf 到底各读走了哪一行」的关键。
 ///
 /// [onJudge] 用户点"提交判题"回调（由外层跑完整判题）
 class InteractiveTerminal extends StatefulWidget {
-  final String? pythonCommand;
+  /// 本面板要跑哪门语言。**必须传对** —— 曾经这里没有这个参数，
+  /// 于是 C / C++ 题目上起的是 Python 解释器。
+  final ProgrammingLanguage language;
+
+  /// 覆盖解释器 / 编译器路径（测试或设置页自定义）
+  final String? commandOverride;
 
   /// 取当前编辑器代码（判题/运行用）
   final String Function() getCode;
@@ -27,7 +36,8 @@ class InteractiveTerminal extends StatefulWidget {
 
   const InteractiveTerminal({
     super.key,
-    this.pythonCommand,
+    required this.language,
+    this.commandOverride,
     required this.getCode,
     required this.sampleInput,
     required this.onJudge,
@@ -39,7 +49,10 @@ class InteractiveTerminal extends StatefulWidget {
 }
 
 class _InteractiveTerminalState extends State<InteractiveTerminal> {
-  final InteractiveRunner _runner = InteractiveRunner();
+  late final InteractiveRunner _runner = InteractiveRunner(
+    language: widget.language,
+    commandOverride: widget.commandOverride,
+  );
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scroll = ScrollController();
 
@@ -53,8 +66,12 @@ class _InteractiveTerminalState extends State<InteractiveTerminal> {
   @override
   void initState() {
     super.initState();
-    _append(_TermLine.hint(
-        '>> 按「开始运行」启动 Python；程序跑到 input() 时在此输入并按回车。'));
+    final lang = widget.language;
+    _append(_TermLine.hint(lang.compiled
+        ? '>> 按「开始运行」先编译再执行 ${lang.displayName} 程序；'
+            '程序读到输入时在此敲一行回车喂给它。\n'
+        : '>> 按「开始运行」启动 ${lang.displayName}；'
+            '程序跑到 input() 时在此输入并按回车。\n'));
     _sub = _runner.events.listen(_onEvent);
   }
 
@@ -87,6 +104,10 @@ class _InteractiveTerminalState extends State<InteractiveTerminal> {
                 ? '\n[进程已正常结束，退出码 0]'
                 : '\n[进程已结束，退出码 ${e.exitCode}]'));
         break;
+      case RunnerEventKind.hint:
+        // 命令行回显、「正在编译」、「编译失败」这类面板自己产生的话
+        _append(_TermLine.hint(e.text));
+        break;
     }
   }
 
@@ -116,12 +137,15 @@ class _InteractiveTerminalState extends State<InteractiveTerminal> {
       _running = true;
       _ended = false;
     });
-    _append(_TermLine.hint('\$ ${widget.pythonCommand ?? 'python3'} runner.py\n'));
+    // 注意：命令行回显不在这里做 —— 编不编译、跑的是哪个产物，只有
+    // InteractiveRunner 知道，由它通过 hint 事件推回来（曾经这里硬编码
+    // 「$ python3 runner.py」，在任何语言下都显示那一行）。
     try {
-      await _runner.start(code);
+      final started = await _runner.start(code);
+      if (!started && mounted) setState(() => _running = false);
     } catch (e) {
       _append(_TermLine.error('启动失败: $e'));
-      setState(() => _running = false);
+      if (mounted) setState(() => _running = false);
     }
   }
 

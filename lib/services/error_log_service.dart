@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../models/programming_language.dart';
+import 'c_runtime.dart';
 import 'python_runtime.dart';
 
 /// 全局错误/日志收集服务单例
@@ -283,35 +285,45 @@ class ErrorLogService {
     }());
   }
 
-  /// 生成平台/环境描述（Windows / macOS 版本、解析到的 Python、Dart 版本）
+  /// 生成平台/环境描述（Windows / macOS 版本、三门语言各自解析到的运行时、Dart 版本）
   ///
-  /// 带上实际解析出的 Python 解释器：判题失败最常见的原因就是
-  /// 「解释器找不到 / 指错」，有这一行日志能省掉一轮来回排查。
+  /// 带上实际解析出的解释器/编译器：判题失败最常见的原因就是
+  /// 「运行时装了但找不到 / 指错」，有这一行日志能省掉一轮来回排查。
+  ///
+  /// 原来这里只报 Python —— 于是学生遇到「找不到 C 编译器」时，
+  /// 日志里恰恰没有最需要的那条信息。
   String _platformInfo() {
     if (kIsWeb) return 'web';
     try {
-      final python = _resolvedPythonForLog();
+      final runtimes = _resolvedRuntimesForLog();
       if (Platform.isWindows) {
         return 'Windows (${Platform.operatingSystemVersion}) / '
-            'Dart ${Platform.version}$python';
+            'Dart ${Platform.version}$runtimes';
       }
       if (Platform.isMacOS) {
         return 'macOS (${Platform.operatingSystemVersion}) / '
-            'Dart ${Platform.version}$python';
+            'Dart ${Platform.version}$runtimes';
       }
-      return '${Platform.operatingSystem} / Dart ${Platform.version}$python';
+      return '${Platform.operatingSystem} / Dart ${Platform.version}$runtimes';
     } catch (_) {
       return 'unknown';
     }
   }
 
-  /// 解析出的 Python 解释器，拼成日志片段；解析失败时静默省略
-  String _resolvedPythonForLog() {
-    try {
-      return ' / Python ${PythonRuntime.resolvePythonCommand()}';
-    } catch (_) {
-      return '';
+  /// 各语言解析到的运行时，拼成日志片段；解析失败的语言静默略过
+  ///
+  /// 逐个 try：某一门语言解析抛异常不该让整行环境信息都没了。
+  String _resolvedRuntimesForLog() {
+    final buf = StringBuffer();
+    for (final lang in ProgrammingLanguage.values) {
+      final path = lang.compiled
+          ? CRuntime.resolveCompiler(lang)
+          : PythonRuntime.resolvePythonCommand();
+      if (path.trim().isEmpty) continue;
+      final label = lang.compiled ? '${lang.displayName} 编译器' : 'Python 解释器';
+      buf.write(' / $label: $path');
     }
+    return buf.toString();
   }
 
   /// 日志目录绝对路径（崩溃排查用）

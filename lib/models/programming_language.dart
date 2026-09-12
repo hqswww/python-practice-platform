@@ -52,6 +52,46 @@ enum ProgrammingLanguage {
   /// - 编译型（C/C++）：没有 REPL，面板是「编译一次跑一次」，叫「编译运行」
   String get runPanelTitle => compiled ? '编译运行' : '交互终端';
 
+  /// 编辑器里预填的起步代码（学生可以直接改）。
+  ///
+  /// 和 [runPanelTitle] 同一个理由放在语言定义里：它是「只有这门语言才知道」
+  /// 的东西，散到页面里去判断必然会漏。
+  ///
+  /// ⚠️ 这个模板原先被写死在编辑页里、且只有 Python 一版 ——
+  /// 于是打开 C / C++ 题目，代码框里也是 `# 在此编写你的代码` 和
+  /// `data = input().split()`，**连注释符号都是错的**（C 用 `//`）。
+  ///
+  /// [hasSampleInput]：有样例输入时多给两行读取输入的示范。
+  /// 只有 Python 用得上 —— C 的 `scanf` 格式完全取决于题目要求，
+  /// 硬塞一个示范反而是误导（学生照着改反而错）。
+  String starterCode({bool hasSampleInput = false}) {
+    switch (this) {
+      case ProgrammingLanguage.python:
+        return hasSampleInput
+            ? '# 在此编写你的代码\n'
+                'data = input().split()\n'
+                '# 根据题目提示处理 data，然后 print 输出结果\n'
+            : '# 在此编写你的代码\n';
+      case ProgrammingLanguage.c:
+        return '#include <stdio.h>\n'
+            '\n'
+            'int main(void) {\n'
+            '    // 在此编写你的代码\n'
+            '\n'
+            '    return 0;\n'
+            '}\n';
+      case ProgrammingLanguage.cpp:
+        return '#include <iostream>\n'
+            'using namespace std;\n'
+            '\n'
+            'int main() {\n'
+            '    // 在此编写你的代码\n'
+            '\n'
+            '    return 0;\n'
+            '}\n';
+    }
+  }
+
   const ProgrammingLanguage({
     required this.id,
     required this.displayName,

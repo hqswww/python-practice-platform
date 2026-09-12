@@ -421,6 +421,7 @@ class _WrongQuestionViewState extends State<_WrongQuestionView> {
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: InteractiveTerminal(
+                language: widget.problem.language,
                 getCode: () => _controller.text,
                 sampleInput: widget.problem.sampleInput,
                 isJudging: _judging,

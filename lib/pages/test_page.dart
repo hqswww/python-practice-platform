@@ -1318,6 +1318,7 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: InteractiveTerminal(
+                      language: widget.problem.language,
                       getCode: () => _controller.text,
                       sampleInput: widget.problem.sampleInput,
                       isJudging: _judging,

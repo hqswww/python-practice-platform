@@ -62,6 +62,69 @@ void main() {
       expect(ProgrammingLanguage.c.fileExtension, 'c');
       expect(ProgrammingLanguage.cpp.fileExtension, 'cpp');
     });
+
+    test('运行面板标题：编译型叫「编译运行」，解释型叫「交互终端」', () {
+      expect(ProgrammingLanguage.python.runPanelTitle, '交互终端');
+      expect(ProgrammingLanguage.c.runPanelTitle, '编译运行');
+      expect(ProgrammingLanguage.cpp.runPanelTitle, '编译运行');
+    });
+
+    group('起步代码（编辑器预填的模板）', () {
+      // 回归：这个模板原先写死在编辑页里、且只有 Python 一版 ——
+      // 打开 C / C++ 题目，代码框里也是 `# 在此编写你的代码` 和
+      // `data = input().split()`，连注释符号都是错的。
+      test('C / C++ 里不能出现任何 Python 的东西', () {
+        for (final lang in [ProgrammingLanguage.c, ProgrammingLanguage.cpp]) {
+          final code = lang.starterCode(hasSampleInput: true);
+          expect(code, isNot(contains('input()')),
+              reason: '${lang.displayName} 的模板里出现了 Python 的 input()');
+          expect(code, isNot(contains('.split()')),
+              reason: '${lang.displayName} 的模板里出现了 Python 的 .split()');
+
+          // C/C++ 里 `#` 只能是预处理指令 —— 用 `#` 写注释是 Python 的习惯
+          for (final line in code.split('\n')) {
+            final t = line.trimLeft();
+            if (t.startsWith('#')) {
+              expect(t, startsWith('#include'),
+                  reason: '${lang.displayName} 的模板里出现了非预处理指令的 # 行：'
+                      '「$line」（C/C++ 的注释是 //）');
+            }
+          }
+        }
+      });
+
+      test('各语言用自己的语法', () {
+        expect(ProgrammingLanguage.python.starterCode(),
+            contains('# 在此编写你的代码'));
+        expect(ProgrammingLanguage.c.starterCode(),
+            contains('#include <stdio.h>'));
+        expect(ProgrammingLanguage.c.starterCode(),
+            contains('// 在此编写你的代码'));
+        expect(ProgrammingLanguage.c.starterCode(), contains('int main(void)'));
+        expect(ProgrammingLanguage.cpp.starterCode(),
+            contains('#include <iostream>'));
+        expect(ProgrammingLanguage.cpp.starterCode(),
+            contains('// 在此编写你的代码'));
+        expect(ProgrammingLanguage.cpp.starterCode(), contains('int main()'));
+      });
+
+      test('每种语言都有非空的起步代码（加新语言时不会漏）', () {
+        for (final lang in ProgrammingLanguage.values) {
+          expect(lang.starterCode().trim(), isNotEmpty,
+              reason: '${lang.displayName} 缺起步模板');
+        }
+      });
+
+      test('有样例输入时：Python 给读取示范，C 不给（scanf 格式取决于题目）', () {
+        expect(ProgrammingLanguage.python.starterCode(hasSampleInput: true),
+            contains('input()'));
+        // 硬塞一个 scanf 示范反而是误导，学生照抄就错了
+        expect(ProgrammingLanguage.c.starterCode(hasSampleInput: true),
+            ProgrammingLanguage.c.starterCode());
+        expect(ProgrammingLanguage.cpp.starterCode(hasSampleInput: true),
+            ProgrammingLanguage.cpp.starterCode());
+      });
+    });
   });
 
   group('Problem.progressKey', () {
