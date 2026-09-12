@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/judge_result.dart';
-
+import 'rich_message_text.dart';
 
 /// 判题结果面板
 ///
@@ -261,7 +261,10 @@ class JudgeResultPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Text(message, style: const TextStyle(fontSize: 13, height: 1.5)),
+      // 用 RichMessageText 而不是 Text：提示里写着 **加粗** 和 `代码`，
+      // 普通 Text 会把星号和反引号原样显示出来，看着像 bug。
+      child: RichMessageText(message,
+          style: const TextStyle(fontSize: 13, height: 1.5)),
     );
   }
 

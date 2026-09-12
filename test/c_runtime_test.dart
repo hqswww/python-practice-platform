@@ -525,6 +525,37 @@ int main() {
           reason: '编译都没过，没有输出可比');
       expect(find.text('期望输出'), findsNothing);
     });
+
+    testWidgets('提示里的 **加粗** 和 `代码` 会被渲染掉，不会原样显示标记', (tester) async {
+      // 这些标记一直写在提示文案里，而面板原先用普通 Text，
+      // 学生看到的是字面的星号和反引号 —— 既像 bug，也把重点冲淡了。
+      final result = JudgeResult(
+        problem: cProblem(cases: const []),
+        hasError: false,
+        caseResults: [
+          TestCaseResult(
+            testCase: TestCase(input: '', output: ''),
+            status: JudgeStatus.wrongAnswer,
+            actualOutput: 'x',
+            stderr: '',
+            timeMs: 1,
+            message: '✅ 内容是对的！只是**格式不对**——看 `as.exe`',
+          ),
+        ],
+      );
+      await pumpPanel(tester, result);
+
+      // Text.rich 的内容用 toPlainText() 取；Text.data 则直接取
+      final all = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.textSpan?.toPlainText() ?? t.data ?? '')
+          .join('\n');
+
+      expect(all, contains('格式不对'), reason: '内容不该丢：$all');
+      expect(all, contains('as.exe'), reason: '内容不该丢：$all');
+      expect(all, isNot(contains('**')), reason: 'markdown 标记漏到界面上了：$all');
+      expect(all, isNot(contains('`')), reason: '反引号漏到界面上了：$all');
+    });
   });
 
 

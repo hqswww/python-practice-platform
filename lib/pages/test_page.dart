@@ -11,6 +11,7 @@ import '../services/judge_engine.dart';
 import '../services/progress_service.dart';
 import '../services/settings_service.dart';
 import 'test_history_page.dart';
+import 'widgets/rich_message_text.dart';
 import 'widgets/interactive_terminal.dart';
 import 'widgets/python_code_field.dart';
 import 'widgets/responsive.dart';
@@ -1304,7 +1305,9 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: Text(
+                                // 判题反馈里带 **加粗** / `代码` 标记，
+                                // 普通 Text 会把标记符号原样显示出来
+                                child: RichMessageText(
                                   _lastFeedback!,
                                   style: const TextStyle(fontSize: 14),
                                 ),
