@@ -115,6 +115,20 @@ class CRuntime {
   static String extensionFor(ProgrammingLanguage language) =>
       _extensions[language] ?? 'c';
 
+  /// 编译产物的文件名。
+  ///
+  /// **Windows 上必须带 `.exe`**：MinGW 的 gcc 收到 `-o solution` 时会把输出补成
+  /// `solution.exe`，而判题是拿这个名字去**执行**的。
+  ///
+  /// 不写扩展名其实也「能跑」—— CreateProcess 对不含扩展名的路径会自动补
+  /// `.exe`（微软文档原话：If the file name does not contain an extension,
+  /// .exe is appended）。但那是撞上了规则而不是设计，路径里带空格或引号时
+  /// 未必还成立。显式写出来最稳；而且这时 gcc 看到已有 `.exe` 也不会再加一次。
+  ///
+  /// [onWindows] 只为测试能覆盖两个分支而存在（本机跑不到 Windows 那条）。
+  static String binaryName({bool? onWindows}) =>
+      (onWindows ?? Platform.isWindows) ? 'solution.exe' : 'solution';
+
   /// 某个「编译器命令」当前能不能用。
   ///
   /// 传进来的可能是绝对路径（设置页填的、兜底候选）也可能是裸命令名

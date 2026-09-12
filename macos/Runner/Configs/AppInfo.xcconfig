@@ -11,4 +11,5 @@ PRODUCT_NAME = code_workbook
 PRODUCT_BUNDLE_IDENTIFIER = com.sakiri.python-practice
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+// （原来这里是 Flutter 模板的 com.example，会原样出现在「关于」对话框里）
+PRODUCT_COPYRIGHT = Copyright © 2026 编程练习册. All rights reserved.

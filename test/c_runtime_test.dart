@@ -44,6 +44,21 @@ void main() {
       expect(CRuntime.extensionFor(ProgrammingLanguage.cpp), 'cpp');
     });
 
+    test('编译产物名：Windows 必须带 .exe，其它平台不带', () {
+      // 这条的两个分支都要覆盖 —— 本机（macOS）永远走不到 Windows 那条，
+      // 而 Windows 上不带 .exe 就意味着**所有 C/C++ 题目都跑不起来**。
+      expect(CRuntime.binaryName(onWindows: true), 'solution.exe');
+      expect(CRuntime.binaryName(onWindows: false), 'solution');
+    });
+
+    test('实际平台上的产物名与判题用的是同一个', () {
+      final rt = runtimeFor(ProgrammingLanguage.c);
+      expect(rt.binaryName, CRuntime.binaryName());
+      // 编译产物名和运行命令里用的名字必须是同一个，否则编完找不到
+      final spec = rt.runSpec(Directory.systemTemp, File('solution.c'));
+      expect(spec.command, endsWith(rt.binaryName));
+    });
+
     test('找不到编译器时给出可操作的安装指引，而不是空话', () {
       final hint = CRuntime.installHint(ProgrammingLanguage.c);
       expect(hint, isNotEmpty);

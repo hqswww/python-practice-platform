@@ -261,7 +261,7 @@ abstract class CompiledLanguageRuntime extends LanguageRuntime {
   String resolveCompiler();
 
   @override
-  String get binaryName => 'solution';
+  String get binaryName => CRuntime.binaryName();
 
   /// 编译命令：<编译器> solution.c -o solution -std=… -O0 -lm
   ///

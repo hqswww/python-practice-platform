@@ -95,4 +95,42 @@ void main() {
       }
     });
   });
+
+  group('Windows 版本资源（exe 属性页里显示的内容）', () {
+    // Windows 上一个字都不会自己报错：exe 照样能编出来、照样能跑，
+    // 只有用户右键看「属性 → 详细信息」时才会发现名字不对或是一串问号。
+    test('StringTable 的代码页必须是 04b0（Unicode），不能是模板默认的 04e4', () {
+      final rc = read('windows/runner/Runner.rc');
+      expect(rc, contains('"040904b0"'),
+          reason: '内容含中文，代码页却声明成 1252 —— 微软对 StringTable.szKey 的\n'
+              '定义是「低四位表示 the code page for which the data is formatted」，\n'
+              '并要求 Unicode 内容用 0x04b0。声明与内容不一致，读到的可能就是乱码');
+      expect(rc, isNot(contains('"040904e4"')),
+          reason: '04e4 = 1252（Windows-1252），装不下中文');
+      expect(rc, contains('"Translation", 0x409, 1200'),
+          reason: 'VarFileInfo 的代码页要和 StringTable 一致');
+    });
+
+    test('含中文的值必须是宽字符 L"..."，否则不会以 UTF-16 存进资源', () {
+      final rc = read('windows/runner/Runner.rc');
+      expect(rc, contains('L"编程练习册"'));
+      // 反面：窄字符的中文就是这个 bug 的样子
+      expect(rc, isNot(contains(r'"编程练习册" "\0"')),
+          reason: '窄字符声明配合 1252 代码页是修复前的写法');
+    });
+
+    test('不再有 com.example 占位符（会出现在 exe 属性页和关于框里）', () {
+      // 只看**生效的行**：注释里提到不算，否则一句「原来这里是 com.example」
+      // 的说明就会把测试弄挂（这个坑当场踩过一次）。
+      String stripComments(String text) => text
+          .split('\n')
+          .where((l) => !l.trimLeft().startsWith('//'))
+          .join('\n');
+
+      expect(stripComments(read('windows/runner/Runner.rc')),
+          isNot(contains('com.example')));
+      expect(stripComments(read('macos/Runner/Configs/AppInfo.xcconfig')),
+          isNot(contains('com.example')));
+    });
+  });
 }

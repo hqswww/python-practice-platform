@@ -87,21 +87,36 @@ VS_VERSION_INFO VERSIONINFO
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "040904e4"
+        // ⚠️ 代码页必须是 04b0（= 1200，Unicode），不能沿用 Flutter 模板的
+        // 04e4（= 1252，Windows-1252）。
+        //
+        // Microsoft 对 StringTable.szKey 的定义是：低四位表示
+        // 「the code page for which the data is formatted」，并且明确要求
+        // 「Set the code page portion ... to 0x04b0 to indicate the Unicode
+        //  code page」。
+        // 我们写的是中文，按 1252 格式化就是**声明与内容自相矛盾** ——
+        // exe 属性页读到的可能就是一串问号或乱码。
+        //
+        // 配套两点，缺一不可：
+        //   1. 含中文的值要写成宽字符 L"..."，才会以 UTF-16 存进资源
+        //   2. 下面 VarFileInfo 里的 Translation 代码页也要一起改成 1200
+        // 纯 ASCII 的值（版本号）保持窄字符即可，资源编译器会按块的代码页
+        // 统一转成 UTF-16，最终整个 StringTable 是清一色的 Unicode。
+        BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "编程练习册" "\0"
+            VALUE "CompanyName", "com.sakiri" "\0"
+            VALUE "FileDescription", L"编程练习册" L"\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "CodeWorkbook" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", L"Copyright (C) 2026 编程练习册. All rights reserved." L"\0"
             VALUE "OriginalFilename", "code_workbook.exe" "\0"
-            VALUE "ProductName", "编程练习册" "\0"
+            VALUE "ProductName", L"编程练习册" L"\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x409, 1252
+        VALUE "Translation", 0x409, 1200
     END
 END
 
