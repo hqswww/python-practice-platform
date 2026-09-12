@@ -149,7 +149,28 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _categoriesFuture = ProblemRepository().loadCategories();
+    _loadCategoriesForCurrentLanguage();
+    // 切语言要重新加载题库：三个主板块的内容都是按语言划分的。
+    // 用监听而不是在切换回调里 setState，是因为语言还可能被别处改
+    // （比如启动时从偏好恢复）。
+    languageService.addListener(_loadCategoriesForCurrentLanguage);
+  }
+
+  @override
+  void dispose() {
+    languageService.removeListener(_loadCategoriesForCurrentLanguage);
+    super.dispose();
+  }
+
+  /// 按当前语言重新加载题库。
+  ///
+  /// **必须按语言过滤**：不过滤会把所有语言的分类混在一起显示
+  /// （练 Python 时冒出 C 的分类）。
+  void _loadCategoriesForCurrentLanguage() {
+    setState(() {
+      _categoriesFuture =
+          ProblemRepository().loadCategories(language: languageService.value);
+    });
   }
 
   void _onDestinationSelected(int i) {
@@ -161,9 +182,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _reload() async {
-    setState(() {
-      _categoriesFuture = ProblemRepository().loadCategories();
-    });
+    _loadCategoriesForCurrentLanguage();
     await _categoriesFuture;
   }
 
@@ -215,13 +234,13 @@ class _HomePageState extends State<HomePage> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
                   return Scaffold(
-                    appBar: AppBar(title: const Text('Python 练习平台')),
+                    appBar: AppBar(title: Text('${languageService.value.displayName} 练习平台')),
                     body: const Center(child: CircularProgressIndicator()),
                   );
                 }
                 if (snapshot.hasError) {
                   return Scaffold(
-                    appBar: AppBar(title: const Text('Python 练习平台')),
+                    appBar: AppBar(title: Text('${languageService.value.displayName} 练习平台')),
                     body: Center(child: Text('加载题库失败: ${snapshot.error}')),
                   );
                 }

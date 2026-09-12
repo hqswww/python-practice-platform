@@ -31,8 +31,13 @@ const Map<ProgrammingLanguage, List<Map<String, String>>> _categoryMeta = {
     {'key': '11_advanced', 'name': '进阶', 'desc': '迭代器、生成器、异常、文件'},
     {'key': '12_challenges', 'name': '综合挑战', 'desc': '跨知识点应用题'},
   ],
-  // ProgrammingLanguage.c  /  .cpp 待接入：把题库放进
-  // assets/problems/c/ 后，在这里补一份同样的分类表即可。
+  // C 目前只有「基础语法」一个起步分类（用于跑通并验收编译链路），
+  // 后续按 runoob 的 C 目录补齐到 12 个分类（见 PROJECT_BACKLOG）。
+  ProgrammingLanguage.c: [
+    {'key': '01_basics', 'name': '基础语法', 'desc': '程序结构、printf、scanf、变量、循环'},
+  ],
+  // ProgrammingLanguage.cpp 待接入：把题库放进 assets/problems/cpp/ 后
+  // 在这里补一份分类表，并在 runtimeFor 里放开 C++。
 };
 
 /// 某门语言是否已经有题库（用于 UI 里把还没做的语言置灰）

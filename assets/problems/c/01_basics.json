@@ -1,0 +1,179 @@
+[
+  {
+    "id": 1,
+    "title": "Hello, C!",
+    "difficulty": "easy",
+    "description": "编写一个 C 程序，在屏幕上输出一行文字：Hello, C!",
+    "input_format": "无输入",
+    "output_format": "输出一行 Hello, C!",
+    "sample_input": "",
+    "sample_output": "Hello, C!",
+    "test_cases": [
+      { "input": "", "output": "Hello, C!" }
+    ],
+    "hints": [
+      "C 程序的入口是 main() 函数。",
+      "用 printf() 输出，需要先 #include <stdio.h>。",
+      "每行输出结尾一般要加 \\n 换行。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    /* 最简单的 C 程序：用 printf 输出一行文字 */\n    printf(\"Hello, C!\\n\");\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "C 程序的基本骨架",
+        "body": "每个 C 程序都必须有一个 main() 函数，程序从它开始执行。\n\n第一行 #include <stdio.h> 是预处理指令，把「标准输入输出」这个头文件引进来——printf 就声明在里面，不写会编译报错。\n\n注意每个语句结尾的分号 ';'，这是初学者最常漏的东西。",
+        "code": "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, C!\\n\");\n    return 0;\n}",
+        "output": "Hello, C!"
+      },
+      {
+        "title": "printf 与转义字符",
+        "body": "printf() 用来格式化输出。\\n 是换行符——它是一个字符，不是两个。\n\n漏掉 \\n 的话，输出不会换行，判题时会因为「少了换行」而判定不一致。",
+        "code": "printf(\"第一行\\n第二行\\n\");",
+        "output": "第一行\n第二行"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "两数之和",
+    "difficulty": "easy",
+    "description": "读入两个整数，输出它们的和。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "输出一个整数，表示 a + b",
+    "sample_input": "3 5",
+    "sample_output": "8",
+    "test_cases": [
+      { "input": "3 5\n", "output": "8" },
+      { "input": "100 250\n", "output": "350" },
+      { "input": "-7 2\n", "output": "-5" }
+    ],
+    "hints": [
+      "用 scanf() 读入，注意变量前面要加取地址符 &。",
+      "%d 表示读入一个整数。",
+      "输出用 printf(\"%d\\n\", 结果)。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int a, b;\n    /* scanf 读入时，变量前必须加 &（取地址符） */\n    scanf(\"%d %d\", &a, &b);\n    printf(\"%d\\n\", a + b);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "用 scanf 读入数据",
+        "body": "scanf() 从键盘读入数据，%d 对应整数。\n\n最容易忘的是变量前面的 &：它是「取地址符」，告诉 scanf 数据该存到哪个内存地址。漏了它，程序能编译通过，但运行时会崩溃——这是 C 和 Python 最不一样的地方之一。",
+        "code": "int a, b;\nscanf(\"%d %d\", &a, &b);",
+        "output": "(等待输入)"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "title": "圆的面积",
+    "difficulty": "easy",
+    "description": "读入一个浮点数 r 作为圆的半径，输出圆的面积，保留 2 位小数。\n\n圆周率取 3.14159。",
+    "input_format": "一行，一个浮点数 r",
+    "output_format": "输出面积，保留 2 位小数",
+    "sample_input": "2",
+    "sample_output": "12.57",
+    "test_cases": [
+      { "input": "2\n", "output": "12.57" },
+      { "input": "1\n", "output": "3.14" },
+      { "input": "5.5\n", "output": "95.03" }
+    ],
+    "hints": [
+      "浮点数用 double 类型，读入用 %lf。",
+      "面积公式是 π × r × r。",
+      "printf 里用 %.2f 控制保留 2 位小数。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    double r;\n    scanf(\"%lf\", &r);\n    const double pi = 3.14159;\n    /* %.2f 表示保留 2 位小数 */\n    printf(\"%.2f\\n\", pi * r * r);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "浮点数与小数位数",
+        "body": "C 里浮点数常用 double 类型。读入 double 要用 %lf（读 float 才是 %f），输出时 double 和 float 都用 %f。\n\n%.2f 里的 .2 表示保留两位小数，printf 会自动四舍五入。",
+        "code": "double x;\nscanf(\"%lf\", &x);\nprintf(\"%.2f\\n\", x);",
+        "output": "输入 3.14159 时输出 3.14"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "title": "三个数中的最大值",
+    "difficulty": "easy",
+    "description": "读入三个整数，输出其中最大的那个。",
+    "input_format": "一行，三个整数，用空格分隔",
+    "output_format": "输出一个整数，即最大值",
+    "sample_input": "3 9 5",
+    "sample_output": "9",
+    "test_cases": [
+      { "input": "3 9 5\n", "output": "9" },
+      { "input": "10 2 7\n", "output": "10" },
+      { "input": "-1 -5 -3\n", "output": "-1" }
+    ],
+    "hints": [
+      "可以先假设第一个数是最大的，再依次比较。",
+      "比较用 if (x > max) { max = x; }。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int a, b, c;\n    scanf(\"%d %d %d\", &a, &b, &c);\n    /* 先假设 a 最大，再依次挑战它 */\n    int max = a;\n    if (b > max) max = b;\n    if (c > max) max = c;\n    printf(\"%d\\n\", max);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "打擂台式的找最大值",
+        "body": "「先假设第一个是最大，后面每个都来挑战它」是最常用的写法，比写一堆嵌套 if 清楚得多。\n\n注意 if 后面只有一条语句时，大括号 { } 可以省略，但初学阶段建议一直写上——以后往里面加语句时不容易出错。",
+        "code": "int max = a;\nif (b > max) max = b;\nif (c > max) max = c;",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "从 1 加到 n",
+    "difficulty": "easy",
+    "description": "读入一个正整数 n，输出 1 + 2 + ... + n 的和。",
+    "input_format": "一行，一个正整数 n",
+    "output_format": "输出一个整数，表示累加结果",
+    "sample_input": "10",
+    "sample_output": "55",
+    "test_cases": [
+      { "input": "10\n", "output": "55" },
+      { "input": "1\n", "output": "1" },
+      { "input": "100\n", "output": "5050" }
+    ],
+    "hints": [
+      "用一个变量记录累加结果，初始为 0。",
+      "for (int i = 1; i <= n; i++) 可以遍历 1 到 n。",
+      "注意累加变量要初始化为 0，否则会得到奇怪的结果。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n    /* 累加变量一定要初始化为 0 */\n    int sum = 0;\n    for (int i = 1; i <= n; i++) {\n        sum += i;\n    }\n    printf(\"%d\\n\", sum);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "for 循环与累加",
+        "body": "for (初始化; 条件; 步进) 是 C 最常用的循环写法。\n\n累加变量必须初始化为 0——C 的局部变量不会自动清零，不初始化的话里面是内存里的随机值，这是新手非常容易踩的坑。",
+        "code": "int sum = 0;\nfor (int i = 1; i <= n; i++) {\n    sum += i;\n}",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "title": "奇数还是偶数",
+    "difficulty": "easy",
+    "description": "读入一个整数，如果是偶数输出 even，是奇数输出 odd。",
+    "input_format": "一行，一个整数 n",
+    "output_format": "输出 even 或 odd",
+    "sample_input": "4",
+    "sample_output": "even",
+    "test_cases": [
+      { "input": "4\n", "output": "even" },
+      { "input": "7\n", "output": "odd" },
+      { "input": "0\n", "output": "even" },
+      { "input": "-3\n", "output": "odd" }
+    ],
+    "hints": [
+      "% 是取余运算符，n % 2 的结果是 0 说明是偶数。",
+      "用 if / else 分两种情况输出。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n    /* n % 2 == 0 表示能被 2 整除 */\n    if (n % 2 == 0) {\n        printf(\"even\\n\");\n    } else {\n        printf(\"odd\\n\");\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "取余判断奇偶",
+        "body": "% 是取余运算符，n % 2 得到 n 除以 2 的余数：余 0 是偶数，余 1 是奇数。\n\n负数也没问题：-3 % 2 在 C 里得到 -1，不等于 0，所以会被正确判为奇数。",
+        "code": "if (n % 2 == 0) {\n    printf(\"even\\n\");\n} else {\n    printf(\"odd\\n\");\n}",
+        "output": ""
+      }
+    ]
+  }
+]

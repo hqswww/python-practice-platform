@@ -887,7 +887,8 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: const Icon(Icons.info_outline, color: Colors.blue),
         title: const Text('关于'),
         subtitle: Text(
-          'Python 练习平台 V1.2\nFlutter (Material 3) + 系统 Python 判题',
+          'V1.2 · Flutter (Material 3)\n'
+          '本地判题：Python 用捆绑解释器，C 用系统编译器',
           style: TextStyle(color: Colors.grey[600]),
         ),
         trailing: const Icon(Icons.chevron_right),
@@ -896,7 +897,7 @@ class _SettingsPageState extends State<SettingsPage> {
             context: context,
             applicationName: 'Python 练习平台',
             applicationVersion: 'V1.2',
-            applicationLegalese: '为学弟学妹准备的 Python 练习与判题工具',
+            applicationLegalese: '为学弟学妹准备的编程练习与判题工具',
             children: const [
               Text('技术栈：Flutter (Material 3) + 系统 Python 判题\n题库：12 分类 72 道题\n\nV1.2 新增：编辑器字体大小 / 缩进宽度 / 自定义 Python 解释器路径'),
             ],

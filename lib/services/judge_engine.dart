@@ -16,6 +16,7 @@ import 'dart:io';
 import '../models/judge_result.dart';
 import '../models/problem.dart';
 import 'error_log_service.dart';
+import 'c_runtime.dart';
 import 'language_runtime.dart';
 
 class JudgeEngine {
@@ -25,7 +26,15 @@ class JudgeEngine {
   /// 可选注入的运行命令（测试用 / 设置页自定义路径）
   final String? commandOverride;
 
-  JudgeEngine({this.timeoutMs = 2000, this.commandOverride});
+  /// 编译超时（毫秒）。**与运行超时分开**：编译本身慢得多（C++ 尤其），
+  /// 混在一起会把「首次编译慢」误判成超时。
+  final int compileTimeoutMs;
+
+  JudgeEngine({
+    this.timeoutMs = 2000,
+    this.compileTimeoutMs = 10000,
+    this.commandOverride,
+  });
 
 
   /// 判一道题的全部测试用例
@@ -43,6 +52,34 @@ class JudgeEngine {
     await runtime.prepare(tempDir);
 
     try {
+      // ── 编译阶段（仅编译型语言；解释型 compileSpec 返回 null，直接跳过）
+      //
+      // 编译一次、所有用例复用同一个产物 —— 比每个用例重编快得多，
+      // 也比 Python 每个用例起一次解释器快。
+      final compileSpec = runtime.compileSpec(tempDir, solutionFile);
+      if (compileSpec != null) {
+        final failure = await _compile(runtime, compileSpec, tempDir);
+        if (failure != null) {
+          // 编译失败：全部用例都判编译错误。
+          // 不逐用例重复同一条报错 —— 展示层只用第一条。
+          return JudgeResult(
+            problem: problem,
+            caseResults: [
+              for (final tc in problem.testCases)
+                TestCaseResult(
+                  testCase: tc,
+                  status: JudgeStatus.compileError,
+                  actualOutput: '',
+                  stderr: failure,
+                  timeMs: 0,
+                  message: failure,
+                ),
+            ],
+            hasError: true,
+          );
+        }
+      }
+
       final results = <TestCaseResult>[];
       var hasRuntimeError = false;
 
@@ -66,6 +103,56 @@ class JudgeEngine {
       try {
         await tempDir.delete(recursive: true);
       } catch (_) {}
+    }
+  }
+
+  /// 编译源码。成功返回 null；失败返回给学生看的错误信息。
+  Future<String?> _compile(
+    LanguageRuntime runtime,
+    RunSpec spec,
+    Directory workDir,
+  ) async {
+    try {
+      final result = await Process.run(
+        spec.command,
+        spec.args,
+        workingDirectory: workDir.path,
+        environment: spec.environment,
+      ).timeout(Duration(milliseconds: compileTimeoutMs));
+
+      // 只看退出码：**警告不影响判题**（编译器输出警告时退出码仍是 0），
+      // 而且警告对初学者是有价值的，不该被当成错误藏起来。
+      if (result.exitCode == 0) return null;
+
+      final raw = '${result.stdout}\n${result.stderr}'.trim();
+      final cleaned = runtime.cleanDiagnostics(raw, workDir);
+      errorLog.logError(
+        '编译失败（${runtime.language.displayName}）:\n$cleaned',
+        source: LogSource.judge,
+      );
+      if (cleaned.isEmpty) return '编译失败，但编译器没有给出任何信息。';
+      // 加一句抬头：C 的编译报错和 Python 的 traceback 长得完全不一样，
+      // 初学者需要被告知「这是编译器在说话，不是你的程序输出」。
+      return '❌ 代码没通过编译。下面是编译器给出的报错：\n\n$cleaned';
+    } on TimeoutException {
+      errorLog.logError(
+        '编译超时（${compileTimeoutMs}ms，${runtime.language.displayName}）',
+        source: LogSource.judge,
+      );
+      return '⏱ 编译超时（超过 ${compileTimeoutMs ~/ 1000} 秒）。'
+          '代码是不是过于复杂，或者模板展开太深了？';
+    } on ProcessException catch (e) {
+      // 找不到编译器是最常见的失败，要给可操作的指引而不是「环境有问题」
+      final hint = runtime is CLanguageRuntime
+          ? CRuntime.installHint(runtime.language)
+          : '';
+      errorLog.logError(
+        '无法启动编译器（${spec.command}）: ${e.message}',
+        source: LogSource.judge,
+        error: e,
+      );
+      return '❌ 找不到 ${runtime.language.displayName} 编译器'
+          '（尝试执行 `${spec.command}`）。\n$hint';
     }
   }
 
@@ -113,8 +200,11 @@ class JudgeEngine {
     Stopwatch stopwatch,
   ) async {
     final spec = runtime.runSpec(solutionFile.parent, solutionFile);
+    Process? process;
+    Future<String>? stdoutFuture;
+    Future<String>? stderrFuture;
     try {
-      final process = await Process.start(
+      process = await Process.start(
         spec.command,
         spec.args,
         workingDirectory: solutionFile.parent.path,
@@ -126,29 +216,33 @@ class JudgeEngine {
       await process.stdin.close();
 
       // 读取输出（分别捕获 stdout 和 stderr）
-      final stdoutFuture = process.stdout
-          .transform(utf8.decoder)
-          .join()
-          .timeout(Duration(milliseconds: timeoutMs));
-      final stderrFuture = process.stderr
-          .transform(utf8.decoder)
-          .join()
-          .timeout(Duration(milliseconds: timeoutMs));
-
-      final exitCodeFuture = process.exitCode
-          .timeout(Duration(milliseconds: timeoutMs));
+      //
+      // ⚠️ 只给 exitCode 加超时，**不要**给这两个流也各加一个：
+      // exitCode 先超时返回后，那两个带超时的 future 就没人 await 了，
+      // 它们随后也会抛 TimeoutException，变成「未处理的异步异常」直接把测试/应用搞崩。
+      // 超时的收尾交给下面统一杀进程 —— 进程一死流自然关闭。
+      stdoutFuture = process.stdout.transform(utf8.decoder).join();
+      stderrFuture = process.stderr.transform(utf8.decoder).join();
 
       final elapsedMs = stopwatch.elapsedMilliseconds;
 
-      // 等待全部完成（先等退出码，再取输出）
-      final exitCode = await exitCodeFuture;
+      final exitCode =
+          await process.exitCode.timeout(Duration(milliseconds: timeoutMs));
       final actualOutput = await stdoutFuture;
       final stderr = await stderrFuture;
 
       return _evaluate(
           runtime, testCase, exitCode, actualOutput, stderr, elapsedMs);
     } on TimeoutException {
-      // 超时
+      // **必须真的杀掉进程**：只返回超时结果而不杀，学生的 while(1)
+      // 会在后台一直跑下去吃满 CPU（提示里写着"已强制终止"，实际并没有）。
+      _killQuietly(process);
+      // 进程没了，两个流会关闭；给一点时间让它们收尾，失败也不管
+      // （此时进程已终止，流的内容也没用了）。
+      try {
+        await Future.wait([stdoutFuture!, stderrFuture!])
+            .timeout(const Duration(milliseconds: 500));
+      } catch (_) {}
       return TestCaseResult(
         testCase: testCase,
         status: JudgeStatus.timeout,
@@ -172,6 +266,16 @@ class JudgeEngine {
         timeMs: stopwatch.elapsedMilliseconds,
         message: '程序运行环境有问题，请联系管理员。',
       );
+    }
+  }
+
+  /// 尽力杀掉进程；已经退出或权限不足都忽略
+  void _killQuietly(Process? p) {
+    if (p == null) return;
+    try {
+      p.kill(ProcessSignal.sigkill);
+    } catch (_) {
+      // 进程可能已自行退出
     }
   }
 
@@ -222,7 +326,8 @@ class JudgeEngine {
         actualOutput: actual.isEmpty ? '(无输出)' : actual,
         stderr: stderr.isEmpty ? actualOutput : stderr,
         timeMs: timeMs,
-        message: _runtimeErrorMessage(runtime, stderr, actualOutput),
+        message: _runtimeErrorMessage(
+            runtime, stderr, actualOutput, exitCode),
       );
     }
 
@@ -296,9 +401,11 @@ class JudgeEngine {
     LanguageRuntime runtime,
     String stderr,
     String output,
+    int exitCode,
   ) {
-    return runtime.explainRuntimeError(stderr, output) ??
-        '程序运行出错：\n\n$stderr\n$output';
+    final cleaned = runtime.cleanDiagnostics(stderr, Directory.systemTemp);
+    return runtime.explainRuntimeError(cleaned, output, exitCode: exitCode) ??
+        '程序运行出错：\n\n$cleaned\n$output';
   }
 
   /// 分析输出错误原因，给出针对性提示

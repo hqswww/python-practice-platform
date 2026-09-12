@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/judge_result.dart';
 
+
 /// 判题结果面板
 ///
 /// 展示判题结果，支持两种模式（由 EditorPage 控制 _showDetailed）：
@@ -45,6 +46,11 @@ class JudgeResultPanel extends StatelessWidget {
     }
 
     final r = result!;
+
+    // 编译失败时全部用例共享同一条编译器报错 —— 逐用例重复展示
+    // 会变成「3 个用例 → 3 块一模一样的报错」，纯噪音。这里只显示一块。
+    final isCompileError = r.isCompileFailure;
+
     // 交错入场：整体动画 0→1，各元素按 index 比例错开
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -56,10 +62,13 @@ class JudgeResultPanel extends StatelessWidget {
           children: [
             _stagger(t, 0, _headerSummary(r)),
             const SizedBox(height: 12),
-            for (var i = 0; i < r.caseResults.length; i++) ...[
-              _stagger(t, 1 + i * 1.0, _caseTile(context, r.caseResults[i])),
-              const SizedBox(height: 8),
-            ],
+            if (isCompileError)
+              _stagger(t, 1, _compileErrorBlock(r.caseResults.first))
+            else
+              for (var i = 0; i < r.caseResults.length; i++) ...[
+                _stagger(t, 1 + i * 1.0, _caseTile(context, r.caseResults[i])),
+                const SizedBox(height: 8),
+              ],
           ],
         );
       },
@@ -90,11 +99,20 @@ class JudgeResultPanel extends StatelessWidget {
   }
 
   Widget _headerSummary(JudgeResult result) {
+    final compileFailed = result.isCompileFailure;
     final color = result.allPassed ? Colors.green : Colors.red;
-    final icon = result.allPassed ? Icons.check_circle : Icons.cancel;
+    final icon = result.allPassed
+        ? Icons.check_circle
+        : compileFailed
+            ? Icons.build_circle_outlined
+            : Icons.cancel;
+    // 编译失败要说「编译没通过」，不能说「0/N 通过」——
+    // 后者听起来像跑了但没过，实际是一个用例都没跑。
     final title = result.allPassed
         ? '全部通过！'
-        : '${result.passedCases}/${result.totalCases} 通过';
+        : compileFailed
+            ? '编译没通过'
+            : '${result.passedCases}/${result.totalCases} 通过';
 
     final card = Card(
       color: color.withValues(alpha: 0.1),
@@ -111,7 +129,9 @@ class JudgeResultPanel extends StatelessWidget {
         subtitle: Text(
           result.allPassed
               ? '干得漂亮！代码正确 🎉'
-              : '还有 ${result.totalCases - result.passedCases} 个用例没过，继续加油！',
+              : compileFailed
+                  ? '代码没能编译成可执行文件，所以一个用例都没跑'
+                  : '还有 ${result.totalCases - result.passedCases} 个用例没过，继续加油！',
           style: const TextStyle(color: Colors.black54),
         ),
       ),
@@ -132,6 +152,44 @@ class JudgeResultPanel extends StatelessWidget {
     return card;
   }
 
+  /// 编译失败区块：一块搞定，不逐用例重复
+  Widget _compileErrorBlock(TestCaseResult cr) {
+    const color = Colors.red;
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.build_circle_outlined, color: color),
+                SizedBox(width: 8),
+                Text(
+                  '代码没通过编译',
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '编译型语言要先编译成可执行文件再运行。编译没过就不会执行，'
+              '所有测试用例都不算数 —— 先按下面的报错把代码改对。',
+              style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.5),
+            ),
+            const SizedBox(height: 12),
+            _messageBox(cr.message, color),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _caseTile(BuildContext context, TestCaseResult cr) {
     final color = cr.isPassed ? Colors.green : Colors.red;
     final icon = cr.isPassed
@@ -145,7 +203,9 @@ class JudgeResultPanel extends StatelessWidget {
         title: Row(
           children: [
             Text(
-              cr.isPassed ? '通过' : '未通过',
+              // 用状态自己的名字（超时/运行错误/答案错误…），
+              // 比笼统的「未通过」更有信息量
+              cr.isPassed ? '通过' : cr.status.label,
               style: TextStyle(color: color, fontWeight: FontWeight.bold),
             ),
             const Spacer(),

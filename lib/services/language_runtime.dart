@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import '../models/programming_language.dart';
+import 'c_runtime.dart';
 import 'python_runtime.dart';
 
 /// 一次外部进程调用的完整描述
@@ -49,12 +50,24 @@ abstract class LanguageRuntime {
   /// 把源码（编译型则是编译产物）跑起来的调用
   RunSpec runSpec(Directory workDir, File sourceFile);
 
+  /// 编译产物的工作目录名（只有编译型语言用）。默认 `solution`。
+  String get binaryName => 'solution';
+
   /// 据 stderr / stdout 判断这是不是「运行时出错」
   bool looksLikeRuntimeError(String stderr, String output) => false;
 
   /// 把该语言的运行错误翻译成给学生看的中文提示；
   /// 返回 null 表示没有针对性文案，由引擎用通用兜底。
-  String? explainRuntimeError(String stderr, String output) => null;
+  ///
+  /// [exitCode] 为负表示被信号杀掉（C 的段错误就是这样），
+  /// 编译型语言要靠它才能说出「程序崩溃」而不是「运行错误」。
+  String? explainRuntimeError(String stderr, String output,
+          {int exitCode = 0}) =>
+      null;
+
+  /// 清洗编译器/解释器的原始输出，去掉学生看不懂的噪音
+  /// （临时目录绝对路径、内部符号等）。默认原样返回。
+  String cleanDiagnostics(String raw, Directory workDir) => raw;
 }
 
 // ------------------------------------------------------------------ Python
@@ -121,7 +134,8 @@ builtins.input = _judge_input
   }
 
   @override
-  String? explainRuntimeError(String stderr, String output) {
+  String? explainRuntimeError(String stderr, String output,
+      {int exitCode = 0}) {
     final combined = '$stderr\n$output';
     if (combined.contains('SyntaxError')) {
       return '⚠️ 语法错误：代码有拼写或格式问题，通常是少了冒号、括号没闭合或缩进不对。\n\n$combined';
@@ -160,6 +174,126 @@ builtins.input = _judge_input
   }
 }
 
+// --------------------------------------------------------------------- C
+
+/// C 运行时：**编译型**，需要先编译再运行
+///
+/// 与 Python 最大的差别有两点：
+/// 1. 判题流程多一个编译阶段。编译失败会直接判编译错误，不会再去运行。
+/// 2. **编译一次、所有测试用例复用同一个产物** —— 比 Python 每个用例
+///    起一次解释器还快。
+class CLanguageRuntime extends LanguageRuntime {
+  const CLanguageRuntime({this.commandOverride});
+
+  /// 覆盖编译器路径（测试注入 / 设置页自定义）
+  final String? commandOverride;
+
+  @override
+  ProgrammingLanguage get language => ProgrammingLanguage.c;
+
+  @override
+  String get sourceFileName => 'solution.${CRuntime.extensionFor(language)}';
+
+  @override
+  String get binaryName => 'solution';
+
+  /// 编译命令：clang solution.c -o solution -std=c11 …
+  ///
+  /// `-std=c11`：锁住标准，避免不同编译器默认标准不一致导致同一份代码
+  /// 在 A 机器能编过、B 机器编不过。
+  /// `-O0`：判题不需要优化，编得越快越好。
+  /// `-lm`：链接数学库，否则用了 sqrt/pow 的学生会莫名其妙链接失败。
+  @override
+  RunSpec? compileSpec(Directory workDir, File sourceFile) => RunSpec(
+        command: commandOverride ?? CRuntime.resolveCompiler(language),
+        args: [
+          sourceFile.absolute.path,
+          '-o',
+          '${workDir.path}${Platform.pathSeparator}$binaryName',
+          '-std=c11',
+          '-O0',
+          '-lm',
+        ],
+      );
+
+  @override
+  RunSpec runSpec(Directory workDir, File sourceFile) => RunSpec(
+        // 直接跑编译产物；工作目录就是它所在目录
+        command: '${workDir.path}${Platform.pathSeparator}$binaryName',
+        args: const [],
+      );
+
+  @override
+  bool looksLikeRuntimeError(String stderr, String output) =>
+      stderr.trim().isNotEmpty;
+
+  @override
+  String? explainRuntimeError(String stderr, String output,
+      {int exitCode = 0}) {
+    final combined = '$stderr\n$output';
+
+    // 被信号杀掉（段错误 = SIGSEGV = 11，浮点异常 = 8，中止 = 6）。
+    // Shell 那边通常只打印 "Segmentation fault"，学生看不懂。
+    if (exitCode < 0 || combined.contains('Segmentation fault')) {
+      return '⚠️ 程序崩溃了。C 里最常见的原因是：\n'
+          '· 数组下标越界（比如长度为 5 的数组访问了 a[5]）\n'
+          '· 用了没初始化的指针，或用完 free 之后又访问\n'
+          '· 指针指向了非法地址（忘了取地址 & 或忘了分配内存）\n'
+          '\n$combined';
+    }
+    if (combined.contains('Floating point exception')) {
+      return '⚠️ 浮点异常，通常是**整数除以 0**。\n\n$combined';
+    }
+    if (combined.contains('Timeout') || combined.contains('超时')) {
+      return null; // 交给引擎的超时文案
+    }
+    if (combined.trim().isEmpty) {
+      return '⚠️ 程序非正常退出（退出码 $exitCode），但没有输出错误信息。\n'
+          '检查一下是不是调用了 return 了非 0 的值，或者中途异常退出。';
+    }
+    return null; // 有 stderr 但没见过 → 交给通用兜底，把原文显示出来
+  }
+
+  /// 清洗编译器输出。
+  ///
+  /// 原始输出长这样，直接甩给学生全是噪音：
+  /// ```
+  /// /var/folders/bh/xxx/T/judge_ab12/solution.c:3:5: error: expected ';' after expression
+  ///     printf("hi")
+  ///     ^
+  /// 1 error generated.
+  /// ```
+  /// 清洗后：
+  /// ```
+  /// 第 3 行: error: expected ';' after expression
+  ///     printf("hi")
+  ///     ^
+  /// 1 error generated.
+  /// ```
+  @override
+  String cleanDiagnostics(String raw, Directory workDir) {
+    var out = raw;
+
+    // 1) 抹掉临时目录的绝对路径（它每次判题都不一样，对学生毫无意义）
+    out = out.replaceAll('${workDir.path}${Platform.pathSeparator}', '');
+    out = out.replaceAll(workDir.path, '');
+
+    // 2) 行:列 翻成中文（两种编译器格式一致：file:line:col:）
+    out = out.replaceAllMapped(
+      RegExp(r'([\w./\-]+\.(?:c|cpp|h)):(\d+):(\d+):'),
+      (m) => '第 ${m.group(2)} 行（第 ${m.group(3)} 列）:',
+    );
+    // 只带行号的情况（gcc 某些提示、链接错误）
+    out = out.replaceAllMapped(
+      RegExp(r'([\w./\-]+\.(?:c|cpp|h)):(\d+):'),
+      (m) => '第 ${m.group(2)} 行:',
+    );
+
+    // 3) 去掉开头多余空行
+    return out.trim();
+  }
+}
+
 // --------------------------------------------------------------- 运行时注册
 
 /// 取某门语言的运行时策略。
@@ -174,8 +308,10 @@ LanguageRuntime runtimeFor(
     case ProgrammingLanguage.python:
       return PythonLanguageRuntime(commandOverride: commandOverride);
     case ProgrammingLanguage.c:
+      return CLanguageRuntime(commandOverride: commandOverride);
     case ProgrammingLanguage.cpp:
-      // 接入时的落点：在这里返回 CppLanguageRuntime / CLanguageRuntime
+      // C++ 复用同一套编译流程，差别在源码扩展名与编译器命令；
+      // 等 C 跑通后再接（见 PROJECT_BACKLOG）
       throw UnsupportedError(
         '${language.displayName} 的运行时尚未接入（题库也还没做）',
       );

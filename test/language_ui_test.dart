@@ -44,8 +44,9 @@ void main() {
     });
 
     test('尚未接入的语言抛出可读错误，而不是静默跑错', () {
-      expect(() => runtimeFor(ProgrammingLanguage.c),
-          throwsA(isA<UnsupportedError>()));
+      // C 已接入；C++ 还没有（复用同一套编译流程，等 C 验收后接）
+      expect(runtimeFor(ProgrammingLanguage.c).language,
+          ProgrammingLanguage.c);
       expect(() => runtimeFor(ProgrammingLanguage.cpp),
           throwsA(isA<UnsupportedError>()));
     });
@@ -211,11 +212,17 @@ void main() {
     });
 
     test('拒绝切到没有题库的语言（避免进到空科目）', () async {
-      // 生产环境现在就是这个状态：只有 Python 有题库
+      // Python 和 C 都已接入；C++ 还没有题库
+      final svc = LanguageService();
+      await svc.select(ProgrammingLanguage.cpp);
+      expect(svc.value, ProgrammingLanguage.python,
+          reason: 'C++ 还没题库，不该让人切过去看到空白');
+    });
+
+    test('有题库的语言可以正常切入（C 已接入）', () async {
       final svc = LanguageService();
       await svc.select(ProgrammingLanguage.c);
-      expect(svc.value, ProgrammingLanguage.python,
-          reason: 'C 还没题库，不该让人切过去看到空白');
+      expect(svc.value, ProgrammingLanguage.c);
     });
 
     test('存了一个已下线的语言会回退到可用语言', () async {

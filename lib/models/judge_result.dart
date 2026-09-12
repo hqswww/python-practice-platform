@@ -4,7 +4,15 @@ library;
 import 'problem.dart';
 
 /// 判题状态
+///
+/// 顺序即「严重程度」：编译错误最靠前 —— 编译都过不去，就谈不上运行时错误。
 enum JudgeStatus {
+  /// 编译失败（仅编译型语言，如 C/C++）
+  ///
+  /// 这是编译型语言特有的状态：一次编译失败会让**全部**用例都变成这个状态，
+  /// UI 上不该逐用例重复展示同一条编译器报错。
+  compileError,
+
   /// 通过（输出与期望一致）
   passed,
 
@@ -16,6 +24,17 @@ enum JudgeStatus {
 
   /// 超时
   timeout,
+}
+
+/// 判题状态的中文名（UI 与日志共用，避免两处各写一套）
+extension JudgeStatusLabel on JudgeStatus {
+  String get label => switch (this) {
+        JudgeStatus.compileError => '编译错误',
+        JudgeStatus.passed => '通过',
+        JudgeStatus.runtimeError => '运行错误',
+        JudgeStatus.wrongAnswer => '答案错误',
+        JudgeStatus.timeout => '超时',
+      };
 }
 
 /// 单个测试用例的判题结果
@@ -61,6 +80,18 @@ class JudgeResult {
   int get totalCases => caseResults.length;
   int get passedCases => caseResults.where((r) => r.isPassed).length;
   bool get allPassed => passedCases == totalCases && totalCases > 0;
+
+  /// 是否「整份代码没编译过」——所有用例都是编译错误。
+  ///
+  /// 编译型语言特有：编译失败时一个用例都没跑，UI 显示「0/3 通过」会误导
+  /// （像是跑了但没过）。放在模型层，免得每个展示处各判一次。
+  bool get isCompileFailure =>
+      caseResults.isNotEmpty &&
+      caseResults.every((c) => c.status == JudgeStatus.compileError);
+
+  /// 编译失败的报错原文（所有用例共享同一条）；非编译失败返回空串
+  String get compileErrorMessage =>
+      isCompileFailure ? caseResults.first.message : '';
 
   const JudgeResult({
     required this.problem,
