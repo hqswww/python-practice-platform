@@ -18,10 +18,13 @@
      手画很难和系统上其它 App 对齐——直接沿用模板最稳。
      ⚠️ 千万不要改成「读当前 app_icon_1024.png 的 alpha」：脚本跑第二遍时
      那张图已经是自己生成的产物了，遮罩会越缩越小。
-  2. macOS 产出 7 张（16→1024），Windows 产出多尺寸 .ico，两者用同一份处理结果，
-     保证双平台外观一致。
+  2. macOS 产出 7 张（16→1024），Windows 产出多尺寸 .ico，Linux 产出 3 张 png，
+     三者用同一份处理结果，保证多平台外观一致。
   3. .icns 不在这一步做：Xcode 从 asset catalog 编出来的只到 256×256，
      由 tools/build_macos.sh 在**签名之前**用 iconutil 重打完整阶梯。
+  4. Linux 为什么要 png：GTK 应用不从可执行文件里读图标，靠 `.desktop` 的
+     `Icon=` 去 hicolor 主题目录找 png。少了它，应用菜单和任务栏里就是个
+     通用占位图标。三个尺寸是为了让不同 DPI/面板大小都能取到合适的。
 """
 
 import os
@@ -40,9 +43,11 @@ DEFAULT_SRC = os.path.expanduser('~/Documents/icon.png')
 ICONSET = os.path.join(ROOT, 'macos/Runner/Assets.xcassets/AppIcon.appiconset')
 MASK = os.path.join(ROOT, 'tools/icon_mask_1024.png')
 ICO = os.path.join(ROOT, 'windows/runner/resources/app_icon.ico')
+LINUX_ICON_DIR = os.path.join(ROOT, 'linux/resources')
 
 MAC_SIZES = (16, 32, 64, 128, 256, 512, 1024)
 ICO_SIZES = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+LINUX_SIZES = (128, 256, 512)
 
 
 def square_crop(img, region):
@@ -96,7 +101,15 @@ def main():
     print(f'✅ Windows: 写入 {os.path.relpath(ICO, ROOT)} '
           f'({len(ICO_SIZES)} 个尺寸, {os.path.getsize(ICO)} bytes)')
 
-    print('\n下一步：bash tools/build_macos.sh（会自动重打完整尺寸的 .icns）')
+    os.makedirs(LINUX_ICON_DIR, exist_ok=True)
+    for s in LINUX_SIZES:
+        icon.resize((s, s), Image.LANCZOS).save(
+            os.path.join(LINUX_ICON_DIR, f'app_icon_{s}.png'))
+    print(f'✅ Linux: 写入 {len(LINUX_SIZES)} 张 -> '
+          f'{os.path.relpath(LINUX_ICON_DIR, ROOT)}')
+
+    print('\n下一步：bash tools/build_macos.sh（会自动重打完整尺寸的 .icns）'
+          '\n        bash tools/build_linux.sh（会自动带上 png 与 .desktop）')
 
 
 if __name__ == '__main__':

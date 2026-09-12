@@ -4,10 +4,19 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "python_practice")
+#
+# 与 macOS（PRODUCT_NAME）和 Windows（BINARY_NAME）保持一致，都用 code_workbook。
+# ⚠️ 这跟 Dart 包名 `python_practice` 是两回事：包名不能改（21 个文件 import 它），
+# 而 BINARY_NAME 只决定产物文件名。Flutter 模板默认把包名填进来，所以原来这里是
+# python_practice —— 用户会拿到一个叫 python_practice 的可执行文件。
+set(BINARY_NAME "code_workbook")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.sakiri.python_practice")
+#
+# 必须与 macOS 的 PRODUCT_BUNDLE_IDENTIFIER 一致（连字符，不是下划线）：
+# 将来做 .desktop 入口、单实例、配置目录时都按这个 id 找应用。
+# D-Bus 名允许连字符，GApplication 能正常用。
+set(APPLICATION_ID "com.sakiri.python-practice")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

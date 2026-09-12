@@ -42,14 +42,17 @@ static void my_application_activate(GApplication* application) {
     }
   }
 #endif
+  // 窗口标题。GTK 的标题接口收的就是 UTF-8，中文字面量直接写没问题。
+  // 原来这里是 Flutter 模板留下的 `python_practice`（Dart 包名），
+  // 用户会在标题栏上看到一个下划线分隔的英文包名。
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, "python_practice");
+    gtk_header_bar_set_title(header_bar, "编程练习册");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
   } else {
-    gtk_window_set_title(window, "python_practice");
+    gtk_window_set_title(window, "编程练习册");
   }
 
   gtk_window_set_default_size(window, 1280, 720);
