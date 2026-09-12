@@ -1,6 +1,6 @@
 [
   {
-    "id": 1,
+    "id": 101,
     "title": "Hello, C!",
     "difficulty": "easy",
     "description": "编写一个 C 程序，在屏幕上输出一行文字：Hello, C!",
@@ -12,7 +12,7 @@
       { "input": "", "output": "Hello, C!" }
     ],
     "hints": [
-      "C 程序的入口是 main() 函数。",
+      "C 程序的入口是 main() 函数，程序从它开始执行。",
       "用 printf() 输出，需要先 #include <stdio.h>。",
       "每行输出结尾一般要加 \\n 换行。"
     ],
@@ -20,20 +20,49 @@
     "tutorial": [
       {
         "title": "C 程序的基本骨架",
-        "body": "每个 C 程序都必须有一个 main() 函数，程序从它开始执行。\n\n第一行 #include <stdio.h> 是预处理指令，把「标准输入输出」这个头文件引进来——printf 就声明在里面，不写会编译报错。\n\n注意每个语句结尾的分号 ';'，这是初学者最常漏的东西。",
+        "body": "每个 C 程序都必须有一个 main() 函数，程序从它开始执行。main 前面的 int 表示它返回一个整数，最后那句 return 0; 就是「正常结束」的意思。\n\n第一行的 #include <stdio.h> 是预处理指令，把「标准输入输出」这个头文件引进来——printf 就声明在里面，不写它编译会直接报错。\n\n注意每个语句结尾的分号 ;，这是初学者最常漏的东西。",
         "code": "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, C!\\n\");\n    return 0;\n}",
         "output": "Hello, C!"
       },
       {
         "title": "printf 与转义字符",
-        "body": "printf() 用来格式化输出。\\n 是换行符——它是一个字符，不是两个。\n\n漏掉 \\n 的话，输出不会换行，判题时会因为「少了换行」而判定不一致。",
+        "body": "printf() 用来输出内容。\\n 是换行符——它是一个字符，不是反斜杠加字母 n 两个字符。\n\n漏掉 \\n 的话输出不会换行，判题时会因为「少了换行」判定不一致。",
         "code": "printf(\"第一行\\n第二行\\n\");",
         "output": "第一行\n第二行"
       }
     ]
   },
   {
-    "id": 2,
+    "id": 102,
+    "title": "读入整数并原样输出",
+    "difficulty": "easy",
+    "description": "读入一个整数，把它原样输出。",
+    "input_format": "一行，一个整数 n",
+    "output_format": "输出这个整数",
+    "sample_input": "42",
+    "sample_output": "42",
+    "test_cases": [
+      { "input": "42\n", "output": "42" },
+      { "input": "-7\n", "output": "-7" },
+      { "input": "0\n", "output": "0" }
+    ],
+    "hints": [
+      "先用 int 声明一个变量存数据。",
+      "scanf(\"%d\", &n) 读入整数，注意变量前的取地址符 &。",
+      "输出用 printf(\"%d\\n\", n)。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int n;\n    /* &n 是「n 的地址」，scanf 需要知道往哪儿存 */\n    scanf(\"%d\", &n);\n    printf(\"%d\\n\", n);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "变量与 scanf 读入",
+        "body": "C 是「先声明后使用」的语言：想用变量必须先写清楚它的类型，比如 int n; 表示声明一个整数变量 n。\n\nscanf() 用来从键盘读入数据。%d 表示读一个整数，后面的 &n 是「n 的地址」——scanf 需要知道把读到的数据存到哪个内存地址去。\n\n漏掉 & 是最常见的错误之一：程序能编译通过，但运行时会崩溃。",
+        "code": "int n;\nscanf(\"%d\", &n);\nprintf(\"%d\\n\", n);",
+        "output": "输入 42 时输出 42"
+      }
+    ]
+  },
+  {
+    "id": 103,
     "title": "两数之和",
     "difficulty": "easy",
     "description": "读入两个整数，输出它们的和。",
@@ -47,132 +76,111 @@
       { "input": "-7 2\n", "output": "-5" }
     ],
     "hints": [
-      "用 scanf() 读入，注意变量前面要加取地址符 &。",
-      "%d 表示读入一个整数。",
-      "输出用 printf(\"%d\\n\", 结果)。"
+      "一次读两个数：scanf(\"%d %d\", &a, &b)。",
+      "两个 %d 之间用空格分隔，scanf 会自动跳过输入里的空白。",
+      "输出结果用 printf(\"%d\\n\", a + b)。"
     ],
-    "solution": "#include <stdio.h>\n\nint main() {\n    int a, b;\n    /* scanf 读入时，变量前必须加 &（取地址符） */\n    scanf(\"%d %d\", &a, &b);\n    printf(\"%d\\n\", a + b);\n    return 0;\n}\n",
+    "solution": "#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf(\"%d %d\", &a, &b);\n    /* 直接把表达式写在 printf 里也可以 */\n    printf(\"%d\\n\", a + b);\n    return 0;\n}\n",
     "tutorial": [
       {
-        "title": "用 scanf 读入数据",
-        "body": "scanf() 从键盘读入数据，%d 对应整数。\n\n最容易忘的是变量前面的 &：它是「取地址符」，告诉 scanf 数据该存到哪个内存地址。漏了它，程序能编译通过，但运行时会崩溃——这是 C 和 Python 最不一样的地方之一。",
-        "code": "int a, b;\nscanf(\"%d %d\", &a, &b);",
-        "output": "(等待输入)"
+        "title": "一次读多个数",
+        "body": "scanf 的格式串里写几个 %d，就能一次读几个整数。中间的空白（空格、制表符、换行）scanf 会自动跳过，所以输入 3 5 和输入 3 换行 5 都能正确读到两个数。\n\n两个变量可以写在同一行声明：int a, b; 等价于 int a; int b;",
+        "code": "int a, b;\nscanf(\"%d %d\", &a, &b);\nprintf(\"%d\\n\", a + b);",
+        "output": "输入 3 5 时输出 8"
       }
     ]
   },
   {
-    "id": 3,
-    "title": "圆的面积",
+    "id": 104,
+    "title": "交换两个数",
     "difficulty": "easy",
-    "description": "读入一个浮点数 r 作为圆的半径，输出圆的面积，保留 2 位小数。\n\n圆周率取 3.14159。",
-    "input_format": "一行，一个浮点数 r",
-    "output_format": "输出面积，保留 2 位小数",
-    "sample_input": "2",
-    "sample_output": "12.57",
+    "description": "读入两个整数 a 和 b，交换它们的值后输出：先输出 b，再输出 a（各占一行）。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "两行，第一行是交换后的第一个数，第二行是第二个数",
+    "sample_input": "3 8",
+    "sample_output": "8\n3",
     "test_cases": [
-      { "input": "2\n", "output": "12.57" },
-      { "input": "1\n", "output": "3.14" },
-      { "input": "5.5\n", "output": "95.03" }
+      { "input": "3 8\n", "output": "8\n3" },
+      { "input": "-1 5\n", "output": "5\n-1" },
+      { "input": "0 0\n", "output": "0\n0" }
     ],
     "hints": [
-      "浮点数用 double 类型，读入用 %lf。",
-      "面积公式是 π × r × r。",
-      "printf 里用 %.2f 控制保留 2 位小数。"
+      "交换需要一个临时变量暂存其中一个值。",
+      "顺序很重要：先把 a 存进临时变量，再让 a = b，最后 b = 临时变量。",
+      "如果直接写 a = b; b = a; 两个变量最后会变成一样的值。"
     ],
-    "solution": "#include <stdio.h>\n\nint main() {\n    double r;\n    scanf(\"%lf\", &r);\n    const double pi = 3.14159;\n    /* %.2f 表示保留 2 位小数 */\n    printf(\"%.2f\\n\", pi * r * r);\n    return 0;\n}\n",
+    "solution": "#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf(\"%d %d\", &a, &b);\n\n    /* 借助临时变量交换，三步的顺序不能颠倒 */\n    int tmp = a;\n    a = b;\n    b = tmp;\n\n    printf(\"%d\\n%d\\n\", a, b);\n    return 0;\n}\n",
     "tutorial": [
       {
-        "title": "浮点数与小数位数",
-        "body": "C 里浮点数常用 double 类型。读入 double 要用 %lf（读 float 才是 %f），输出时 double 和 float 都用 %f。\n\n%.2f 里的 .2 表示保留两位小数，printf 会自动四舍五入。",
-        "code": "double x;\nscanf(\"%lf\", &x);\nprintf(\"%.2f\\n\", x);",
-        "output": "输入 3.14159 时输出 3.14"
-      }
-    ]
-  },
-  {
-    "id": 4,
-    "title": "三个数中的最大值",
-    "difficulty": "easy",
-    "description": "读入三个整数，输出其中最大的那个。",
-    "input_format": "一行，三个整数，用空格分隔",
-    "output_format": "输出一个整数，即最大值",
-    "sample_input": "3 9 5",
-    "sample_output": "9",
-    "test_cases": [
-      { "input": "3 9 5\n", "output": "9" },
-      { "input": "10 2 7\n", "output": "10" },
-      { "input": "-1 -5 -3\n", "output": "-1" }
-    ],
-    "hints": [
-      "可以先假设第一个数是最大的，再依次比较。",
-      "比较用 if (x > max) { max = x; }。"
-    ],
-    "solution": "#include <stdio.h>\n\nint main() {\n    int a, b, c;\n    scanf(\"%d %d %d\", &a, &b, &c);\n    /* 先假设 a 最大，再依次挑战它 */\n    int max = a;\n    if (b > max) max = b;\n    if (c > max) max = c;\n    printf(\"%d\\n\", max);\n    return 0;\n}\n",
-    "tutorial": [
-      {
-        "title": "打擂台式的找最大值",
-        "body": "「先假设第一个是最大，后面每个都来挑战它」是最常用的写法，比写一堆嵌套 if 清楚得多。\n\n注意 if 后面只有一条语句时，大括号 { } 可以省略，但初学阶段建议一直写上——以后往里面加语句时不容易出错。",
-        "code": "int max = a;\nif (b > max) max = b;\nif (c > max) max = c;",
+        "title": "为什么要用临时变量",
+        "body": "交换两个杯子里的水，你需要第三个空杯子。\n\n如果直接写 a = b; b = a; ——第一句已经把 a 原来的值覆盖掉了，第二句再赋值时两个变量就都是 b 的值了。\n\n正确的三步是：把 a 倒进空杯 tmp → 把 b 倒进 a → 把 tmp 倒回 b。",
+        "code": "int tmp = a;\na = b;\nb = tmp;",
         "output": ""
       }
     ]
   },
   {
-    "id": 5,
-    "title": "从 1 加到 n",
+    "id": 105,
+    "title": "分三行输出",
     "difficulty": "easy",
-    "description": "读入一个正整数 n，输出 1 + 2 + ... + n 的和。",
-    "input_format": "一行，一个正整数 n",
-    "output_format": "输出一个整数，表示累加结果",
-    "sample_input": "10",
-    "sample_output": "55",
-    "test_cases": [
-      { "input": "10\n", "output": "55" },
-      { "input": "1\n", "output": "1" },
-      { "input": "100\n", "output": "5050" }
-    ],
-    "hints": [
-      "用一个变量记录累加结果，初始为 0。",
-      "for (int i = 1; i <= n; i++) 可以遍历 1 到 n。",
-      "注意累加变量要初始化为 0，否则会得到奇怪的结果。"
-    ],
-    "solution": "#include <stdio.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n    /* 累加变量一定要初始化为 0 */\n    int sum = 0;\n    for (int i = 1; i <= n; i++) {\n        sum += i;\n    }\n    printf(\"%d\\n\", sum);\n    return 0;\n}\n",
-    "tutorial": [
-      {
-        "title": "for 循环与累加",
-        "body": "for (初始化; 条件; 步进) 是 C 最常用的循环写法。\n\n累加变量必须初始化为 0——C 的局部变量不会自动清零，不初始化的话里面是内存里的随机值，这是新手非常容易踩的坑。",
-        "code": "int sum = 0;\nfor (int i = 1; i <= n; i++) {\n    sum += i;\n}",
-        "output": ""
-      }
-    ]
-  },
-  {
-    "id": 6,
-    "title": "奇数还是偶数",
-    "difficulty": "easy",
-    "description": "读入一个整数，如果是偶数输出 even，是奇数输出 odd。",
+    "description": "读入一个整数 n，输出三行内容：\n第一行 n\n第二行 n 的平方\n第三行 n 的立方",
     "input_format": "一行，一个整数 n",
-    "output_format": "输出 even 或 odd",
-    "sample_input": "4",
-    "sample_output": "even",
+    "output_format": "三行，依次是 n、n*n、n*n*n",
+    "sample_input": "3",
+    "sample_output": "3\n9\n27",
     "test_cases": [
-      { "input": "4\n", "output": "even" },
-      { "input": "7\n", "output": "odd" },
-      { "input": "0\n", "output": "even" },
-      { "input": "-3\n", "output": "odd" }
+      { "input": "3\n", "output": "3\n9\n27" },
+      { "input": "1\n", "output": "1\n1\n1" },
+      { "input": "10\n", "output": "10\n100\n1000" }
     ],
     "hints": [
-      "% 是取余运算符，n % 2 的结果是 0 说明是偶数。",
-      "用 if / else 分两种情况输出。"
+      "可以用一个 printf 输出三行，也可以在格式串里写三个 %d。",
+      "printf(\"%d\\n%d\\n%d\\n\", n, n*n, n*n*n) 一次就能输出三行。",
+      "注意最后一行的末尾也要有换行。"
     ],
-    "solution": "#include <stdio.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n    /* n % 2 == 0 表示能被 2 整除 */\n    if (n % 2 == 0) {\n        printf(\"even\\n\");\n    } else {\n        printf(\"odd\\n\");\n    }\n    return 0;\n}\n",
+    "solution": "#include <stdio.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n    /* 一次 printf 输出三行：格式串里的 \\n 决定换行位置 */\n    printf(\"%d\\n%d\\n%d\\n\", n, n * n, n * n * n);\n    return 0;\n}\n",
     "tutorial": [
       {
-        "title": "取余判断奇偶",
-        "body": "% 是取余运算符，n % 2 得到 n 除以 2 的余数：余 0 是偶数，余 1 是奇数。\n\n负数也没问题：-3 % 2 在 C 里得到 -1，不等于 0，所以会被正确判为奇数。",
-        "code": "if (n % 2 == 0) {\n    printf(\"even\\n\");\n} else {\n    printf(\"odd\\n\");\n}",
-        "output": ""
+        "title": "一个 printf 输出多行",
+        "body": "printf 的格式串里有几个 %d，后面就要按顺序给几个值：第一个 %d 取 n，第二个取 n*n，第三个取 n*n*n。\n\n\\n 写在哪个位置，就在哪个位置换行。所以 \"%d\\n%d\\n%d\\n\" 会在每个数后面都换行，包括最后一个——最后一行结尾有换行是必要的。",
+        "code": "printf(\"%d\\n%d\\n%d\\n\", n, n * n, n * n * n);",
+        "output": "输入 3 时输出：\n3\n9\n27"
+      }
+    ]
+  },
+  {
+    "id": 106,
+    "title": "摄氏温度转华氏",
+    "difficulty": "easy",
+    "description": "读入一个摄氏温度 c（整数），按公式 F = c × 9 / 5 + 32 换算成华氏温度并输出。\n\n结果保留 2 位小数。",
+    "input_format": "一行，一个整数 c",
+    "output_format": "输出华氏温度，保留 2 位小数",
+    "sample_input": "100",
+    "sample_output": "212.00",
+    "test_cases": [
+      { "input": "100\n", "output": "212.00" },
+      { "input": "0\n", "output": "32.00" },
+      { "input": "37\n", "output": "98.60" },
+      { "input": "-40\n", "output": "-40.00" }
+    ],
+    "hints": [
+      "用 double 存结果，避免整数除法丢小数：c * 9.0 / 5 + 32。",
+      "如果写成 c * 9 / 5，C 会按整数除法算，结果不对。",
+      "输出用 %.2f 保留 2 位小数。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int c;\n    scanf(\"%d\", &c);\n\n    /* 关键：9.0 是浮点数，整个表达式才会按小数运算。\n       写成 9 / 5 的话 C 会做整数除法，得到 1。 */\n    double f = c * 9.0 / 5 + 32;\n    printf(\"%.2f\\n\", f);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "小心整数除法",
+        "body": "在 C 里，两个整数相除结果还是整数，小数部分会被直接丢掉：9 / 5 得到 1，不是 1.8。\n\n所以换算公式必须写成 c * 9.0 / 5，只要参与运算的有一个是浮点数（9.0），整个表达式就会按浮点规则算。\n\n这是初学者最容易踩的坑之一——程序不报错，就是结果不对。",
+        "code": "double f = c * 9.0 / 5 + 32;\nprintf(\"%.2f\\n\", f);",
+        "output": "输入 100 时输出 212.00"
+      },
+      {
+        "title": "浮点数的输出格式",
+        "body": "double 类型用 %f 输出，默认会打印 6 位小数。\n\n%.2f 里的 .2 表示保留两位小数，printf 会自动四舍五入。",
+        "code": "printf(\"%.2f\\n\", 3.14159);  /* 3.14 */",
+        "output": "3.14"
       }
     ]
   }

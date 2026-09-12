@@ -149,17 +149,32 @@
 **顺序**：架构改造 → 跑通编译链路 → 判题状态与错误 UI → **填题库** → C++
 
 **待办**
-- [ ] **C 题库补齐到 12 分类**（对齐 runoob 的 C 目录）：
-      基础语法 / 数据类型与变量 / 运算符 / 判断与分支 / 循环 / 函数与作用域 /
-      数组 / 字符串 / **指针** / 结构体与共用体 / 进阶（预处理器、文件、malloc） / 综合挑战
-      —— 「指针」建议题量给多一点，它是 C 的分水岭
+- [x] **C 题库补齐到 12 分类**：基础语法 / 数据类型与变量 / 运算符 / 判断与分支 /
+      循环 / 函数与作用域 / 数组 / 字符串 / 指针 / 结构体与共用体 / 进阶 / 综合挑战
+      —— 共 **72 题 / 162 个教程小节**，与 Python 规模对齐。
+      全部 72 份参考答案经真判题引擎编译并判过（`tools/verify_c_bank.py` + Flutter 自检测试）
+- [x] `tools/C_BANK_SPEC.md`：题库编写规格（JSON 结构、判题比对规则、id 分配、文风要求）
+- [x] `tools/verify_c_bank.py`：独立的题库自检脚本（真编译真跑，一轮几秒）
+- [x] `test/c_bank_structure_test.dart`：结构守卫（id 段、跨分类撞号、字段完整性）
 - [ ] Windows 端 MinGW 一键安装脚本（自动下载 + 配置 PATH）
 - [ ] C 接入后补一组语法高亮的实际用例（`LanguageSyntax.c` 已备好但 `of()` 还没切过去）
+- [ ] `11_advanced` 分类描述里还留着「文件读写」字样，但为避免判题沙盒里没有稳定文件路径，
+      该分类实际没有出文件题 —— 要么把描述里的「文件读写」去掉，要么补一道用
+      `fopen` 写临时文件的题（需先确认判题工作目录可写）
 - [ ] C++：复用同一套编译流程，改扩展名 + 编译器命令 + `LanguageSyntax.cpp`
 - [ ] 应用名是否要从「Python 练习平台」改成更中性的名字（现在已支持多语言，
       README / CFBundleDisplayName / 关于页都还写着 Python）
 
-**踩过的坑**
+**踩过的坑（题库编写阶段）**
+- **一条测试里判完整个题库会把 flutter_tools 搞崩**：72 题放在一条测试里跑要 33 秒，
+  触发 `Bad state: Cannot close sink while adding stream`（flutter_platform.dart），
+  suite 报「did not complete」。拆成每分类一条（各约 3 秒）后稳定，失败也能定位到分类
+- `test/c_bank_structure_test.dart` 要求**每个用例的期望输出非空**，
+  所以「打印 0 行」这种题（比如 n=0 的空三角形）会让结构守卫失败
+- 结构测试用普通 `test()` 时必须自己 `TestWidgetsFlutterBinding.ensureInitialized()`，
+  否则读 assets 会静默变成空数组，看起来像「题库没有分类」
+
+**踩过的坑（判题引擎）**
 - 超时后**进程根本没被杀**（既有 bug）：每次判题超时都只返回结果，学生的 `while(1)`
   会在后台一直跑吃满 CPU，而提示语却写着「已强制终止」——已修
 - 给 stdout/stderr 各自加 `.timeout` 会留下无人 await 的 future，

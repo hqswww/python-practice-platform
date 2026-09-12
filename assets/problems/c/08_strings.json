@@ -1,0 +1,230 @@
+[
+  {
+    "id": 801,
+    "title": "字符串长度",
+    "difficulty": "easy",
+    "description": "读入一个不含空格的字符串，输出它的长度（字符个数）。",
+    "input_format": "一行，一个不含空格的字符串 s（长度不超过 100）",
+    "output_format": "输出一个整数，表示 s 的字符个数",
+    "sample_input": "hello",
+    "sample_output": "5",
+    "test_cases": [
+      { "input": "hello\n", "output": "5" },
+      { "input": "a\n", "output": "1" },
+      { "input": "aaaaaaaa\n", "output": "8" },
+      { "input": "Hello123\n", "output": "8" }
+    ],
+    "hints": [
+      "C 里没有专门的字符串类型，字符串是存在 char 数组里的。",
+      "一次读入一个不含空格的字符串可以用 scanf(\"%s\", s)——数组名本身就是地址，所以不写 &。",
+      "求长度用 <string.h> 里的 strlen(s)，别忘了 #include <string.h>。"
+    ],
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main() {\n    /* 长度不超过 100，数组要开到 101：\n       字符串结尾还要额外放一个 '\\0' 占位置 */\n    char s[101];\n\n    /* 数组名就是首地址，因此不用（也不该）加 & */\n    scanf(\"%s\", s);\n\n    /* strlen 数的是「'\\0' 之前有多少个字符」，\n       结尾的 '\\0' 自己不算长度 */\n    printf(\"%d\\n\", (int)strlen(s));\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "char 数组和字符串的区别",
+        "body": "char s[10]; 只是「10 个格子、每格放一个字符」的数组，它本身还不是字符串。\n只有当数组里出现 '\\0'（读作 null 字符，值是 0）时，它前面的这些字符才算一个字符串——'\\0' 就是字符串的结束标志。\n\n所以 char s[10] 最多只能存 9 个字符，最后一个位置必须留给 '\\0'。本题输入最长 100 个字符，数组就得开到 101。\n\n用 scanf(\"%s\", s) 读入时，scanf 会自动在末尾补上 '\\0'，这也是它比逐个字符读方便的地方。",
+        "code": "char s[101];\nscanf(\"%s\", s);   /* 输入 hello 之后，s 里是 h e l l o \\0 */",
+        "output": ""
+      },
+      {
+        "title": "strlen 和 sizeof 不是一回事",
+        "body": "strlen(s) 从 s[0] 开始数，一直数到第一个 '\\0' 为止，返回的是字符个数，不包括 '\\0'。\nsizeof(s) 则是数组一共占多少字节，和里面装了什么东西无关：char s[101] 的 sizeof 永远等于 101。\n\n新手常把这两个混着用：想求输入长度却写了 sizeof(s)，于是不管输入多长，输出永远是 101。\n\n另外注意 scanf(\"%s\") 遇到空格、制表符、换行就停下，所以它读不到带空格的句子；要读一整行得用 fgets。",
+        "code": "char s[101] = \"hello\";\nprintf(\"%d\\n\", (int)strlen(s));   /* 5：数到 '\\0' 为止 */\nprintf(\"%d\\n\", (int)sizeof(s));   /* 101：数组本身的字节数 */",
+        "output": "5\n101"
+      },
+      {
+        "title": "不调 strlen 也能自己数",
+        "body": "把循环的结束条件写成 s[i] != '\\0'，就能一个字符一个字符地数完整个字符串——这正是 '\\0' 存在的意义，它让程序知道字符串到哪里结束。\n\n要小心循环条件别写成 i <= strlen(s)：那样最后一轮读到的正好是结尾的 '\\0'，再往后就越界了。\n\n还有一个小陷阱：strlen 本身要遍历一遍字符串，把它放在循环条件里，每轮都会重新数一次，长度 n 的串会白跑 n 遍，数据一多就明显变慢。",
+        "code": "int n = 0;\nwhile (s[n] != '\\0') {\n    n++;\n}\nprintf(\"%d\\n\", n);",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 802,
+    "title": "统计数字字符的个数",
+    "difficulty": "easy",
+    "description": "读入一个不含空格的字符串，统计其中数字字符（'0' 到 '9'）出现的次数并输出。",
+    "input_format": "一行，一个不含空格的字符串 s（长度不超过 100）",
+    "output_format": "输出一个整数，表示 s 中数字字符的个数",
+    "sample_input": "C99",
+    "sample_output": "2",
+    "test_cases": [
+      { "input": "C99\n", "output": "2" },
+      { "input": "abc\n", "output": "0" },
+      { "input": "12345\n", "output": "5" },
+      { "input": "a1b2c3\n", "output": "3" }
+    ],
+    "hints": [
+      "用一个计数器 count，边遍历边累加，初值设成 0。",
+      "遍历的结束条件是遇到字符串结尾的 '\\0'，也就是写 s[i] != '\\0'。",
+      "判断数字字符写 s[i] >= '0' && s[i] <= '9'，两个条件都要写。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    char s[101];\n    scanf(\"%s\", s);\n\n    int count = 0;\n\n    /* 循环的终点是结尾的 '\\0'，而不是数组长度 101 */\n    for (int i = 0; s[i] != '\\0'; i++) {\n        /* 数字字符的 ASCII 码是连续的，\n           所以直接和 '0'、'9' 比大小就能判断 */\n        if (s[i] >= '0' && s[i] <= '9') {\n            count++;\n        }\n    }\n\n    printf(\"%d\\n\", count);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "循环靠 '\\0' 收尾",
+        "body": "遍历字符串不需要事先知道长度：只要还没遇到 '\\0' 就继续。最常见的写法是 for (int i = 0; s[i] != '\\0'; i++)。\n\n如果写成 for (int i = 0; i < strlen(s); i++)，结果也对，但 strlen 每轮都会被调用一次，长度 n 的串要白跑 n 遍，字符串一长就能感觉到慢。\n\n越界是这里最常见的错误：写成 i <= strlen(s) 的话，最后一轮 i 正好等于长度，读到的是结尾那个 '\\0'，再往后就跑到数组外面去了。",
+        "code": "for (int i = 0; s[i] != '\\0'; i++) {\n    /* 对 s[i] 做点什么 */\n}",
+        "output": ""
+      },
+      {
+        "title": "怎么判断一个字符是数字",
+        "body": "C 语言里字符用单引号表示：'0'、'9'。它们在内存里存的其实是 ASCII 码，'0' 是 48，'9' 是 57。\n\n正因为 0 到 9 这十个字符的编码是连续的，只要判断 s[i] >= '0' && s[i] <= '9' 就知道它是不是数字字符。写 '0' 比写 48 更清楚，也不依赖具体的字符编码。\n\n两个新手常犯的错：\n1. 写成 s[i] >= 0 —— 那是拿字符和整数比，结果永远成立，等于把字母也数进去了；\n2. 写成 0 <= s[i] <= 9 —— C 会先算 0 <= s[i] 得到一个 0 或 1，再拿它和 9 比较，永远为真，等于根本没判断。",
+        "code": "if (s[i] >= '0' && s[i] <= '9') {\n    count++;\n}",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 803,
+    "title": "小写字母转大写",
+    "difficulty": "easy",
+    "description": "读入一个不含空格的字符串，把其中的小写字母全部转换成大写字母后输出，其它字符原样保留。",
+    "input_format": "一行，一个不含空格的字符串 s（长度不超过 100）",
+    "output_format": "输出转换后的字符串，占一行",
+    "sample_input": "hello",
+    "sample_output": "HELLO",
+    "test_cases": [
+      { "input": "hello\n", "output": "HELLO" },
+      { "input": "abcXYZ123\n", "output": "ABCXYZ123" },
+      { "input": "a\n", "output": "A" },
+      { "input": "zzz\n", "output": "ZZZ" }
+    ],
+    "hints": [
+      "要一个字符一个字符地处理，先把整个字符串读进 char 数组。",
+      "小写字母的范围是 'a' 到 'z'：先判断，只转换落在范围内的字符。",
+      "转换可以写 s[i] = s[i] - 'a' + 'A'；最后用 printf(\"%s\\n\", s) 输出整个字符串。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    char s[101];\n    scanf(\"%s\", s);\n\n    /* 就地修改数组里的每一个字符 */\n    for (int i = 0; s[i] != '\\0'; i++) {\n        /* 只动小写字母：范围之外的一律不碰，\n           否则数字和大写字母会被减成毫不相干的字符 */\n        if (s[i] >= 'a' && s[i] <= 'z') {\n            s[i] = s[i] - 'a' + 'A';\n        }\n    }\n\n    /* %s 从开头一路打印到 '\\0'，不用自己写循环输出 */\n    printf(\"%s\\n\", s);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "字符其实也是整数：'a' - 'A' 等于 32",
+        "body": "字符在内存里就是整数（ASCII 码）：'A' 是 65，'a' 是 97，小写字母刚好比对应的大写字母大 32。\n\n所以小写转大写可以写 s[i] - 32，但更推荐写 s[i] - 'a' + 'A'：只用字符本身表达意图，不用记 32 这个数字，换字符集也不会错。\n\n关键是要先判断范围再转换。如果不判断就对所有字符做减法，数字和大写字母会被改成完全不相干的符号，比如 '1' 会变成别的字符——程序不报错，结果却全乱。",
+        "code": "if (ch >= 'a' && ch <= 'z') {\n    ch = ch - 'a' + 'A';\n}",
+        "output": ""
+      },
+      {
+        "title": "输出字符串用 %s",
+        "body": "改完的字符还在数组里，用 printf(\"%s\\n\", s) 一次就能输出整个字符串：%s 从数组开头一直打印，遇到 '\\0' 才停下。\n\n不要用 %c 去输出数组名——%c 只打印一个字符，给它数组名只会得到一个莫名其妙的符号。\n\n还要保证数组里有 '\\0'：如果哪里忘了补上结束标志，%s 会一直往后读，输出一堆乱码甚至崩溃。",
+        "code": "printf(\"%s\\n\", s);   /* 从 s[0] 一直打到 '\\0' 之前 */",
+        "output": "输入 hello 时输出 HELLO"
+      }
+    ]
+  },
+  {
+    "id": 804,
+    "title": "字符串反转",
+    "difficulty": "medium",
+    "description": "读入一个不含空格的字符串，把它倒过来输出（第一个字符变最后一个，最后一个变第一个）。",
+    "input_format": "一行，一个不含空格的字符串 s（长度不超过 100）",
+    "output_format": "输出反转后的字符串，占一行",
+    "sample_input": "hello",
+    "sample_output": "olleh",
+    "test_cases": [
+      { "input": "hello\n", "output": "olleh" },
+      { "input": "a\n", "output": "a" },
+      { "input": "ab\n", "output": "ba" },
+      { "input": "aaaa\n", "output": "aaaa" }
+    ],
+    "hints": [
+      "先求出长度 n，下标 i 的对称位置是 n - 1 - i。",
+      "交换 s[i] 和 s[n - 1 - i]，需要一个临时变量。",
+      "循环只走到一半：i < n / 2，走过头会把刚换好的又换回去。"
+    ],
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main() {\n    char s[101];\n    scanf(\"%s\", s);\n\n    int n = (int)strlen(s);\n\n    /* 首尾对称交换：i 和 n - 1 - i 是一对。\n       只走到中间就停——继续走会把刚换好的又换回来 */\n    for (int i = 0; i < n / 2; i++) {\n        char t = s[i];          /* 交换三件套的顺序不能颠倒 */\n        s[i] = s[n - 1 - i];\n        s[n - 1 - i] = t;\n    }\n\n    printf(\"%s\\n\", s);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么循环用 i < n / 2",
+        "body": "反转就是把首尾对称的两个字符互换：第 1 个和最后 1 个换，第 2 个和倒数第 2 个换……下标 i 的对称位置是 n - 1 - i。\n\n交换完前一半，后一半就已经是对的了，所以循环只需要走 n / 2 步。\n\n如果写成 i < n，i 走过后半段时会把它再换一次，等于白换——结果又变回原样。用 \"ab\" 这类短串在纸上走一遍最容易看清这点。\n\n单字符（n = 1）时 n / 2 等于 0，循环一次都不执行，直接输出原串，这也是正确答案。",
+        "code": "for (int i = 0; i < n / 2; i++) {\n    char t = s[i];\n    s[i] = s[n - 1 - i];\n    s[n - 1 - i] = t;\n}",
+        "output": "输入 hello 时输出 olleh"
+      },
+      {
+        "title": "另一种做法：strcpy 和 strcat",
+        "body": "反转还可以把字符从后往前复制到一个新数组里，这里用到两个 string.h 里的函数：\nstrcpy(dst, src) 把 src 的内容复制到 dst（连结尾的 '\\0' 一起复制）；\nstrcat(dst, src) 把 src 接到 dst 的末尾。\n\n注意几点：\n1. dst 必须先用 strcpy 或直接写 '\\0' 变成「空串」，否则它的内容是不确定的，接上去就成了乱码；\n2. dst 一定要开得够大——这两个函数都不知道 dst 能装多少，装不下就会写坏相邻的内存；\n3. 单个字符要凑成字符串才能接，所以得准备一个 char one[2] = {字符, '\\0'}。",
+        "code": "char s[101], t[101];\nscanf(\"%s\", s);\nint n = (int)strlen(s);\n\nt[0] = '\\0';                      /* 先变成空串，strcat 才有地方接 */\nfor (int i = n - 1; i >= 0; i--) {\n    char one[2] = {s[i], '\\0'};   /* 一个字符 + 结束标志 = 一个字符串 */\n    strcat(t, one);\n}\nprintf(\"%s\\n\", t);",
+        "output": "输入 hello 时输出 olleh"
+      }
+    ]
+  },
+  {
+    "id": 805,
+    "title": "回文判断",
+    "difficulty": "medium",
+    "description": "读入一个不含空格的字符串，判断它是不是回文串（正着读和倒着读完全一样）。\n\n比较时区分大小写，所以 Level 不是回文串。",
+    "input_format": "一行，一个不含空格的字符串 s（长度不超过 100，只含英文字母和数字）",
+    "output_format": "是回文串输出一行 Yes，否则输出一行 No",
+    "sample_input": "level",
+    "sample_output": "Yes",
+    "test_cases": [
+      { "input": "level\n", "output": "Yes" },
+      { "input": "abc\n", "output": "No" },
+      { "input": "a\n", "output": "Yes" },
+      { "input": "abccba\n", "output": "Yes" }
+    ],
+    "hints": [
+      "先想清楚「回文」等价于哪些位置上的字符必须相同。",
+      "下标 i 的对称位置是 n - 1 - i，从两头往中间逐个比较。",
+      "用一个标志变量记结果，一旦发现不相同就可以 break 提前结束。"
+    ],
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main() {\n    char s[101];\n    scanf(\"%s\", s);\n\n    int n = (int)strlen(s);\n    int ok = 1;   /* 先假设是回文串，发现问题再改成 0 */\n\n    /* 从两头往中间比：只要有一对不同，就能断定不是回文 */\n    for (int i = 0; i < n / 2; i++) {\n        if (s[i] != s[n - 1 - i]) {\n            ok = 0;\n            break;   /* 已经能确定答案，不用再往下比 */\n        }\n    }\n\n    if (ok) {\n        printf(\"Yes\\n\");\n    } else {\n        printf(\"No\\n\");\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "从两头往中间比",
+        "body": "回文串正着读和倒着读一样，等价于「第 1 个和最后 1 个相同、第 2 个和倒数第 2 个相同……」。\n\n下标 i 的对称位置是 n - 1 - i（n 是长度）。从两头往中间比，只要发现一对不同，就可以立刻下结论「不是回文」，用 break 提前结束，不必白比完后面的。\n\n比较到 n / 2 就够：长度是偶数时正好比 n/2 对；长度是奇数时最中间那个字符和自己对称，不用比。\n\n单字符串（n = 1）一次都不比，直接输出 Yes，这是对的。",
+        "code": "int n = (int)strlen(s);\nint ok = 1;\nfor (int i = 0; i < n / 2; i++) {\n    if (s[i] != s[n - 1 - i]) {\n        ok = 0;\n        break;\n    }\n}",
+        "output": ""
+      },
+      {
+        "title": "字符能直接用 == 比，字符串不能",
+        "body": "单个字符本质上是整数，用 == 和 != 比较完全没问题：s[i] != s[n - 1 - i] 就是比两个字符是否相同。\n\n但两个字符串千万不能用 == 比。如果有 char a[10], b[10];，那么 a == b 比较的是两个数组的首地址，它们永远不相等——哪怕两个数组里的内容一模一样。判断字符串内容是否相等要用 strcmp(a, b) == 0。\n\n还有输出格式：题目要的是 Yes / No 两个单词，大小写、字母一个都不能差，判题会逐行逐字符比对。",
+        "code": "if (ok) {\n    printf(\"Yes\\n\");\n} else {\n    printf(\"No\\n\");\n}",
+        "output": "输入 level 时输出 Yes"
+      }
+    ]
+  },
+  {
+    "id": 806,
+    "title": "拼接两个字符串并比较大小",
+    "difficulty": "medium",
+    "description": "读入两个不含空格的字符串 a 和 b，先输出把它们拼接起来的结果（a 在前、b 在后），再输出它们的字典序比较结果。",
+    "input_format": "一行，两个不含空格的字符串 a 和 b，用空格分隔（每个长度不超过 50）",
+    "output_format": "输出两行：\n第一行是 a 接 b 的拼接结果；\n第二行是比较结果——相等输出 equal，a 小于 b 输出 less，a 大于 b 输出 greater",
+    "sample_input": "ab cd",
+    "sample_output": "abcd\nless",
+    "test_cases": [
+      { "input": "ab cd\n", "output": "abcd\nless" },
+      { "input": "abc abc\n", "output": "abcabc\nequal" },
+      { "input": "banana apple\n", "output": "bananaapple\ngreater" },
+      { "input": "a ab\n", "output": "aab\nless" }
+    ],
+    "hints": [
+      "拼接和比较都要用 <string.h> 里的函数，别忘了 #include。",
+      "拼接用 strcat(a, b)，结果会留在 a 里，所以 a 必须开得足够大。",
+      "比较用 strcmp(a, b)：返回 0 表示相等，正数表示 a 大，负数表示 a 小；而且要先把比较结果存下来，再拼接。"
+    ],
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main() {\n    /* 拼接后的结果要放得下 a 和 b 两个串，外加一个 '\\0'：\n       50 + 50 + 1 = 101，这里开 128 更保险 */\n    char a[128], b[64];\n    scanf(\"%s %s\", a, b);\n\n    /* 1. 先把比较结果存下来再拼接。\n          strcat 会改掉 a 的内容，顺序颠倒的话\n          第二行比较的就不是「原来的 a」了 */\n    int cmp = strcmp(a, b);\n\n    /* 2. strcat 从 a 的 '\\0' 位置接着往后写，\n          所以 a 必须开得足够大，装不下会写坏别的内存 */\n    strcat(a, b);\n    printf(\"%s\\n\", a);\n\n    /* 3. strcmp 返回 0 才代表内容完全相同，\n          返回正数表示前面的串大，负数表示前面的串小 */\n    if (cmp == 0) {\n        printf(\"equal\\n\");\n    } else if (cmp > 0) {\n        printf(\"greater\\n\");\n    } else {\n        printf(\"less\\n\");\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "strcat：把字符串接到末尾",
+        "body": "strcat(a, b) 把 b 追加到 a 的后面，结果留在 a 里。它从 a 的 '\\0' 位置开始写，先把那个 '\\0' 覆盖掉，写完之后再补一个新的 '\\0'。\n\n所以 a 必须开得足够大：strcat 根本不知道 a 的容量，装不下就会写坏相邻的内存（这叫缓冲区溢出）。本题两个串各不超过 50 个字符，a 至少要 101 个位置，示例里开 128 更保险。\n\n调用顺序也要留意：strcat 之后 a 的内容就变了。如果还要拿「原来的 a」做别的事（比如比较大小），必须先把结果存进变量。",
+        "code": "char a[128] = \"ab\";\nchar b[64] = \"cd\";\nstrcat(a, b);\nprintf(\"%s\\n\", a);   /* abcd */",
+        "output": "abcd"
+      },
+      {
+        "title": "strcmp：返回 0 才是相等",
+        "body": "strcmp(a, b) 按字典序逐个字符比较两个字符串，返回值分三种情况：\n返回 0：两个字符串内容完全相同；\n返回正数：a 排在 b 后面（a 更大）；\n返回负数：a 排在 b 前面（a 更小）。\n\n两个经典错误：\n1. 用 a == b 判断相等——那比的是两个数组的地址，永远不相等，而且编译器多半只会给个警告；\n2. 直接写 if (strcmp(a, b))——C 里 0 是假、非 0 是真，这样等于「不相等时才成立」，跟想说的正好相反。正确写法是 if (strcmp(a, b) == 0)。\n\n比较是按 ASCII 码来的，大写字母的编码比小写字母小（'Z' 是 90，'a' 是 97），所以 \"Zoo\" 反而排在 \"apple\" 前面。这也是为什么 a 是 b 的前缀时（a = \"a\"，b = \"ab\"）a 更小：比较到 a 的结尾时，'\\0' 比 'b' 小。",
+        "code": "printf(\"%d\\n\", strcmp(\"abc\", \"abc\"));   /* 0：内容相同 */\nif (strcmp(a, b) == 0) {\n    printf(\"equal\\n\");\n}",
+        "output": "0"
+      },
+      {
+        "title": "strcpy：复制字符串不用逐个搬",
+        "body": "strcpy(dst, src) 把 src 的内容整体复制到 dst，结尾的 '\\0' 也会一起复制过去。\n\n为什么不能直接写 dst = src？因为数组名在 C 里不是一个可以整体赋值的变量，这样写连编译都过不去。\n\n和 strcat 一样，dst 也必须先开够大——strcpy 不会替你检查长度，目标数组装不下同样会踩坏别的内存。",
+        "code": "char src[] = \"hello\";\nchar dst[20];        /* 至少 5 + 1 个位置 */\nstrcpy(dst, src);\nprintf(\"%s\\n\", dst);",
+        "output": "hello"
+      }
+    ]
+  }
+]

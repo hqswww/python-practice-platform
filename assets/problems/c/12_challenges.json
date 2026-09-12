@@ -1,0 +1,248 @@
+[
+  {
+    "id": 1201,
+    "title": "一组数据的最大、最小与总和",
+    "difficulty": "easy",
+    "description": "读入一组整数，输出其中的最大值、最小值和总和，各占一行。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100），表示数据的个数。\n第二行 n 个整数，用空格分隔。",
+    "output_format": "三行，依次是最大值、最小值、总和。",
+    "sample_input": "5\n3 7 1 9 4",
+    "sample_output": "9\n1\n24",
+    "test_cases": [
+      { "input": "5\n3 7 1 9 4\n", "output": "9\n1\n24" },
+      { "input": "1\n-5\n", "output": "-5\n-5\n-5" },
+      { "input": "3\n0 0 0\n", "output": "0\n0\n0" },
+      { "input": "6\n-3 -1 -7 -2 -9 -4\n", "output": "-1\n-9\n-26" }
+    ],
+    "hints": [
+      "先把 n 个数全部读进一个数组，再遍历数组，一次就能算出三个结果。",
+      "最大值和最小值都拿 a[0] 当起点，然后从 a[1] 开始逐个比较。",
+      "把「求最大值」「求最小值」「求和」各写成一个函数，参数传数组和长度：int max_of(int a[], int n)。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 形参写成 int a[] 和写成 int *a 是同一件事：传进来的是数组首地址 */\nint max_of(int a[], int n) {\n    int m = a[0];                  /* 用第一个元素初始化，不能写 0 */\n    for (int i = 1; i < n; i++) {\n        if (a[i] > m) {\n            m = a[i];\n        }\n    }\n    return m;\n}\n\nint min_of(int a[], int n) {\n    int m = a[0];                  /* 初始化为 0 的话，全是负数时结果就错了 */\n    for (int i = 1; i < n; i++) {\n        if (a[i] < m) {\n            m = a[i];\n        }\n    }\n    return m;\n}\n\nint sum_of(int a[], int n) {\n    int s = 0;                     /* 累加器必须初始化为 0，否则是内存里的随机值 */\n    for (int i = 0; i < n; i++) {\n        s += a[i];\n    }\n    return s;\n}\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    int a[100];\n    for (int i = 0; i < n; i++) {\n        scanf(\"%d\", &a[i]);        /* a[i] 是普通变量，取地址符不能漏 */\n    }\n\n    printf(\"%d\\n\", max_of(a, n));\n    printf(\"%d\\n\", min_of(a, n));\n    printf(\"%d\\n\", sum_of(a, n));\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "最大值为什么不能从 0 开始",
+        "body": "很多人的第一反应是写 int m = 0;，然后一个个比过去。这组数里只要有正数，结果看起来是对的；但只要输入全是负数，比如 -3 -1 -7，m 就会一直保持 0，最后输出一个根本没出现过的「最大值 0」。\n\n正确做法是拿数据里的一个真实元素当起点（通常就是 a[0]），然后从第二个元素开始比较。这样无论数据是正是负都不会错。\n\n最小值同理：初始化为 0 时，全正的数据会得到一个假的「最小值」。",
+        "code": "int m = a[0];          /* 用真实数据当起点 */\nfor (int i = 1; i < n; i++) {\n    if (a[i] > m) m = a[i];\n}",
+        "output": "输入 -3 -1 -7 时输出 -1（而不是 0）"
+      },
+      {
+        "title": "把数组交给函数",
+        "body": "数组作为参数传给函数时，传的是首地址而不是一整份拷贝。所以函数里 int a[] 和 int *a 完全等价，函数内改 a[0] 会直接改到外面的数组。\n\n这也是为什么数组参数必须再单独传一个长度 n——函数里用 sizeof(a) 算出来的是指针的大小（8 字节），不是数组的长度，这是新手很容易踩的坑。\n\n本题要算三样东西，写成三个函数的好处是：每个函数只做一件事，测试和阅读都更容易。",
+        "code": "int sum_of(int a[], int n) {\n    int s = 0;\n    for (int i = 0; i < n; i++) s += a[i];\n    return s;\n}\n\nprintf(\"%d\\n\", sum_of(a, n));   /* 直接把数组名 a 传进去 */",
+        "output": "输入 3 7 1 9 4 时输出 24"
+      }
+    ]
+  },
+  {
+    "id": 1202,
+    "title": "输出区间内的所有素数",
+    "difficulty": "medium",
+    "description": "读入两个整数 a 和 b（a ≤ b），找出闭区间 [a, b] 内所有的素数。\n先输出素数的个数，再按从小到大的顺序输出这些素数。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔（1 ≤ a ≤ b ≤ 1000）。",
+    "output_format": "第一行输出素数的个数。\n第二行按从小到大的顺序输出所有素数，相邻两个之间用一个空格分隔；如果区间内一个素数都没有，第二行留空。",
+    "sample_input": "2 20",
+    "sample_output": "8\n2 3 5 7 11 13 17 19",
+    "test_cases": [
+      { "input": "2 20\n", "output": "8\n2 3 5 7 11 13 17 19" },
+      { "input": "1 10\n", "output": "4\n2 3 5 7" },
+      { "input": "1 1\n", "output": "0" },
+      { "input": "90 97\n", "output": "1\n97" }
+    ],
+    "hints": [
+      "把「判断一个整数 n 是不是素数」单独写成一个函数，主函数里用循环对区间内每个数调用它。",
+      "判断素数不用试除到 n-1，只要试到 √n 就够了，写成 for (int i = 2; i * i <= n; i++)。",
+      "小于 2 的数都不是素数：1 不是，0 和负数也不是。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 是素数返回 1，不是返回 0 */\nint is_prime(int n) {\n    if (n < 2) {\n        return 0;                  /* 1 不是素数，这条边界最容易漏 */\n    }\n    for (int i = 2; i * i <= n; i++) {   /* i*i <= n 等价于 i <= √n */\n        if (n % i == 0) {\n            return 0;              /* 找到因子就立刻返回，不用再试 */\n        }\n    }\n    return 1;\n}\n\nint main() {\n    int a, b;\n    scanf(\"%d %d\", &a, &b);\n\n    /* 第一遍：数出个数，因为个数要最先输出 */\n    int count = 0;\n    for (int i = a; i <= b; i++) {\n        if (is_prime(i)) {\n            count++;\n        }\n    }\n    printf(\"%d\\n\", count);\n\n    /* 第二遍：按顺序打印，第一个数前面不加空格 */\n    int first = 1;\n    for (int i = a; i <= b; i++) {\n        if (is_prime(i)) {\n            if (!first) {\n                printf(\" \");\n            }\n            printf(\"%d\", i);\n            first = 0;\n        }\n    }\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "把大问题拆成一个小函数",
+        "body": "「找出区间内所有素数」听起来复杂，拆开看其实只有两件事：判断一个数是不是素数，以及对一堆数重复做这件事。\n\n前者写成函数 is_prime(n)，后者用一个 for 循环从 a 走到 b。这样主函数里剩下的逻辑只有三行，一眼就能看懂。\n\n拆函数不只是为了好看：is_prime 可以单独测试（比如单独试试 is_prime(1) 和 is_prime(2)），出错时也容易定位到底是判断写错了还是循环写错了。",
+        "code": "for (int i = a; i <= b; i++) {\n    if (is_prime(i)) count++;\n}",
+        "output": "输入 2 20 时 count 得到 8"
+      },
+      {
+        "title": "为什么试到 √n 就够了",
+        "body": "如果 n 是个合数，那它一定能写成 n = x × y，其中 x、y 都大于 1。这两个因子不可能都大于 √n——否则乘积就超过 n 了。所以只要在 2 到 √n 之间找不到因子，n 就一定是素数。\n\n比如 97：√97 约等于 9.8，只需要试 2、3、4、5、6、7、8、9，都不用试到 96。数据大起来时这一步能省掉大量计算。\n\n写 i * i <= n 比写 i <= sqrt(n) 更好：不用包含 <math.h>，也不会碰到浮点数精度问题。",
+        "code": "for (int i = 2; i * i <= n; i++) {\n    if (n % i == 0) return 0;\n}",
+        "output": "is_prime(1) 返回 0，is_prime(2) 返回 1，is_prime(9) 返回 0"
+      },
+      {
+        "title": "空格摆在哪里",
+        "body": "「相邻两个之间用一个空格分隔」的意思是：数字前面有空格，但第一个数字前面不能有。\n\n常见的错误写法是每个数字后面都跟一个空格，输出就变成 \"2 3 5 \"——末尾多了一个空格。虽然判题时会忽略行尾空白，但写代码时养成控制好格式的习惯更稳妥。\n\n用一个 first 标志位记录「是不是第一个」是最简单的做法：只有不是第一个时才先打空格。",
+        "code": "int first = 1;\nfor (...) {\n    if (is_prime(i)) {\n        if (!first) printf(\" \");\n        printf(\"%d\", i);\n        first = 0;\n    }\n}",
+        "output": "2 3 5 7 11 13 17 19"
+      }
+    ]
+  },
+  {
+    "id": 1203,
+    "title": "统计字符串里的各类字符",
+    "difficulty": "medium",
+    "description": "读入一整行字符串，统计其中大写字母、小写字母、数字字符和其他字符各有多少个。",
+    "input_format": "一行字符串，长度不超过 100，以换行结束。字符串中可能含有空格和标点，保证只包含 ASCII 字符。",
+    "output_format": "四行，依次输出：大写字母个数、小写字母个数、数字字符个数、其他字符个数。\n行尾的换行符不算作字符。",
+    "sample_input": "Hello, World! 123",
+    "sample_output": "2\n8\n3\n4",
+    "test_cases": [
+      { "input": "Hello, World! 123\n", "output": "2\n8\n3\n4" },
+      { "input": "abcXYZ\n", "output": "3\n3\n0\n0" },
+      { "input": "12345\n", "output": "0\n0\n5\n0" },
+      { "input": "\n", "output": "0\n0\n0\n0" }
+    ],
+    "hints": [
+      "字符在 C 里本质上是整数（ASCII 码），所以可以直接比较大小，例如 c >= 'A' && c <= 'Z'。",
+      "这一行里有空格，用 scanf(\"%s\") 读到空格就停了；改用 fgets(s, sizeof(s), stdin) 整行读入。",
+      "循环结束条件要同时排除字符串结尾和换行符：s[i] != '\\0' && s[i] != '\\n'。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    char s[128];   /* 题目保证不超过 100 个字符，留出余量更安全 */\n\n    /* fgets 会把行尾的换行符一起读进来；读到 EOF 时返回 NULL */\n    if (fgets(s, sizeof(s), stdin) == NULL) {\n        s[0] = '\\0';   /* 什么都没读到就当成空字符串处理 */\n    }\n\n    int upper = 0, lower = 0, digit = 0, other = 0;\n    for (int i = 0; s[i] != '\\0' && s[i] != '\\n'; i++) {\n        char c = s[i];\n        if (c >= 'A' && c <= 'Z') {\n            upper++;\n        } else if (c >= 'a' && c <= 'z') {\n            lower++;\n        } else if (c >= '0' && c <= '9') {\n            digit++;\n        } else {\n            other++;   /* 空格、逗号、感叹号都算在这里 */\n        }\n    }\n\n    printf(\"%d\\n\", upper);\n    printf(\"%d\\n\", lower);\n    printf(\"%d\\n\", digit);\n    printf(\"%d\\n\", other);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "scanf(\"%s\") 为什么读不全",
+        "body": "scanf(\"%s\", s) 遇到空格、制表符或换行就停止读取。输入 Hello, World! 123，它只会把 Hello, 交给 s，后面的内容被留在缓冲区里。\n\n想读「一整行」要用 fgets(s, sizeof(s), stdin)：它一直读到换行符（或读满、或遇到文件结尾）为止。sizeof(s) 这个参数是缓冲区大小，用来防止读入过多字符把内存写坏。\n\n注意两个细节：fgets 会把换行符也存进字符串；读不到任何内容时它返回 NULL，严谨的写法要判断一下。",
+        "code": "char s[128];\nfgets(s, sizeof(s), stdin);   /* 输入 Hello, World! 123 后 s 是 \"Hello, World! 123\\n\" */",
+        "output": "s 的内容为 Hello, World! 123 加上结尾的换行符"
+      },
+      {
+        "title": "字符比较其实就是整数比较",
+        "body": "C 里没有独立的「字符类型运算」，char 存的本来就是 ASCII 码：'A' 是 65，'Z' 是 90，'a' 是 97，'z' 是 122，'0' 是 48。\n\n因为大写字母、小写字母、数字在 ASCII 表里各自都是连续排列的，所以可以用范围判断来分类，不需要把 26 个字母一个个列出来。\n\n还要注意：'a' 和 \"a\" 不是一回事——单引号是字符（一个整数），双引号是字符串（一个地址），比较时别写混。",
+        "code": "if (c >= 'A' && c <= 'Z')      upper++;\nelse if (c >= 'a' && c <= 'z') lower++;\nelse if (c >= '0' && c <= '9') digit++;",
+        "output": "输入 Hello, World! 123 时依次得到 2、8、3、4"
+      },
+      {
+        "title": "别忘了行尾那个换行符",
+        "body": "fgets 读到的字符串是「输入内容 + \\n」。如果循环只写 s[i] != '\\0'，那个换行符会被当成「其他字符」多统计一个，答案就多了 1。\n\n另外，输入是一行空行时，s 里只有 \"\\n\"，四个计数都应该是 0——把 '\\n' 排除掉才能得到这个正确结果。",
+        "code": "for (int i = 0; s[i] != '\\0' && s[i] != '\\n'; i++) { ... }",
+        "output": "输入空行时输出 0 0 0 0（各占一行）"
+      }
+    ]
+  },
+  {
+    "id": 1204,
+    "title": "矩阵转置",
+    "difficulty": "medium",
+    "description": "读入一个 m 行 n 列的整数矩阵，输出它的转置矩阵——也就是把原来的行变成列、列变成行。",
+    "input_format": "第一行两个整数 m 和 n（1 ≤ m, n ≤ 10），用空格分隔。\n接下来 m 行，每行 n 个整数，用空格分隔。",
+    "output_format": "输出 n 行，每行 m 个整数，相邻两个之间用一个空格分隔，表示转置后的矩阵。",
+    "sample_input": "2 3\n1 2 3\n4 5 6",
+    "sample_output": "1 4\n2 5\n3 6",
+    "test_cases": [
+      { "input": "2 3\n1 2 3\n4 5 6\n", "output": "1 4\n2 5\n3 6" },
+      { "input": "1 1\n7\n", "output": "7" },
+      { "input": "3 1\n1\n2\n3\n", "output": "1 2 3" },
+      { "input": "2 2\n-1 0\n2 -3\n", "output": "-1 2\n0 -3" }
+    ],
+    "hints": [
+      "用二维数组存矩阵：a[i][j] 表示第 i 行第 j 列的元素。",
+      "转置后的第 j 行第 i 列，正是原矩阵的第 i 行第 j 列，也就是交换两个下标：a[i][j] → a[j][i]。",
+      "输出时外层循环走列、内层循环走行，一共输出 n 行、每行 m 个数——行列数刚好和输入反过来。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int m, n;\n    scanf(\"%d %d\", &m, &n);\n\n    /* 行列都不超过 10，下标最大是 9，所以开 [10][10] 刚好够 */\n    int a[10][10];\n    for (int i = 0; i < m; i++) {\n        for (int j = 0; j < n; j++) {\n            scanf(\"%d\", &a[i][j]);\n        }\n    }\n\n    /* 转置不必再开一个数组：把输出时的访问顺序换一下就行。\n       外层是列 j，内层是行 i，打印出来的自然就是 a[j][i]。 */\n    for (int j = 0; j < n; j++) {\n        for (int i = 0; i < m; i++) {\n            if (i > 0) {\n                printf(\" \");   /* 每行第一个数前面不加空格 */\n            }\n            printf(\"%d\", a[i][j]);\n        }\n        printf(\"\\n\");\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "二维数组的行与列",
+        "body": "int a[10][10]; 声明了一个二维数组。a[i][j] 表示第 i 行第 j 列，两个下标都从 0 开始：3 行 4 列的矩阵，合法下标是行 0~2、列 0~3，写 a[3][0] 就越界了。\n\n读入的时候通常是两层循环，外层走行、内层走列，和输入的顺序一致。scanf 里要写 &a[i][j]——漏掉 & 一样会运行崩溃。\n\n数组开多大是按上限开的：题目说 m、n 最大是 10，那 [10][10] 就够，不用管实际输入是几行几列。",
+        "code": "int a[10][10];\nfor (int i = 0; i < m; i++)\n    for (int j = 0; j < n; j++)\n        scanf(\"%d\", &a[i][j]);",
+        "output": "输入 2 3 后依次读入 1 2 3 4 5 6"
+      },
+      {
+        "title": "转置：换个顺序读出来就够了",
+        "body": "转置的定义是「把第 i 行第 j 列的元素放到第 j 行第 i 列」。很多人的第一反应是再开一个 b[10][10]，把 b[j][i] = a[i][j] 抄一遍。\n\n其实本题只需要「输出转置矩阵」，不要求保存它。既然 b[j][i] 就是 a[i][j]，那直接在打印时把两个下标调过来即可，连第二个数组都省了。\n\n关键是想清楚两件事：转置后一共有 n 行（原来是 m 行），每行有 m 个数（原来是 n 个）。所以外层循环的上界是 n，内层是 m——这两个数很容易写反，写完用样例验一遍。",
+        "code": "for (int j = 0; j < n; j++) {          /* n 行 */\n    for (int i = 0; i < m; i++) {      /* 每行 m 个数 */\n        if (i > 0) printf(\" \");\n        printf(\"%d\", a[i][j]);\n    }\n    printf(\"\\n\");\n}",
+        "output": "1 4\n2 5\n3 6"
+      },
+      {
+        "title": "如果真要存下转置矩阵",
+        "body": "如果题目改成「把转置结果存起来，后面还要用」，那就必须开第二个数组，而且它的大小是 b[n][m]——行数和列数也换了过来。\n\n写成 int b[10][10] 不会出错（行列上限一样），但把 b[m][n] 当成转置结果的形状来用就会越界。养成「先想清楚行列，再定数组形状」的习惯。",
+        "code": "int b[10][10];\nfor (int i = 0; i < m; i++)\n    for (int j = 0; j < n; j++)\n        b[j][i] = a[i][j];   /* 下标交换 */",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 1205,
+    "title": "简易计算器",
+    "difficulty": "medium",
+    "description": "读入一个形如 a op b 的表达式，其中 a 和 b 是整数，op 是 +、-、*、/ 四个运算符之一，计算并输出结果。",
+    "input_format": "一行，形如 8 / 3：第一个整数、一个运算符、第二个整数，三者之间用空格分隔。\n保证输入合法，题目中不会出现除以 0 的情况。",
+    "output_format": "一行，运算结果。\n加、减、乘输出整数（如 8）；除法输出保留 2 位小数的浮点数（如 2.67）。",
+    "sample_input": "3 + 5",
+    "sample_output": "8",
+    "test_cases": [
+      { "input": "3 + 5\n", "output": "8" },
+      { "input": "10 - 25\n", "output": "-15" },
+      { "input": "7 * 6\n", "output": "42" },
+      { "input": "8 / 3\n", "output": "2.67" }
+    ],
+    "hints": [
+      "运算符是一个字符，用 char op; 存起来，再根据它决定做哪种运算。",
+      "四个分支用 switch (op) 写最清楚，每种运算单独写成一个函数，case 里只负责调用。",
+      "除法要小心整数除法：直接写 a / b 会得到 2，必须让表达式里出现浮点数，比如 1.0 * a / b。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 每种运算一个小函数，switch 里只负责分派 */\nint add(int a, int b) { return a + b; }\nint sub(int a, int b) { return a - b; }\nint mul(int a, int b) { return a * b; }\n\nint main() {\n    int a, b;\n    char op;\n\n    /* %c 前面的空格不能省：它让 scanf 跳过前面的空白，\n       否则 op 读到的会是 a 和运算符之间那个空格。 */\n    scanf(\"%d %c %d\", &a, &op, &b);\n\n    switch (op) {\n        case '+':\n            printf(\"%d\\n\", add(a, b));\n            break;                 /* 漏掉 break 会继续往下执行 */\n        case '-':\n            printf(\"%d\\n\", sub(a, b));\n            break;\n        case '*':\n            printf(\"%d\\n\", mul(a, b));\n            break;\n        case '/':\n            /* 写成 a / b 是两个整数相除，8 / 3 会得到 2；\n               乘上 1.0 之后整个表达式按浮点计算。 */\n            printf(\"%.2f\\n\", 1.0 * a / b);\n            break;\n        default:\n            printf(\"error\\n\");     /* 输入保证合法，这里只是防御性写法 */\n            break;\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "用 switch 分派四种运算",
+        "body": "四个运算符、四种做法，最适合的结构就是 switch：它把「拿 op 和几个固定值比较」这件事写得比一串 if-else if 更整齐。\n\n两个新手常见的错误：\n一、case 后面写双引号——case \"+\" 是字符串，编译不过；字符常量必须用单引号写成 case '+'。\n二、忘了 break——不写 break 时，匹配到 '+' 之后还会顺次执行 '-'、'*' 的语句，这种现象叫「贯穿」，是 switch 最容易出的 bug。\n\ndefault 分支不是必须的，但写上更安全：万一读进来的运算符不是那四个，程序不会默默什么都不做。",
+        "code": "switch (op) {\n    case '+': printf(\"%d\\n\", add(a, b)); break;\n    case '-': printf(\"%d\\n\", sub(a, b)); break;\n    default:  printf(\"error\\n\"); break;\n}",
+        "output": "输入 3 + 5 时输出 8"
+      },
+      {
+        "title": "读运算符时那个空格",
+        "body": "格式串 \"%d %c %d\" 里的空格很关键。scanf 格式串中的空白字符（空格、\\t、\\n）表示「跳过任意多个空白」，所以在读完第一个整数后，它会先跳过空格，再让 %c 读到真正的运算符。\n\n如果写成 \"%d%c%d\"，%c 会老老实实读下一个字符——也就是那个空格，于是 op 变成 ' '，switch 谁都匹配不上。\n\n顺带一提：输入写成 3+5（没有空格）时，\"%d %c %d\" 同样能正确读到，因为「跳过空白」允许一个都不跳。",
+        "code": "char op;\nscanf(\"%d %c %d\", &a, &op, &b);   /* 注意 %c 前面的空格 */",
+        "output": "输入 3 + 5 时 op 得到 '+'"
+      },
+      {
+        "title": "除法为什么要乘 1.0",
+        "body": "在 C 里，两个 int 相除的结果还是 int，小数部分被直接丢掉：8 / 3 得到 2，而不是 2.67。\n\n只要表达式里出现一个浮点数，C 就会把另一个操作数也转成浮点数，按小数规则计算。所以写 1.0 * a / b：先算 1.0 * 8 得到 8.0，再除以 3，得到 2.666...。\n\n最后用 %.2f 输出，printf 会自动四舍五入到两位小数。要注意这一题里「加减乘输出整数、除法输出小数」，别把 printf 的格式串写混了。",
+        "code": "printf(\"%.2f\\n\", 1.0 * a / b);   /* 8 / 3 → 2.67 */\nprintf(\"%.2f\\n\", 1.0 * 9 / 3);   /* 9 / 3 → 3.00，整数除法也能得到小数结果 */",
+        "output": "2.67\n3.00"
+      }
+    ]
+  },
+  {
+    "id": 1206,
+    "title": "学生成绩排序",
+    "difficulty": "hard",
+    "description": "读入 n 个学生的姓名和成绩，把学生按成绩从高到低排序后输出。\n如果两名学生成绩相同，姓名靠前（字典序更小）的排在前面。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 50），表示学生人数。\n接下来 n 行，每行一个姓名和一个整数成绩，用空格分隔。姓名不含空格，长度不超过 19；成绩在 0 到 100 之间。",
+    "output_format": "输出 n 行，每行一个姓名和一个整数成绩，中间用一个空格分隔，按成绩从高到低排列。",
+    "sample_input": "3\nTom 88\nAlice 95\nBob 72",
+    "sample_output": "Alice 95\nTom 88\nBob 72",
+    "test_cases": [
+      { "input": "3\nTom 88\nAlice 95\nBob 72\n", "output": "Alice 95\nTom 88\nBob 72" },
+      { "input": "4\nDan 60\nAnn 60\nCindy 90\nBen 60\n", "output": "Cindy 90\nAnn 60\nBen 60\nDan 60" },
+      { "input": "1\nZoe 100\n", "output": "Zoe 100" },
+      { "input": "3\nAmy 0\nMax 100\nKen 0\n", "output": "Max 100\nAmy 0\nKen 0" }
+    ],
+    "hints": [
+      "姓名和成绩是绑在一起的一组数据，用结构体把它们放在一个变量里最合适：姓名用 char 数组，成绩用 int。",
+      "排序时不用一个字段一个字段地搬，C 允许直接对整个结构体赋值，所以交换写法和交换两个 int 一样简单。",
+      "成绩相同时要比姓名，用 strcmp(a.name, b.name) < 0 判断字典序——字符串不能用 == 比较，更不能用 >。"
+    ],
+    "solution": "#include <stdio.h>\n#include <string.h>\n\n/* 姓名和成绩绑在一起，排序时整个结构体一起搬，不会出现\n   「成绩换了、姓名没跟着换」这种对不上的情况。 */\nstruct Student {\n    char name[20];   /* 最长 19 个字符，还要留一个位置给结尾的 '\\0' */\n    int score;\n};\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    struct Student s[50];\n    for (int i = 0; i < n; i++) {\n        /* 数组名 s[i].name 本身就是地址，这里不需要也不能写成 &s[i].name */\n        scanf(\"%s %d\", s[i].name, &s[i].score);\n    }\n\n    /* 选择排序：每一轮在剩下的学生里挑出应该排在最前面的那个 */\n    for (int i = 0; i < n - 1; i++) {\n        int best = i;\n        for (int j = i + 1; j < n; j++) {\n            if (s[j].score > s[best].score) {\n                best = j;\n            } else if (s[j].score == s[best].score &&\n                       strcmp(s[j].name, s[best].name) < 0) {\n                best = j;   /* 成绩相同时，姓名字典序小的排前面 */\n            }\n        }\n        if (best != i) {\n            struct Student tmp = s[i];\n            s[i] = s[best];\n            s[best] = tmp;   /* 结构体可以整体赋值，不用逐个成员搬 */\n        }\n    }\n\n    for (int i = 0; i < n; i++) {\n        printf(\"%s %d\\n\", s[i].name, s[i].score);\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "先想清楚数据长什么样",
+        "body": "这道题每个人的信息有两条：姓名和成绩。如果开两个平行数组 char names[50][20] 和 int scores[50]，排序时就得时刻记得「交换成绩的同时也要交换姓名」，漏一个数据就全乱了。\n\n更稳的做法是用结构体把两条信息绑成一个整体：\n\nstruct Student { char name[20]; int score; };\n\n这样 s[0] 就是一个完整的「人」，交换时整块一起动，不可能出现错位。\n\n注意 name 开 20 个字符只能存 19 个字母——C 的字符串末尾必须有一个 '\\0' 表示结束，少留这一位，printf 会一直往后读到别的内存里去。",
+        "code": "struct Student {\n    char name[20];   /* 19 个字符 + 1 个 '\\0' */\n    int score;\n};\n\nstruct Student s[50];",
+        "output": ""
+      },
+      {
+        "title": "比较规则要写全",
+        "body": "题目给了两条规则，缺一条答案就会错：先比成绩，成绩不同就按成绩；成绩相同再按姓名。\n\n字符串比较必须用 strcmp(s1, s2)，它的返回值是：小于 0 表示 s1 在前，等于 0 表示相同，大于 0 表示 s2 在前。\n\n为什么不能写 s[j].name < s[best].name？因为数组名是地址，这样比的是两个字符串在内存里的位置，跟字典序毫无关系；写 == 也一样，比的是地址是否相同，永远不相等。这是字符串最容易踩的坑。\n\n「先按 A 排，A 相同再按 B 排」是排序题的通用套路：判断条件里用 && 把两个条件串起来就行。",
+        "code": "if (s[j].score > s[best].score) {\n    best = j;\n} else if (s[j].score == s[best].score &&\n           strcmp(s[j].name, s[best].name) < 0) {\n    best = j;\n}",
+        "output": "输入 Dan 60 / Ann 60 / Cindy 90 / Ben 60 时，输出顺序为 Cindy、Ann、Ben、Dan"
+      },
+      {
+        "title": "选择排序的思路",
+        "body": "排序不一定非要写复杂的算法。选择排序的逻辑很好记：\n\n第 1 轮，在全部 n 个人里找出应该排第一的那个，和位置 0 交换；\n第 2 轮，在剩下的 n-1 个人里找出应该排第二的那个，和位置 1 交换；\n依此类推，直到只剩最后一个人，它自然就到位了。\n\n所以外层循环是 i 从 0 到 n-2，内层循环从 i+1 开始「找最好的那个」，找到后和 s[i] 交换。\n\n两个常见的边界错误：外层写成 i < n 会多跑一轮（没有意义但也不算错），内层写成 j <= n 就是数组越界了——下标最大只能到 n-1。\n\n交换结构体和交换整数写法完全一样，因为 C 允许结构体整体赋值：tmp = s[i]; s[i] = s[best]; s[best] = tmp;",
+        "code": "for (int i = 0; i < n - 1; i++) {\n    int best = i;\n    for (int j = i + 1; j < n; j++) {\n        if (s[j].score > s[best].score) best = j;\n    }\n    if (best != i) {\n        struct Student tmp = s[i];\n        s[i] = s[best];\n        s[best] = tmp;\n    }\n}",
+        "output": "输入 Tom 88 / Alice 95 / Bob 72 时输出 Alice 95、Tom 88、Bob 72"
+      }
+    ]
+  }
+]

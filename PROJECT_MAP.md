@@ -86,7 +86,10 @@
 
 ## 三、题库 `assets/`
 
-### `assets/problems/` — 72 道题，12 个分类 JSON
+### `assets/problems/<语言>/` — 每门语言 72 道题，12 个分类 JSON
+
+**按语言分目录**（`python/`、`c/`）。加语言时新建目录并在 `pubspec.yaml` 登记，
+再在 `lib/data/problem_repository.dart` 的分类表里补一份。编写规格见 `tools/C_BANK_SPEC.md`。
 ```
 01_syntax.json      基础语法(缩进/注释/print/变量)
 02_datatype.json    数据类型与转换

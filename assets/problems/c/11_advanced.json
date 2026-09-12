@@ -1,0 +1,223 @@
+[
+  {
+    "id": 1101,
+    "title": "带参数的宏：求三个数的最大值",
+    "difficulty": "easy",
+    "description": "读入三个整数 a、b、c，输出其中的最大值。\n\n要求定义一个带参数的宏 MAX(a, b) 用来求两个数的较大值，再嵌套使用它求出三个数的最大值。",
+    "input_format": "一行，三个整数 a、b、c，用空格分隔",
+    "output_format": "输出一个整数，表示三个数中的最大值",
+    "sample_input": "3 5 4",
+    "sample_output": "5",
+    "test_cases": [
+      { "input": "3 5 4\n", "output": "5" },
+      { "input": "4 3 5\n", "output": "5" },
+      { "input": "-7 -2 -9\n", "output": "-2" },
+      { "input": "0 -1 0\n", "output": "0" }
+    ],
+    "hints": [
+      "带参数的宏长得像函数，但它不是函数，而是预处理阶段的「文本替换」。",
+      "宏体可以写成三目运算符：((a) > (b) ? (a) : (b))，注意括号。",
+      "求三个数的最大值可以直接嵌套：MAX(MAX(a, b), c)，宏的参数本身可以是另一个宏调用。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 带参数的宏：在预处理阶段做文本替换。\n   每个参数和整个表达式都套了一层括号，嵌套使用时才不会算错 */\n#define MAX(a, b) ((a) > (b) ? (a) : (b))\n\nint main() {\n    int a, b, c;\n    scanf(\"%d %d %d\", &a, &b, &c);\n\n    /* 宏可以嵌套：内层先取前两个数里的大者，外层再和第三个数比 */\n    printf(\"%d\\n\", MAX(MAX(a, b), c));\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "宏不是函数，是文本替换",
+        "body": "带参数的宏由 #define 定义，它和函数的区别非常大：\n\n1. 宏在「预处理阶段」就被替换掉了，编译器根本看不到 MAX 这个名字，看到的只是展开后的表达式。\n2. 宏不做类型检查：MAX(3.5, 2) 也能用。\n3. 宏没有函数调用的开销，所以常用来写又短又频繁的代码。\n\n正因为它是「原样替换文本」，所以括号极其重要：每个参数都要加括号，整个表达式外面也要再套一层括号。",
+        "code": "#define MAX(a, b) ((a) > (b) ? (a) : (b))\n\nprintf(\"%d\\n\", MAX(3, 5));",
+        "output": "5\n展开后相当于 printf(\"%d\\n\", ((3) > (5) ? (3) : (5)));"
+      },
+      {
+        "title": "括号陷阱：不加括号会算错",
+        "body": "先看偷懒的写法：#define BAD(a, b) a > b ? a : b。单独用 BAD(3, 5) 看不出任何问题，可一旦把宏嵌进别的表达式就会出错。\n\n比如 BAD(BAD(4, 3), 5)，替换后变成：4 > 3 ? 4 : 3 > 5 ? 4 > 3 ? 4 : 3 : 5。因为 > 的优先级高于 ?:，而 ?: 是从右往左结合的，编译器实际按 (4>3) ? 4 : ((3>5) ? (4>3?4:3) : 5) 来理解，结果是 4——但正确答案明明是 5。\n\n参数不加括号也一样危险：如果宏体写成 (a > b ? a : b)，那么 MAX(x + 1, y) 会展开成 (x + 1 > y ? x + 1 : y)，看着还行，可换成 MAX(x * 2, y) 之类就未必了——总之别赌优先级。\n\n结论：带参数的宏，每个参数和整个表达式都老老实实套一层括号。",
+        "code": "#define BAD(a, b) a > b ? a : b   /* 危险写法 */\nprintf(\"%d\\n\", BAD(BAD(4, 3), 5));",
+        "output": "4\n（正确答案是 5，这就是不加括号的代价）"
+      }
+    ]
+  },
+  {
+    "id": 1102,
+    "title": "条件编译：调试开关",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，输出两行内容：\n第一行是调试信息 debug: n=<n>\n第二行是 n 的平方\n\n要求：第一行的调试信息必须写在 #ifdef DEBUG 和 #endif 之间，并在程序开头用 #define DEBUG 打开这个开关。这样只要把 #define DEBUG 注释掉，调试信息就会从程序里彻底消失。",
+    "input_format": "一行，一个整数 n",
+    "output_format": "两行，第一行形如 debug: n=6，第二行是 n 的平方",
+    "sample_input": "6",
+    "sample_output": "debug: n=6\n36",
+    "test_cases": [
+      { "input": "6\n", "output": "debug: n=6\n36" },
+      { "input": "0\n", "output": "debug: n=0\n0" },
+      { "input": "-5\n", "output": "debug: n=-5\n25" }
+    ],
+    "hints": [
+      "以 # 开头的都是预处理指令，它在真正编译之前执行。",
+      "#define DEBUG 定义了一个没有值的宏，表示「这个开关是开着的」。",
+      "用 #ifdef DEBUG ... #endif 把调试用的 printf 包起来，注意 #endif 不能漏。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 调试开关：把下面这一行注释掉再重新编译，调试输出就整段消失了 */\n#define DEBUG\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n#ifdef DEBUG\n    /* 只有 DEBUG 被定义时，这一行才会参与编译 */\n    printf(\"debug: n=%d\\n\", n);\n#endif\n\n    /* 正常的输出，不管有没有定义 DEBUG 都有 */\n    printf(\"%d\\n\", n * n);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "条件编译发生在编译之前",
+        "body": "#ifdef DEBUG 判断的是「宏 DEBUG 有没有被定义」，这个判断由预处理器完成，发生在编译之前。\n\n如果 DEBUG 没被定义，那么 #ifdef 和 #endif 之间的代码在预处理阶段就被整段删掉了——它根本不会进入编译出来的程序，不是「运行时跳过」。\n\n这一点和 if 完全不同：if 是运行时判断，两种分支的代码都在程序里；而条件编译一次只能编出一个版本，想切换必须改代码、重新编译。\n\n实际开发里这非常有用：调试时打开大量打印，正式发布时把 #define DEBUG 一注释，一个字节的调试代码都不剩，也不用担心忘了删。",
+        "code": "#define DEBUG\n\n#ifdef DEBUG\n    printf(\"debug: n=%d\\n\", n);\n#endif",
+        "output": "保留 #define DEBUG 时输出 debug: n=6\n把它注释掉重新编译后，这一行不再出现"
+      },
+      {
+        "title": "ifndef 和 else：给宏一个默认值",
+        "body": "#ifndef 的意思正好相反：宏「没有定义」时才编译这一段，常用来给一个宏兜底默认值。这样别人在编译时可以用 -D 传自己的值，不传就用默认的。\n\n#ifdef / #ifndef 还可以配 #else 使用，#else 分支在条件不成立时生效（注意是 #else，不是 C 语言的 else）。\n\n另外别忘了 #endif：漏掉它编译器会一直报「未终止的 #ifdef」。",
+        "code": "#ifndef SIZE\n#define SIZE 100   /* 别人没定义 SIZE 时用 100 */\n#endif\n\n#ifdef DEBUG\n#define LOG(msg) printf(msg)\n#else\n#define LOG(msg)   /* 空宏：直接替换成什么都没有 */\n#endif",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 1103,
+    "title": "动态数组：n 个数的和",
+    "difficulty": "medium",
+    "description": "先读入整数 n，再读入 n 个整数，输出它们的和。\n\n要求用 malloc 或 calloc 在运行时为这 n 个数分配内存，用完必须释放。",
+    "input_format": "第一行一个整数 n（0 ≤ n ≤ 1000）；第二行 n 个整数，用空格分隔。n 为 0 时第二行不存在。",
+    "output_format": "输出一个整数，表示这 n 个数的和（n 为 0 时输出 0）",
+    "sample_input": "3\n1 2 3",
+    "sample_output": "6",
+    "test_cases": [
+      { "input": "3\n1 2 3\n", "output": "6" },
+      { "input": "1\n-42\n", "output": "-42" },
+      { "input": "0\n", "output": "0" },
+      { "input": "5\n10 -10 20 -20 5\n", "output": "5" }
+    ],
+    "hints": [
+      "数组的大小在运行时才知道，所以不能用写死的 int a[10]，要改成向系统申请内存。",
+      "malloc 的参数是「字节数」，用 n * sizeof(int) 算出来，返回值是 void*，需要转成 int*。",
+      "malloc 可能失败并返回 NULL，拿到指针后要先判断；程序结束前用 free 把内存还回去。"
+    ],
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    /* n 可能为 0，此时不去申请、更不解引用，避免访问无效内存 */\n    int *a = NULL;\n    if (n > 0) {\n        a = (int *)malloc(n * sizeof(int));\n        /* malloc 失败会返回 NULL，直接用它程序会崩溃 */\n        if (a == NULL) {\n            return 1;\n        }\n    }\n\n    int sum = 0;\n    for (int i = 0; i < n; i++) {\n        scanf(\"%d\", &a[i]);\n        sum += a[i];\n    }\n\n    printf(\"%d\\n\", sum);\n\n    /* 借来的内存必须还：free(NULL) 是安全的，所以这里不需要额外判断 */\n    free(a);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么需要动态内存",
+        "body": "前面写的 int a[10]; 大小在写代码时就定死了。可题目往往只说「先读 n，再读 n 个数」，n 要到运行时才知道。\n\n这时固定数组两头不讨好：开小了遇到大 n 就越界（写坏别的变量，甚至崩溃）；开大了又浪费内存。\n\nmalloc 解决的正是这个问题：它在程序运行时向后系统「借」一块指定字节数的内存，并把首地址给你。借多少、什么时候借，都由运行时决定。",
+        "code": "int *a = (int *)malloc(n * sizeof(int));\nif (a == NULL) return 1;\n\n/* 拿到首地址后，a 就能像数组一样用 */\na[0] = 1;\na[n - 1] = 2;",
+        "output": "n 为 3 时，a 指向一块能存 3 个 int 的内存"
+      },
+      {
+        "title": "malloc 的四个易错点",
+        "body": "1. 参数是字节数，不是元素个数。必须写 n * sizeof(int)，只写 n 的话只借到 3 个字节，连一个 int 都放不下。\n\n2. 返回值必须判断。内存不足时 malloc 返回 NULL，此时 a[i] = ... 就是往空指针上写数据，程序直接崩溃。\n\n3. n 为 0 时不要解引用。malloc(0) 的行为由实现决定，可能返回 NULL，也可能返回一个不能真正访问的指针，所以先判断 n > 0 再分配、再循环。\n\n4. 借了必须还。忘记 free 就是内存泄漏：程序跑得越久占用越多。同时注意同一块内存只能 free 一次，重复释放是未定义行为（可能崩，也可能悄悄破坏内存）。",
+        "code": "int *a = (int *)malloc(n * sizeof(int));   /* 1. 字节数要对 */\nif (a == NULL) return 1;                    /* 2. 判断返回 NULL */\n...\nfree(a);                                    /* 4. 用完还回去 */",
+        "output": ""
+      },
+      {
+        "title": "malloc 和 calloc 的区别",
+        "body": "calloc 也用来申请内存，但两个参数是「元素个数」和「单个元素大小」，而且它会把整块内存清零。\n\nmalloc 不清零，刚拿到的内存里是之前留下的随机数据——所以在求和这类「先读入再使用」的场景里无所谓，但如果要直接累加、或者当计数器用，就必须自己初始化，否则结果里会混进垃圾值。\n\n两个函数的返回值都用 free 释放，写法一样。",
+        "code": "int *a = (int *)malloc(n * sizeof(int));   /* 内容不确定 */\nint *b = (int *)calloc(n, sizeof(int));   /* 全部初始化为 0 */\n\nprintf(\"%d %d\\n\", b[0], b[n - 1]);\nfree(a);\nfree(b);",
+        "output": "0 0"
+      }
+    ]
+  },
+  {
+    "id": 1104,
+    "title": "动态二维数组：每行求和",
+    "difficulty": "medium",
+    "description": "先读入行数 n 和列数 m，再读入 n 行、每行 m 个整数，输出每一行元素的和（共 n 行）。\n\n要求用 malloc 动态创建这个 n × m 的二维数组（先分配一列指针，再逐行分配），最后把所有内存释放掉。",
+    "input_format": "第一行两个整数 n 和 m（1 ≤ n, m ≤ 100），用空格分隔；接下来 n 行，每行 m 个整数，用空格分隔。",
+    "output_format": "输出 n 行，第 i 行是矩阵第 i 行所有元素的和",
+    "sample_input": "2 3\n1 2 3\n4 5 6",
+    "sample_output": "6\n15",
+    "test_cases": [
+      { "input": "2 3\n1 2 3\n4 5 6\n", "output": "6\n15" },
+      { "input": "1 1\n-5\n", "output": "-5" },
+      { "input": "3 1\n7\n-7\n0\n", "output": "7\n-7\n0" },
+      { "input": "2 2\n0 0\n100 200\n", "output": "0\n300" }
+    ],
+    "hints": [
+      "动态二维数组要分两步：先申请 n 个指针（每个指向一行），再为每一行申请 m 个 int。",
+      "第一层的元素类型是 int *，所以字节数是 n * sizeof(int *)；第二层每行是 m * sizeof(int)。",
+      "释放的顺序和申请的顺序相反：先循环 free 掉每一行，最后 free 掉那个指针数组。"
+    ],
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n    int n, m;\n    scanf(\"%d %d\", &n, &m);\n\n    /* 第一层：n 个 int* 组成的「指针数组」，每个元素将来指向一行 */\n    int **grid = (int **)malloc(n * sizeof(int *));\n    if (grid == NULL) {\n        return 1;\n    }\n\n    /* 第二层：每一行单独申请 m 个 int */\n    for (int i = 0; i < n; i++) {\n        grid[i] = (int *)malloc(m * sizeof(int));\n        if (grid[i] == NULL) {\n            return 1;\n        }\n    }\n\n    for (int i = 0; i < n; i++) {\n        for (int j = 0; j < m; j++) {\n            scanf(\"%d\", &grid[i][j]);\n        }\n    }\n\n    /* grid[i][j] 和 *(*(grid + i) + j) 完全等价，用起来就像普通二维数组 */\n    for (int i = 0; i < n; i++) {\n        int sum = 0;\n        for (int j = 0; j < m; j++) {\n            sum += grid[i][j];\n        }\n        printf(\"%d\\n\", sum);\n    }\n\n    /* 释放顺序必须和申请顺序相反：先还每一行，最后还指针数组本身 */\n    for (int i = 0; i < n; i++) {\n        free(grid[i]);\n    }\n    free(grid);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "动态二维数组就是「指针数组」",
+        "body": "int a[2][3] 这样的二维数组，大小必须写死在代码里。要动态创建 n 行 m 列，就得分两步走。\n\n第一步：申请 n 个 int *，得到一个「指针数组」——它本身是一维数组，只不过每个元素都是指针，分别指向一行。\n\n第二步：为这 n 个指针各自申请 m 个 int，也就是每一行的真正存储空间。两层的类型不一样，sizeof 千万别写混：第一层元素是 int *（指针），第二层元素才是 int。\n\n这样得到的 grid 用起来和普通二维数组一模一样：grid[i][j]。",
+        "code": "int **grid = (int **)malloc(n * sizeof(int *));\nfor (int i = 0; i < n; i++) {\n    grid[i] = (int *)malloc(m * sizeof(int));\n}\ngrid[1][2] = 9;   /* 像二维数组一样用 */",
+        "output": "n 为 2、m 为 3 时，得到 2 行 3 列的可写矩阵"
+      },
+      {
+        "title": "两个最容易写错的地方",
+        "body": "第一，sizeof 里的类型。第一层写成 n * sizeof(int) 是最常见的错误：它只申请到 n 个 int 的空间，却要往里存 n 个指针，后面 grid[i] = malloc(...) 就在越界写内存。记住「要存什么类型，就 sizeof 什么类型」。\n\n第二，释放的顺序。必须先循环 free(grid[i]) 把每一行还掉，最后才 free(grid)。如果先 free(grid)，那些行的首地址就再也找不到了，每一行都成了永远收不回来的内存——这就是内存泄漏。\n\n另外提醒一句：free 之后指针里的地址值还在，再通过它访问是未定义行为。养成习惯：free 完就把它置成 NULL。",
+        "code": "for (int i = 0; i < n; i++) {\n    free(grid[i]);   /* 先还每一行 */\n}\nfree(grid);          /* 再还指针数组 */\ngrid = NULL;         /* 防止之后误用 */",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 1105,
+    "title": "函数指针：简易计算器",
+    "difficulty": "hard",
+    "description": "读入一个只含整数和四则运算的算式（形如 12 + 3），输出运算结果。\n\n要求用函数指针来选择运算：为 +、-、*、/ 各写一个函数，再声明一个函数指针，根据运算符让它指向对应的函数并调用。\n\n说明：输入的两个数都是整数，除法按整数除法计算（丢弃小数部分）；如果运算符不是四则运算符，或者除法的除数为 0，输出 error。",
+    "input_format": "一行，格式为「整数 运算符 整数」，例如 12 + 3，三部分之间用空格分隔",
+    "output_format": "输出一个整数，表示运算结果；运算符不合法或除数为 0 时输出 error",
+    "sample_input": "12 + 3",
+    "sample_output": "15",
+    "test_cases": [
+      { "input": "12 + 3\n", "output": "15" },
+      { "input": "9 - 20\n", "output": "-11" },
+      { "input": "7 / 2\n", "output": "3" },
+      { "input": "8 / 0\n", "output": "error" }
+    ],
+    "hints": [
+      "运算符可以用 char 变量接住：scanf(\"%d %c %d\", &a, &op, &b)。",
+      "函数指针声明成 int (*fn)(int, int); 它指向「收两个 int、返回 int」的函数。",
+      "按运算符用 switch 给 fn 赋值，最后统一写 fn(a, b) 调用；除数为 0 要先判断，不能直接调用除法函数。"
+    ],
+    "solution": "#include <stdio.h>\n\nint op_add(int a, int b) { return a + b; }\nint op_sub(int a, int b) { return a - b; }\nint op_mul(int a, int b) { return a * b; }\n\n/* 除数不会为 0：调用它之前已经检查过了 */\nint op_div(int a, int b) { return a / b; }\n\nint main() {\n    int a, b;\n    char op;\n\n    /* 格式串里 %c 前面那个空格很重要：它让 scanf 先跳过空白再读运算符 */\n    if (scanf(\"%d %c %d\", &a, &op, &b) != 3) {\n        return 1;\n    }\n\n    /* 函数指针：*(fn) 外面的括号不能省，它表示 fn 是指针，而不是返回 int* 的函数 */\n    int (*fn)(int, int) = NULL;\n\n    switch (op) {\n        case '+': fn = op_add; break;\n        case '-': fn = op_sub; break;\n        case '*': fn = op_mul; break;\n        case '/': fn = op_div; break;\n        default:  fn = NULL;   break;\n    }\n\n    if (fn == NULL) {\n        printf(\"error\\n\");\n    } else if (op == '/' && b == 0) {\n        /* 整数除以 0 是未定义行为，可能直接崩溃，必须在调用前拦下来 */\n        printf(\"error\\n\");\n    } else {\n        printf(\"%d\\n\", fn(a, b));   /* 写 (*fn)(a, b) 完全等价 */\n    }\n\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "函数指针：把函数存进变量",
+        "body": "在 C 里，函数名本身就是函数的入口地址，所以可以把它赋给一个指针变量，这就是函数指针。\n\n声明 int (*fn)(int, int); 的意思是：fn 是一个指针，指向「收两个 int、返回 int」的函数。\n\n注意那对括号不能省！写成 int *fn(int, int) 就变成了「一个叫 fn 的函数，参数是两个 int，返回 int *」，是完全不同的东西——这是函数指针最经典的语法坑。\n\n赋值时直接写函数名（op_add），不要写 op_add()，加了括号就成了调用它、把返回值赋过去。调用时 fn(a, b) 和 (*fn)(a, b) 等价，前者更常用。",
+        "code": "int (*fn)(int, int) = NULL;\nfn = op_add;\nprintf(\"%d\\n\", fn(3, 5));",
+        "output": "8"
+      },
+      {
+        "title": "为什么值得用函数指针",
+        "body": "这道题用 switch 里直接调用也能写对。但用了函数指针之后，「选哪个运算」和「怎么算」就被分开了：main 只负责把 fn 指到正确的函数上，后面统一调用同一个 fn，不需要为每个运算符各写一遍 printf。\n\n函数本身也变成了可以赋值、可以当参数传递的「数据」：把 fn 传给另一个函数，那个函数就能在不认识 op_add 的情况下完成加法。标准库里的 qsort 就是靠函数指针接收比较规则的。\n\n这道题还有两个容易翻车的点：\n1. 整数除法 7 / 2 的结果是 3，不是 3.5——两个 int 相除，小数部分直接被丢掉。想要小数必须用 double。\n2. 除数为 0 在 C 里不是「抛异常」，而是未定义行为，可能直接崩溃。必须在调用除法函数之前先判断，不能让 fn 指过去再补救。",
+        "code": "if (op == '/' && b == 0) {\n    printf(\"error\\n\");\n} else {\n    printf(\"%d\\n\", fn(a, b));\n}",
+        "output": "输入 7 / 2 时输出 3；输入 8 / 0 时输出 error"
+      }
+    ]
+  },
+  {
+    "id": 1106,
+    "title": "static 变量：累计求和",
+    "difficulty": "medium",
+    "description": "先读入整数 n，再依次读入 n 个整数。每读入一个数，就输出「到目前为止所有已读入数字的累计和」，每个结果占一行。\n\n要求把累计和保存在一个函数内部的 static 变量里：写一个函数，接收本次读入的数，返回累计和。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）；第二行 n 个整数，用空格分隔。",
+    "output_format": "输出 n 行，第 i 行是前 i 个数的和",
+    "sample_input": "3\n1 2 3",
+    "sample_output": "1\n3\n6",
+    "test_cases": [
+      { "input": "3\n1 2 3\n", "output": "1\n3\n6" },
+      { "input": "1\n-42\n", "output": "-42" },
+      { "input": "4\n-1 -2 -3 -4\n", "output": "-1\n-3\n-6\n-10" },
+      { "input": "2\n7 -7\n", "output": "7\n0" }
+    ],
+    "hints": [
+      "如果累计和是普通局部变量，每次进函数都会被重新初始化，累加不起来。",
+      "在函数里写 static int total = 0; 它就能在两次调用之间「记住」上次的值。",
+      "函数写成 int add_to_total(int x)，先把 x 加到 total 上，再 return total。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* static 局部变量只初始化一次，函数返回后它依然活着，\n   所以下一次调用看到的是上次留下的值 */\nint add_to_total(int x) {\n    static int total = 0;\n    total += x;\n    return total;\n}\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    for (int i = 0; i < n; i++) {\n        int x;\n        scanf(\"%d\", &x);\n        printf(\"%d\\n\", add_to_total(x));\n    }\n\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "static 局部变量：只初始化一次",
+        "body": "普通的局部变量每次进入函数都是全新的：函数一返回它就没了，下次调用又是一块新内存，值还是不确定的。\n\nstatic 局部变量不一样，它有三个特点：\n1. 程序启动时就分配好，一直活到程序结束，函数返回也还在；\n2. 那句 = 0 只在第一次执行到它时生效一次，之后每次调用都跳过；\n3. 作用域没变——依然只有这个函数能看见它，别的函数访问不到。\n\n所以它特别适合做「跨调用保持状态」的事，比如统计函数被调用了几次、累计求和。",
+        "code": "int add_to_total(int x) {\n    static int total = 0;   /* 初始化只做这一次 */\n    total += x;\n    return total;\n}",
+        "output": "依次调用 add_to_total(1)、add_to_total(2)、add_to_total(3)，返回 1、3、6"
+      },
+      {
+        "title": "static 的三个易错点",
+        "body": "1. 把初始化当成「每次清零」。static int total = 0; 只在程序开始时归零一次；真正每次调用都清零的写法是单独写一句赋值语句 total = 0;——那样累加就永远失效了，每次返回的都是刚读进来的那个数。\n\n2. 以为它是全局变量。static 局部变量的名字只在这个函数里有效，别的函数既看不到也改不了，这正是它比全局变量安全的地方。\n\n3. 在递归函数里随手用 static。所有递归层共用同一个 static 变量，值会互相干扰，很容易算错。另外 static 也可以修饰全局变量和函数，那种情况下它的含义是「只在本文件内可见」，和局部 static 是两回事，别混为一谈。",
+        "code": "static int total = 0;   /* 只在程序启动时执行一次 */\ntotal = 0;              /* 每次调用都清零 —— 累加会失效 */",
+        "output": ""
+      }
+    ]
+  }
+]

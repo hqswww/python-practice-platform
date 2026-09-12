@@ -1,0 +1,218 @@
+[
+  {
+    "id": 601,
+    "title": "用函数求三个数的最大值",
+    "difficulty": "easy",
+    "description": "读入三个整数，输出其中的最大值。\n\n要求把「求两个数中较大的那个」写成一个自定义函数 max_of_two，在 main 中调用它来完成任务。",
+    "input_format": "一行，三个整数 a、b、c，用空格分隔",
+    "output_format": "输出一个整数，表示三个数中的最大值",
+    "sample_input": "3 7 5",
+    "sample_output": "7",
+    "test_cases": [
+      { "input": "3 7 5\n", "output": "7" },
+      { "input": "10 10 10\n", "output": "10" },
+      { "input": "-5 -2 -9\n", "output": "-2" },
+      { "input": "0 0 -1\n", "output": "0" }
+    ],
+    "hints": [
+      "「比较两个数的大小」这件事要用两次，正好适合写成一个函数重复使用。",
+      "把函数定义写在 main 后面时，必须在 main 前面写一行原型声明，例如 int max_of_two(int a, int b);",
+      "main 里先调用 max_of_two(a, b) 得到前两个数的较大者，再拿这个结果和 c 比一次。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 函数原型声明：把函数头抄一遍加上分号。\n   函数定义写在 main 之后时，没有这一行，编译器读到 main 里的调用\n   就不认识 max_of_two，会报错或给出「隐式声明」警告。 */\nint max_of_two(int a, int b);\n\nint main() {\n    int a, b, c;\n    scanf(\"%d %d %d\", &a, &b, &c);\n\n    /* 把重复的「比大小」交给函数：先比前两个，再用结果和第三个比 */\n    int m = max_of_two(a, b);\n    m = max_of_two(m, c);\n\n    printf(\"%d\\n\", m);\n    return 0;\n}\n\n/* 函数定义：返回两个整数中较大的那个 */\nint max_of_two(int a, int b) {\n    if (a > b) {\n        return a;   /* return 一执行函数就结束，下面的 return b 不会再跑 */\n    }\n    return b;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么要把代码拆成函数",
+        "body": "同一个动作要用好几遍时，写成函数只需要写一次：调用处各写一行，将来要改也只改一个地方。\n\n定义函数的格式是「返回类型 函数名(参数列表) { 函数体 }」。括号里的 a、b 是形参，它相当于函数内部的局部变量，只在函数里有效。\n\n调用时传进去的具体值叫实参。调用 max_of_two(3, 7) 时，实参 3、7 的值会各拷贝一份给形参 a、b，函数拿这两份副本去算，再把 return 的值交回给调用方。\n\n返回类型必须和 return 交回的东西对得上：这里声明的是 int，就只能 return 整数；如果函数什么都不返回，返回类型要写 void。",
+        "code": "int max_of_two(int a, int b) {\n    if (a > b) {\n        return a;\n    }\n    return b;\n}",
+        "output": ""
+      },
+      {
+        "title": "函数写在 main 后面，要先写原型声明",
+        "body": "编译器是从上往下读代码的。函数定义如果写在 main 之后，编译器读到 main 里的调用时还没见过这个函数，不知道它要几个参数、返回什么类型。\n\n解决办法是在 main 之前写一行原型声明：把函数头原样抄一遍，末尾加分号。声明只是提前告诉编译器「有这么个函数、长什么样」，真正的实现还在后面。声明末尾千万别漏分号。\n\n另一个新手常忽略的点是 return 的「立刻结束」效果：max_of_two 里两个 return 只会执行其中一个，执行完函数就交回控制权，后面的语句一律不跑。这正是 602 里「提前返回」写法的基础。",
+        "code": "int max_of_two(int a, int b);   /* 原型声明，末尾有分号 */\n\nint main() {\n    int m = max_of_two(3, 7);   /* 得到 7 */\n    return 0;\n}",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 602,
+    "title": "判断素数的函数",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，判断它是不是素数。是素数输出 yes，否则输出 no。\n\n要求把判断过程写成一个返回 int 的自定义函数 is_prime：是素数返回 1，不是返回 0。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 1000000）",
+    "output_format": "n 是素数输出 yes，否则输出 no",
+    "sample_input": "17",
+    "sample_output": "yes",
+    "test_cases": [
+      { "input": "0\n", "output": "no" },
+      { "input": "2\n", "output": "yes" },
+      { "input": "9\n", "output": "no" },
+      { "input": "17\n", "output": "yes" }
+    ],
+    "hints": [
+      "写一个函数 int is_prime(int n)，返回 1 表示是素数、0 表示不是。",
+      "0 和 1 都不是素数，函数开头先把这两种情况挡掉。",
+      "用循环检查 2 到 n-1 之间的因子；一旦发现能整除 n 的数，直接 return 0 提前结束，不用把循环跑完。"
+    ],
+    "solution": "#include <stdio.h>\n\nint is_prime(int n);\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    /* 函数返回 1 或 0，C 里非 0 即为真，所以可以直接当条件用 */\n    if (is_prime(n)) {\n        printf(\"yes\\n\");\n    } else {\n        printf(\"no\\n\");\n    }\n    return 0;\n}\n\nint is_prime(int n) {\n    /* 素数从 2 开始：0、1 以及负数都不是素数，先处理掉 */\n    if (n < 2) {\n        return 0;\n    }\n\n    /* 只要找到一个能整除 n 的因子，就能断定它不是素数，\n       立刻 return 0 结束函数 —— 这就是「提前返回」 */\n    for (int i = 2; i * i <= n; i++) {\n        if (n % i == 0) {\n            return 0;\n        }\n    }\n\n    /* 循环走完都没找到因子，说明是素数。\n       注意这条路径不能漏，否则函数会返回一个不确定的垃圾值 */\n    return 1;\n}\n",
+    "tutorial": [
+      {
+        "title": "return 不只是「交回值」，还会立刻结束函数",
+        "body": "return 有两个作用：把值交回调用方，以及马上结束当前函数——写在 return 后面的语句一律不执行。\n\nis_prime 里一旦发现某个 i 能整除 n，就已经确定它不是素数了，直接 return 0; 走人，剩下的 i 根本不用再试。这种「提前返回」能让代码更短、也更快。\n\n反过来，最危险的错误是「某条路径上没有 return」：函数声明返回 int，却在某种情况下什么也没返回，函数就会交回一个不确定的垃圾值。程序不报错，但结果时对时错，极难排查。写函数时要保证每条可能的路径都有返回值。",
+        "code": "int is_prime(int n) {\n    if (n < 2) {\n        return 0;   /* 提前结束，后面的循环根本不会执行 */\n    }\n    for (int i = 2; i * i <= n; i++) {\n        if (n % i == 0) {\n            return 0;\n        }\n    }\n    return 1;       /* 所有分支都要有返回值 */\n}",
+        "output": ""
+      },
+      {
+        "title": "用 1 和 0 表示「真」和「假」",
+        "body": "C 语言没有内置的布尔类型（要用得额外 #include <stdbool.h>），老习惯是让函数返回 int：1 表示真、0 表示假。\n\n在 if 的条件里，任何非 0 的值都算真、0 算假，所以 if (is_prime(n)) 可以直接写，不必画蛇添足写成 if (is_prime(n) == 1)。只有 1 才算真的写法反而容易在函数返回别的真值时出错。\n\n顺带记一个数论常识：素数从 2 开始，0 和 1 都不是素数，负数也不是。先把这些情况挡在函数开头，后面的循环逻辑就能写得干净。\n\n循环条件 i * i <= n 是「试到平方根为止」的写法：如果 n 有大于平方根的因子，那它一定还有一个小于平方根的因子，早就被找到了。这样比试到 n-1 快得多。",
+        "code": "if (is_prime(n)) {          /* 非 0 即真 */\n    printf(\"yes\\n\");\n} else {\n    printf(\"no\\n\");\n}",
+        "output": "输入 17 时输出 yes"
+      }
+    ]
+  },
+  {
+    "id": 603,
+    "title": "形参改变不影响实参（值传递）",
+    "difficulty": "medium",
+    "description": "读入两个整数 a 和 b，按下面的顺序做两件事：\n先调用函数 swap_in_function 把两个形参交换，并在函数内部打印交换后的结果；函数返回后，再回到 main 里打印 a 和 b 的值。\n\n你会看到函数内交换成功、函数外却一切照旧 —— 这道题就是让你亲眼看到 C 的参数是「值传递」。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "输出两行：\n第一行以「函数内: 」开头，后面是交换后的两个整数（用一个空格分隔）\n第二行以「函数外: 」开头，后面是 main 里 a 和 b 原来的值（用一个空格分隔）",
+    "sample_input": "3 8",
+    "sample_output": "函数内: 8 3\n函数外: 3 8",
+    "test_cases": [
+      { "input": "3 8\n", "output": "函数内: 8 3\n函数外: 3 8" },
+      { "input": "0 5\n", "output": "函数内: 5 0\n函数外: 0 5" },
+      { "input": "7 7\n", "output": "函数内: 7 7\n函数外: 7 7" },
+      { "input": "-1 4\n", "output": "函数内: 4 -1\n函数外: -1 4" }
+    ],
+    "hints": [
+      "函数里的 x、y 和 main 里的 a、b 是四份不同的变量，函数交换的只是自己那两份副本。",
+      "先在函数内部交换并打印「函数内: ...」，函数返回后在 main 里再打印「函数外: ...」。",
+      "如果 main 打印出来还是原值，那就对了 —— 这正是值传递的表现，不是你的程序写错了。"
+    ],
+    "solution": "#include <stdio.h>\n\nvoid swap_in_function(int x, int y);\n\nint main() {\n    int a, b;\n    scanf(\"%d %d\", &a, &b);\n\n    /* 这里只是把 a、b 的值各拷贝一份传给函数。\n       函数怎么折腾那两份副本，都动不到 a、b 本身。 */\n    swap_in_function(a, b);\n\n    printf(\"函数外: %d %d\\n\", a, b);\n    return 0;\n}\n\n/* 形参 x、y 是函数自己的局部变量，函数一返回就消失 */\nvoid swap_in_function(int x, int y) {\n    int t = x;\n    x = y;\n    y = t;\n\n    /* 交换在函数内部确实成功了，所以这一行打印的是交换后的值 */\n    printf(\"函数内: %d %d\\n\", x, y);\n}\n",
+    "tutorial": [
+      {
+        "title": "C 的参数是值传递：函数收到的是复印件",
+        "body": "调用 swap_in_function(a, b) 时，C 会把 a、b 的值各复制一份给形参 x、y。函数里自始至终操作的都是这两份副本，改副本不会影响原件。\n\n所以「函数内交换成功」和「函数外还是原值」并不矛盾——它们本来就是四个完全不同的变量，只是值碰巧一样。很多初学者在这里反复调试，就是因为没意识到「函数拿到的是拷贝」。\n\n如果确实需要让函数改变外面的变量，就得把变量的地址传进去（形参写成指针），函数再顺着地址去改原件。那是指针章节的内容，这道题只要先把「值传递」这个事实记住。",
+        "code": "void swap_in_function(int x, int y) {\n    int t = x;\n    x = y;\n    y = t;      /* 交换成功，但交换的只是副本 */\n}",
+        "output": "调用 swap_in_function(3, 8) 后，main 里的 a、b 仍是 3 和 8"
+      },
+      {
+        "title": "作用域：形参一离开函数就不存在了",
+        "body": "形参和函数体内声明的变量都属于局部变量：它们的生命从函数被调用开始，到函数返回就结束，占用的内存随之被回收。\n\n这意味着两次调用之间它们互不相干：上一次调用残留的值不会带到下一次，每次调用都是全新的变量。\n\n还有一点容易想歪：就算你把形参特意命名为 a、b，也不会和 main 里的 a、b 撞车。判断「是不是同一个变量」看的是它定义在哪个作用域里，而不是名字。同名不同域，就是两个毫不相干的变量。",
+        "code": "void f(int a, int b) {   /* 这里的 a、b 和 main 的 a、b 毫无关系 */\n    a = 100;             /* 改的是函数自己的局部变量 */\n}",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 604,
+    "title": "用 void 函数打印直角三角形",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，先输出 n 行星号组成的直角三角形：第 1 行 1 个星号，第 2 行 2 个星号，依此类推，第 n 行 n 个星号；最后再输出一行，表示所有星号的总个数。\n\n要求把「打印一行星号」写成一个无返回值的函数 print_stars，main 里只负责控制行数和统计总数。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 20）",
+    "output_format": "共输出 n + 1 行：前 n 行是三角形，第 i 行有 i 个星号；最后一行是星号的总个数。n 为 0 时只输出最后一行 0",
+    "sample_input": "3",
+    "sample_output": "*\n**\n***\n6",
+    "test_cases": [
+      { "input": "0\n", "output": "0" },
+      { "input": "1\n", "output": "*\n1" },
+      { "input": "3\n", "output": "*\n**\n***\n6" },
+      { "input": "5\n", "output": "*\n**\n***\n****\n*****\n15" }
+    ],
+    "hints": [
+      "写一个 void 函数 print_stars(int count)，它的任务就是打印一行 count 个星号然后换行。",
+      "main 里用一个 for 循环从 1 数到 n，第 i 行就调用 print_stars(i)，循环结束后再输出总数。",
+      "print_stars 是 void、不返回任何值，所以它到底打了几个星号 main 是问不到的 —— 总个数要在循环里自己累加。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* void 表示这个函数不返回任何值，调用它只是「让它去做一件事」 */\nvoid print_stars(int count);\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    /* main 负责决定打几行，每行具体怎么打交给函数。\n       n 为 0 时循环一次都不执行，最后只输出总数 0。 */\n    int total = 0;\n    for (int i = 1; i <= n; i++) {\n        print_stars(i);\n        /* print_stars 是 void，拿不到它打了几个星号，\n           所以星号总数只能在 main 里自己数 */\n        total += i;\n    }\n\n    printf(\"%d\\n\", total);\n    return 0;\n}\n\nvoid print_stars(int count) {\n    for (int j = 0; j < count; j++) {\n        printf(\"*\");\n    }\n    /* 换行一起放在函数末尾：调用方就不用操心换行这件事了 */\n    printf(\"\\n\");\n}\n",
+    "tutorial": [
+      {
+        "title": "void：不返回值的函数",
+        "body": "有些函数只负责「做一件事」，比如打印，不需要交回任何结果，这时返回类型要写 void。\n\nvoid 函数里可以写 return;（不带值）提前收工，但不能写 return 0; ——那会编译报错，因为函数已经声明了不返回任何值。\n\n同样地，void 函数不能出现在表达式里：int x = print_stars(3); 是错的，它没有值可以赋给 x。这道题正好体会一下：print_stars 打完一行星号就结束了，main 想问它「你刚才打了几个」是问不到的，所以星号总数只能在 main 里用 total += i 自己累加。想拿到结果，就该把返回类型改成 int 并 return 一个值。",
+        "code": "void print_stars(int count) {\n    if (count <= 0) {\n        return;         /* void 函数可以这样提前结束 */\n    }\n    for (int j = 0; j < count; j++) {\n        printf(\"*\");\n    }\n    printf(\"\\n\");\n}",
+        "output": "print_stars(3) 输出一行 ***"
+      },
+      {
+        "title": "让每个函数只干一件事",
+        "body": "print_stars 只负责「打印一行 count 个星号并换行」，main 只负责「决定打印几行、统计总数」。职责分清楚之后，调用方写 print_stars(i) 就等于「打一行」，完全不用关心细节。\n\n如果换行留在 main 里，每次调用后都要记得补一句 printf(\"\\n\")，一旦漏写就会全部挤在一行。这种「职责没分干净」的写法是 bug 的温床。\n\n拆函数还有一个好处是复用：想打印一个 5 行的正方形，在 main 里调用 print_stars(5) 五次就行，函数本身一个字都不用改。\n\n最后注意 n 为 0 这种边界：for 循环一次都不执行，一行星号都不打，但总数那一行照样要输出 0。写循环时多想一步「如果一次都不循环会怎样」，能避开很多低级错误。",
+        "code": "for (int i = 1; i <= n; i++) {\n    print_stars(i);     /* 一行一个调用，行数由 i 决定 */\n    total += i;\n}",
+        "output": "n = 3 时输出：\n*\n**\n***\n6"
+      }
+    ]
+  },
+  {
+    "id": 605,
+    "title": "递归求阶乘",
+    "difficulty": "medium",
+    "description": "读入一个非负整数 n，用递归函数计算并输出 n 的阶乘 n!（即 1×2×…×n，并规定 0! = 1）。\n\n要求函数 factorial 自己调用自己，不许用循环。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 12）",
+    "output_format": "输出一个整数，表示 n!",
+    "sample_input": "5",
+    "sample_output": "120",
+    "test_cases": [
+      { "input": "0\n", "output": "1" },
+      { "input": "1\n", "output": "1" },
+      { "input": "5\n", "output": "120" },
+      { "input": "10\n", "output": "3628800" }
+    ],
+    "hints": [
+      "递归函数第一件事是写终止条件：n 为 0 或 1 时直接返回 1。",
+      "递推关系是 n! = n × (n-1)!，函数里直接调用自己来算 (n-1)!。",
+      "函数定义写在 main 之后的话，别忘了在前面写 int factorial(int n);"
+    ],
+    "solution": "#include <stdio.h>\n\nint factorial(int n);\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    printf(\"%d\\n\", factorial(n));\n    return 0;\n}\n\nint factorial(int n) {\n    /* 基准情形（终止条件）：n 为 0 或 1 时直接返回 1，不再递归。\n       少了这一句，函数会永远调用下去，把栈耗尽后程序崩溃。 */\n    if (n <= 1) {\n        return 1;\n    }\n\n    /* 递归：n! = n * (n-1)!。每递归一次，参数就小 1，\n       规模不断缩小，最终一定会走到上面的基准情形。 */\n    return n * factorial(n - 1);\n}\n",
+    "tutorial": [
+      {
+        "title": "递归：把问题交给小一号的自己",
+        "body": "阶乘的数学定义本身就是递归的：0! = 1，n! = n × (n-1)!。用 C 写出来几乎和公式一模一样：return n * factorial(n - 1);\n\n执行时会一层层往下调用：factorial(3) 需要 factorial(2)，factorial(2) 又需要 factorial(1)。到 factorial(1) 时命中基准情形直接返回 1，然后结果一层层乘回来：1 → 2 → 6。\n\n每一层调用都拥有自己独立的形参 n：factorial(3) 里的 n 是 3，factorial(2) 里的 n 是 2，它们各自活在那一层里，互不干扰。这也是递归能自动「记住」中间状态的原因——靠的不是变量，而是每一层独立的局部变量。",
+        "code": "int factorial(int n) {\n    if (n <= 1) {\n        return 1;\n    }\n    return n * factorial(n - 1);\n}",
+        "output": "factorial(5) = 120"
+      },
+      {
+        "title": "递归必须有终止条件，否则栈溢出",
+        "body": "递归最容易犯的错是忘记写基准情形。没有 if (n <= 1) return 1; 这一句，factorial 会不停地调用自己，每一层调用都要占用一块栈空间，很快就会耗尽内存，程序以「段错误（segmentation fault）」或栈溢出崩溃。\n\n写递归时先问自己两个问题：什么时候停下来？每递归一次，问题有没有变小？factorial(n-1) 的参数每次减 1，规模确实在缩小，所以迟早会碰到基准情形。\n\n再提醒一个数值上的坑：int 能表示的最大值约 21 亿，13! 已经是 62 亿，装不下会溢出成一个莫名其妙的数（甚至负数）。题目把 n 限制在 12 以内就是这个原因——超出范围时该换用 long long，或者干脆用循环。",
+        "code": "if (n <= 1) {\n    return 1;   /* 基准情形：没有它，递归永不停止 */\n}",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 606,
+    "title": "递归斐波那契与全局变量计数",
+    "difficulty": "hard",
+    "description": "斐波那契数列的规定是：fib(0) = 0，fib(1) = 1，从第 2 项起每一项等于前两项之和。\n\n读入一个整数 n，用递归函数算出第 n 项并输出，同时用一个全局变量统计这个递归函数一共被调用了多少次，把次数也输出。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 15）",
+    "output_format": "输出两行：\n第一行是第 n 项的值\n第二行是求解过程中递归函数被调用的总次数",
+    "sample_input": "5",
+    "sample_output": "5\n15",
+    "test_cases": [
+      { "input": "0\n", "output": "0\n1" },
+      { "input": "1\n", "output": "1\n1" },
+      { "input": "5\n", "output": "5\n15" },
+      { "input": "10\n", "output": "55\n177" }
+    ],
+    "hints": [
+      "先按数学定义写递归：n 为 0 返回 0，n 为 1 返回 1，其余返回 fib(n-1) + fib(n-2)。",
+      "定义一个写在所有函数外面的全局变量（比如 int call_count = 0;），在 fib 函数的第一行让它加 1。",
+      "全局变量不写初始化也会自动是 0，但显式写出来更清楚；注意它不能被定义在 main 里面。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 全局变量：定义在所有函数外面，任何函数都能直接读写。\n   它和局部变量不同 —— 即使不写 = 0，编译器也会自动把它初始化成 0；\n   而局部变量不初始化就是内存里的随机值。 */\nint call_count = 0;\n\nint fib(int n);\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    int value = fib(n);     /* 算完之后 call_count 里就是调用次数 */\n\n    printf(\"%d\\n\", value);\n    printf(\"%d\\n\", call_count);\n    return 0;\n}\n\nint fib(int n) {\n    call_count++;   /* 每进来一次就记一笔，用来数总共调用了几次 */\n\n    /* 两个基准情形：递推式一次要算两个子问题，\n       所以 n 减到 0 和 1 时都得有地方停下来 */\n    if (n == 0) {\n        return 0;\n    }\n    if (n == 1) {\n        return 1;\n    }\n\n    /* 注意这一行会让函数被调用两次，所以调用次数涨得非常快 */\n    return fib(n - 1) + fib(n - 2);\n}\n",
+    "tutorial": [
+      {
+        "title": "斐波那契：需要两个基准情形的递归",
+        "body": "斐波那契数列的规则是：fib(0) = 0，fib(1) = 1，从第 2 项起每一项等于前两项之和。翻译成递归函数时，两个初始值要各自写成一个基准情形，缺一个递归就停不下来。\n\n因为递推式 fib(n-1) + fib(n-2) 一次要算两个子问题，同一项会被重复计算很多遍：算 fib(5) 一共要调用函数 15 次，算 fib(10) 要 177 次，n 每加 1，次数差不多翻一倍多。\n\n用递归写斐波那契和数学定义最贴近、最好懂，但效率很差。等学到后面，可以改成循环从前往后推，或者把算过的结果记下来避免重复计算——这道题先让你亲眼看到「重复计算」有多严重。",
+        "code": "int fib(int n) {\n    if (n == 0) return 0;       /* 基准情形一 */\n    if (n == 1) return 1;       /* 基准情形二 */\n    return fib(n - 1) + fib(n - 2);\n}",
+        "output": "fib(5) = 5"
+      },
+      {
+        "title": "全局变量与作用域",
+        "body": "定义在所有函数外面的变量叫全局变量，从它定义的位置开始，后面的每个函数都能直接读写它。这里用它来数 fib 被调用了多少次：函数一进来就 call_count++。\n\n全局变量有两点和局部变量不一样。一是生命周期贯穿整个程序，函数返回了它也不会消失；二是没显式初始化时会自动为 0，而局部变量不初始化就是随机值——所以局部变量一定要先赋值再用。\n\n但全局变量要慎用：谁都能改它，某个函数偷偷改了值，排查起来非常麻烦。能用参数传进去、能用返回值传出来的信息，就别用全局变量。传参是「明着来」，全局变量是「暗着来」。\n\n还要注意变量的作用域从定义处开始：如果把 int call_count = 0; 写在 main 里面，那它就只是个局部变量，fib 根本看不到它，编译会直接报错。",
+        "code": "#include <stdio.h>\n\nint call_count = 0;     /* 全局变量，所有函数都可见 */\n\nint main() {\n    printf(\"%d\\n\", call_count);   /* 自动初始化为 0 */\n    return 0;\n}",
+        "output": "0"
+      }
+    ]
+  }
+]

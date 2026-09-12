@@ -31,10 +31,22 @@ const Map<ProgrammingLanguage, List<Map<String, String>>> _categoryMeta = {
     {'key': '11_advanced', 'name': '进阶', 'desc': '迭代器、生成器、异常、文件'},
     {'key': '12_challenges', 'name': '综合挑战', 'desc': '跨知识点应用题'},
   ],
-  // C 目前只有「基础语法」一个起步分类（用于跑通并验收编译链路），
-  // 后续按 runoob 的 C 目录补齐到 12 个分类（见 PROJECT_BACKLOG）。
+  // C 分类对齐 runoob 的 C 教程目录（见 tools/C_BANK_SPEC.md）。
+  // 题库文件缺失的分类会被自动跳过（loadCategories 只收有题目的分类），
+  // 所以这里可以先把 12 个分类一次性登记好，边写边补齐。
   ProgrammingLanguage.c: [
-    {'key': '01_basics', 'name': '基础语法', 'desc': '程序结构、printf、scanf、变量、循环'},
+    {'key': '01_basics', 'name': '基础语法', 'desc': '程序结构、printf、scanf、变量、注释'},
+    {'key': '02_datatype', 'name': '数据类型与变量', 'desc': 'int/float/double/char、常量、sizeof、类型转换'},
+    {'key': '03_operators', 'name': '运算符', 'desc': '算术、关系、逻辑、位运算、优先级'},
+    {'key': '04_conditionals', 'name': '判断与分支', 'desc': 'if / else if / else、switch'},
+    {'key': '05_loops', 'name': '循环', 'desc': 'for / while / do-while、break / continue'},
+    {'key': '06_functions', 'name': '函数与作用域', 'desc': '定义、参数、返回值、递归、作用域'},
+    {'key': '07_arrays', 'name': '数组', 'desc': '一维/二维数组、遍历、查找、排序'},
+    {'key': '08_strings', 'name': '字符串', 'desc': 'char 数组、string.h 常用函数'},
+    {'key': '09_pointers', 'name': '指针', 'desc': '指针基础、指针与数组、指针与函数'},
+    {'key': '10_structs', 'name': '结构体与共用体', 'desc': 'struct / union / enum / typedef'},
+    {'key': '11_advanced', 'name': '进阶', 'desc': '预处理器、文件读写、malloc/free'},
+    {'key': '12_challenges', 'name': '综合挑战', 'desc': '跨知识点应用题'},
   ],
   // ProgrammingLanguage.cpp 待接入：把题库放进 assets/problems/cpp/ 后
   // 在这里补一份分类表，并在 runtimeFor 里放开 C++。

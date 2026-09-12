@@ -1,0 +1,217 @@
+[
+  {
+    "id": 1001,
+    "title": "结构体的定义与成员访问",
+    "difficulty": "easy",
+    "description": "定义一个结构体 Point，它有两个整数成员 x 和 y。读入两个整数存进这个结构体，然后输出两个成员的和与积。",
+    "input_format": "一行，两个整数 x 和 y，用空格分隔",
+    "output_format": "两行，第一行是 x + y，第二行是 x * y",
+    "sample_input": "3 5",
+    "sample_output": "8\n15",
+    "test_cases": [
+      { "input": "3 5\n", "output": "8\n15" },
+      { "input": "-7 2\n", "output": "-5\n-14" },
+      { "input": "0 0\n", "output": "0\n0" }
+    ],
+    "hints": [
+      "先想清楚「一个点」由哪几个数据组成，把它们放进同一个结构体里。",
+      "定义写法是 struct Point { int x; int y; };，注意结尾的分号。",
+      "访问成员用点号：p.x 和 p.y，读入时写 scanf(\"%d %d\", &p.x, &p.y)。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 结构体定义：把「一个点」需要的两个坐标打包成一种新类型 */\nstruct Point {\n    int x;\n    int y;\n};   /* 这个分号最容易漏，漏了编译器会报一串看不懂的错 */\n\nint main() {\n    struct Point p;\n    /* p.x 本身就是一个普通的 int 变量，所以 scanf 同样要加 & */\n    scanf(\"%d %d\", &p.x, &p.y);\n\n    printf(\"%d\\n\", p.x + p.y);\n    printf(\"%d\\n\", p.x * p.y);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么需要结构体",
+        "body": "不用结构体的话，一个点要写成 int x, y;，两个点就是 int x1, y1, x2, y2;，十个点就是二十个散落的变量——「哪两个数属于同一个点」这层关系只存在于你脑子里，函数一多就没人记得住了。\n\n结构体把描述同一个事物的若干成员打包成一个整体，从此它可以整体赋值、整体传参、整体装进数组，这层关系由编译器帮你记。\n\n还有一点新手常误会：写 struct Point { ... }; 只是画了一张图纸，此时并不占内存；写 struct Point p; 才是按图纸真正造出一个变量。",
+        "code": "struct Point { int x; int y; };\n\nstruct Point p;\np.x = 3;\np.y = 5;\nprintf(\"%d\\n\", p.x + p.y);",
+        "output": "8"
+      },
+      {
+        "title": "用点号访问成员",
+        "body": "结构体变量用 . 取成员：p.x、p.y。成员在结构体里声明成什么类型，p.x 就是什么类型，所以它和普通 int 变量一样可以参与运算、可以被 scanf 读入（别忘了 &）。\n\n注意 . 的优先级很高，p.x + p.y 就是「两个成员相加」，不需要额外加括号。",
+        "code": "scanf(\"%d %d\", &p.x, &p.y);\nprintf(\"%d\\n\", p.x * p.y);",
+        "output": "输入 3 5 时输出 15"
+      }
+    ]
+  },
+  {
+    "id": 1002,
+    "title": "结构体数组：平均分与最高分",
+    "difficulty": "easy",
+    "description": "读入学生人数 n，接着 n 行每行是一个学生的姓名和成绩。用结构体数组保存这些数据，输出所有成绩的平均分和成绩最高的学生姓名。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）；接下来 n 行，每行一个不含空格的姓名和一个整数成绩，用空格分隔。成绩互不相同。",
+    "output_format": "第一行是平均分，保留 2 位小数；第二行是成绩最高的学生姓名",
+    "sample_input": "3\nTom 90\nJerry 80\nSpike 70",
+    "sample_output": "80.00\nTom",
+    "test_cases": [
+      { "input": "3\nTom 90\nJerry 80\nSpike 70\n", "output": "80.00\nTom" },
+      { "input": "1\nAmy 59\n", "output": "59.00\nAmy" },
+      { "input": "4\nA 100\nB 0\nC 50\nD 25\n", "output": "43.75\nA" },
+      { "input": "3\nKim 88\nLee 92\nPark 60\n", "output": "80.00\nLee" }
+    ],
+    "hints": [
+      "数组的元素类型可以是结构体：struct Student list[100]; 之后 list[i] 就是一个完整的学生。",
+      "读入用 scanf(\"%s %d\", list[i].name, &list[i].score)；name 是字符数组名，本身已经是地址，不用加 &。",
+      "求最高分时记下分数最高的那个下标，最后才能输出 list[best].name。"
+    ],
+    "solution": "#include <stdio.h>\n\nstruct Student {\n    char name[20];   /* 存 19 个字符就要留一个位置给结尾的 '\\0' */\n    int score;\n};\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    struct Student list[100];\n    int sum = 0;\n    for (int i = 0; i < n; i++) {\n        /* name 是数组名，本身就是地址；score 是 int，所以要加 & */\n        scanf(\"%s %d\", list[i].name, &list[i].score);\n        sum += list[i].score;\n    }\n\n    /* sum 和 n 都是整数，写成 sum / n 会做整数除法把小数丢掉，\n       所以分母要转成 double */\n    printf(\"%.2f\\n\", sum / (double)n);\n\n    /* 打擂台：记住的是下标，因为最后要输出的是姓名而不是分数 */\n    int best = 0;\n    for (int i = 1; i < n; i++) {\n        if (list[i].score > list[best].score) {\n            best = i;\n        }\n    }\n    printf(\"%s\\n\", list[best].name);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么把姓名和成绩放进同一个结构体",
+        "body": "另一种写法是开两个数组：char names[100][20] 存姓名，int scores[100] 存成绩。它能跑，但从此你每次排序、每次删除学生，都要记得「两个数组的下标必须同步操作」。漏改一处，成绩和姓名就张冠李戴了，而且编译器完全不会提醒你。\n\n用结构体数组，一个下标对应一个完整的学生，怎么搬都一起搬，这类错误从根上就不可能出现。",
+        "code": "struct Student { char name[20]; int score; };\nstruct Student list[3];\nlist[0].score = 90;\nprintf(\"%d\\n\", list[0].score);",
+        "output": "90"
+      },
+      {
+        "title": "数组名不用加 &，整数求平均别掉进整数除法",
+        "body": "scanf 需要地址：list[i].score 是 int，必须写 &list[i].score；而 list[i].name 是 char 数组，数组名本身就会退化成首元素地址，再写 & 反而类型不对。\n\n求平均时，sum 和 n 都是整数，sum / n 会按整数除法把小数丢掉（175 / 4 得到 43）。把其中一个写成 (double) 或 1.0 就会按小数运算，再用 %.2f 输出即可。",
+        "code": "printf(\"%.2f\\n\", sum / (double)n);   /* 175 / 4 -> 43.75 */",
+        "output": "43.75"
+      }
+    ]
+  },
+  {
+    "id": 1003,
+    "title": "结构体作函数参数与返回值",
+    "difficulty": "medium",
+    "description": "定义结构体 Student，成员是学号 id 和成绩 score。写两个函数：\nmake_student(id, score) 负责组装出一个 Student 并返回；\nadd_bonus(学生, bonus) 负责给这个学生的成绩加上 bonus 分。\n读入学号、成绩和加分值，输出加分后的学号和成绩。",
+    "input_format": "一行，三个整数 id、score、bonus，用空格分隔",
+    "output_format": "两行，第一行是学号，第二行是加分后的成绩",
+    "sample_input": "1 80 5",
+    "sample_output": "1\n85",
+    "test_cases": [
+      { "input": "1 80 5\n", "output": "1\n85" },
+      { "input": "100 0 0\n", "output": "100\n0" },
+      { "input": "7 59 1\n", "output": "7\n60" }
+    ],
+    "hints": [
+      "函数可以直接返回结构体类型：struct Student make_student(int id, int score)。",
+      "想让函数改到 main 里的那个学生，就必须把地址传进去。",
+      "指针访问成员用 ->：s->score 等价于 (*s).score。"
+    ],
+    "solution": "#include <stdio.h>\n\nstruct Student {\n    int id;\n    int score;\n};\n\n/* 返回结构体：把成员组装好，整体交出去 */\nstruct Student make_student(int id, int score) {\n    struct Student s;\n    s.id = id;\n    s.score = score;\n    return s;   /* 返回的是这份数据的拷贝，可以放心用 */\n}\n\n/* 参数是指针：函数里改的就是调用者那个结构体本身 */\nvoid add_bonus(struct Student *s, int bonus) {\n    s->score += bonus;   /* s->score 就是 (*s).score */\n}\n\nint main() {\n    int id, score, bonus;\n    scanf(\"%d %d %d\", &id, &score, &bonus);\n\n    struct Student stu = make_student(id, score);\n\n    /* 必须传 &stu：按值传参改不到原件，只有地址才行 */\n    add_bonus(&stu, bonus);\n\n    printf(\"%d\\n\", stu.id);\n    printf(\"%d\\n\", stu.score);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "结构体当参数，传进去的是拷贝",
+        "body": "C 的函数参数一律按值传递，结构体也不例外：写 void add_bonus(struct Student s, int bonus) 再在函数里执行 s.score += bonus，改的只是那份副本，main 里的 stu 一点没变。这和「交换两个数的函数必须传指针」是同一个道理，只是结构体大了以后更不容易被发现。\n\n想改原件就传地址，然后在函数里用 -> 访问成员。顺带的好处是传地址只复制一个指针，结构体再大也不会拖慢调用。",
+        "code": "/* 这样写改不到调用者的变量 */\nvoid add_bonus(struct Student s, int bonus) {\n    s.score += bonus;   /* 只改了副本 */\n}\n\n/* 正确写法：传地址 */\nvoid add_bonus(struct Student *s, int bonus) {\n    s->score += bonus;\n}",
+        "output": ""
+      },
+      {
+        "title": ". 和 -> 的区别",
+        "body": "结构体变量本身用点号：stu.score。指向结构体的指针用箭头：p->score，它等价于 (*p).score。\n\n写成 p.score 是错的——p 存的是一个地址，它身上并没有 score 这个成员。同理 *p.score 也是错的，因为 . 的优先级比 * 高，它会被理解成 *(p.score)；真要手写就得加括号。之所以有这个箭头运算符，就是为了让你少写那对括号。",
+        "code": "struct Student s;\nstruct Student *p = &s;\ns.score = 90;\np->score = 95;              /* 改的是同一个 s */\nprintf(\"%d %d\\n\", s.score, (*p).score);",
+        "output": "95 95"
+      }
+    ]
+  },
+  {
+    "id": 1004,
+    "title": "typedef 与按成绩排序",
+    "difficulty": "medium",
+    "description": "用 typedef 把「姓名 + 成绩」的结构体取个别名叫 Student。读入 n 个学生，把他们的姓名按成绩从高到低输出；成绩相同的保持输入时的先后顺序。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）；接下来 n 行，每行一个不含空格的姓名和一个整数成绩，用空格分隔",
+    "output_format": "n 行，按成绩从高到低输出姓名；成绩相同时先输入的在前",
+    "sample_input": "3\nTom 90\nJerry 95\nSpike 90",
+    "sample_output": "Jerry\nTom\nSpike",
+    "test_cases": [
+      { "input": "3\nTom 90\nJerry 95\nSpike 90\n", "output": "Jerry\nTom\nSpike" },
+      { "input": "1\nAmy 100\n", "output": "Amy" },
+      { "input": "4\nA 60\nB 70\nC 70\nD 80\n", "output": "D\nB\nC\nA" },
+      { "input": "2\nX 0\nY 0\n", "output": "X\nY" }
+    ],
+    "hints": [
+      "typedef 把类型名变短：typedef struct { ... } Student; 之后直接写 Student stu;。",
+      "排序用冒泡：相邻两个比较，如果前面比后面小就交换，一轮下来最大的就漂到了最前面。",
+      "交换时整个结构体一起换：Student tmp = list[j]; list[j] = list[j+1]; list[j+1] = tmp;",
+      "判断条件用严格小于 list[j].score < list[j+1].score，成绩相等时不交换，顺序才稳定。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* typedef 给这个结构体起别名 Student，以后不用再写 struct 关键字 */\ntypedef struct {\n    char name[20];\n    int score;\n} Student;\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    Student list[100];\n    for (int i = 0; i < n; i++) {\n        scanf(\"%s %d\", list[i].name, &list[i].score);\n    }\n\n    /* 冒泡排序，从高到低。\n       条件写严格小于：分数相同时不交换，输入顺序自然保留下来 */\n    for (int i = 0; i < n - 1; i++) {\n        for (int j = 0; j < n - 1 - i; j++) {\n            if (list[j].score < list[j + 1].score) {\n                /* 交换的是整个学生，姓名和成绩必须一起搬家 */\n                Student tmp = list[j];\n                list[j] = list[j + 1];\n                list[j + 1] = tmp;\n            }\n        }\n    }\n\n    for (int i = 0; i < n; i++) {\n        printf(\"%s\\n\", list[i].name);\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "typedef 省掉的是什么",
+        "body": "不用 typedef 时，每次声明变量都要写全 struct Student stu;，多一个 struct 关键字，写多了容易漏。typedef struct { ... } Student; 相当于给这个类型起个短名字，之后写 Student stu; 就行。\n\n注意别名写在最后、分号的前面。也可以写成 typedef struct Student { ... } Student;，标签名和别名同名是合法的。\n\n要清楚 typedef 只是「改名」，它不会创造新类型：在编译器眼里 Student 和 struct Student 完全是同一个东西，也不会带来任何运行开销。",
+        "code": "typedef struct {\n    char name[20];\n    int score;\n} Student;\n\nStudent a;              /* 不用写 struct */\na.score = 95;",
+        "output": ""
+      },
+      {
+        "title": "交换整个结构体，以及什么叫稳定排序",
+        "body": "新手常只交换姓名、或者只交换成绩，结果排序后张冠李戴。结构体的价值就在于「姓名和成绩是一个整体」，所以赋值时要整个换：\nStudent tmp = list[j]; 会把所有成员一起复制过去。\n\n成绩相同时谁在前？这题要求保持输入顺序，这种「相同关键字不打乱原有次序」的排序叫稳定排序。冒泡排序只要把比较写成严格小于（相等就不交换），天然就是稳定的；如果写成 list[j].score <= list[j+1].score，同分的两个人会被互换，顺序就乱了。\n\n内层循环写 n - 1 - i，是因为每跑完一轮，末尾就已经排好了 i 个元素，不用再比。",
+        "code": "if (list[j].score < list[j + 1].score) {\n    Student tmp = list[j];\n    list[j] = list[j + 1];\n    list[j + 1] = tmp;\n}",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 1005,
+    "title": "用 enum 枚举表示星期",
+    "difficulty": "medium",
+    "description": "定义一个枚举类型 Weekday，成员是星期一到星期日。读入一个整数 d：1 到 7 输出对应的英文名，其它值输出 Invalid。",
+    "input_format": "一行，一个整数 d",
+    "output_format": "一行：1 输出 Monday、2 输出 Tuesday …… 7 输出 Sunday；其它值输出 Invalid",
+    "sample_input": "1",
+    "sample_output": "Monday",
+    "test_cases": [
+      { "input": "1\n", "output": "Monday" },
+      { "input": "4\n", "output": "Thursday" },
+      { "input": "7\n", "output": "Sunday" },
+      { "input": "9\n", "output": "Invalid" }
+    ],
+    "hints": [
+      "枚举可以自己指定起始值：enum Weekday { MON = 1, TUE, WED, ... }; 后面的成员自动加 1。",
+      "用 switch 逐个 case 判断，别忘了 default 处理非法输入。",
+      "每个 case 结尾要 break，否则会继续往下执行。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 枚举：给一串整数常量起名字。MON = 1 后面的成员自动加 1，SUN 就是 7 */\nenum Weekday { MON = 1, TUE, WED, THU, FRI, SAT, SUN };\n\nint main() {\n    int d;\n    scanf(\"%d\", &d);\n\n    /* 读进来的是整数，显式转成枚举值再用 switch 判断 */\n    enum Weekday day = (enum Weekday)d;\n\n    switch (day) {\n        case MON: printf(\"Monday\\n\");    break;\n        case TUE: printf(\"Tuesday\\n\");   break;\n        case WED: printf(\"Wednesday\\n\"); break;\n        case THU: printf(\"Thursday\\n\");  break;\n        case FRI: printf(\"Friday\\n\");    break;\n        case SAT: printf(\"Saturday\\n\");  break;\n        case SUN: printf(\"Sunday\\n\");    break;\n        /* default 兜住所有非法输入，没有它程序会什么都不输出 */\n        default:  printf(\"Invalid\\n\");   break;\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "枚举解决的是「看不懂的数字」",
+        "body": "如果直接写 if (d == 3) printf(\"Wednesday\");，过两个月没人知道 3 是什么意思，写错成 4 编译器也不会拦你。换成 if (d == WED)，代码自己就把意思说清楚了，拼错 WED 则直接编译报错——这就是枚举的价值：给常量起名字，把错误从运行期提前到编译期。\n\n枚举成员的编号从 0 开始自动递增，写了 MON = 1 之后，TUE 就是 2，一路到 SUN = 7，正好和星期几对上。",
+        "code": "enum Weekday { MON = 1, TUE, WED, THU, FRI, SAT, SUN };\nprintf(\"%d %d %d\\n\", MON, WED, SUN);",
+        "output": "1 3 7"
+      },
+      {
+        "title": "枚举本质上还是整数，别忘了 default",
+        "body": "枚举值在内存里就是整数，可以和整数互相比较、转换，所以 scanf 用 %d 读进 int 再转成枚举值是完全正常的写法。\n\n这题要求「其它值输出 Invalid」，就一定要写 default 分支：switch 遇到没有匹配的 case 时会直接跳过整个 switch，什么也不输出。判题时少一行输出就是错。\n\n另外每个 case 后面的 break 也不是装饰——漏掉它，程序会顺着往下把后面所有 case 都执行一遍（这叫「穿透」），输出就会多出好几行。",
+        "code": "switch (day) {\n    case MON: printf(\"Monday\\n\"); break;\n    default:  printf(\"Invalid\\n\"); break;\n}",
+        "output": "输入 1 输出 Monday；输入 9 输出 Invalid"
+      }
+    ]
+  },
+  {
+    "id": 1006,
+    "title": "共用体 union 的内存共享",
+    "difficulty": "hard",
+    "description": "定义一个共用体 union Data，成员有 int 类型的 i、float 类型的 f 和 char 类型的数组 c[4]。\n读入一个整数 n，先输出这个共用体的大小，再把这个整数存进成员 i，最后按成员 f 把它读出来。",
+    "input_format": "一行，一个整数 n",
+    "output_format": "第一行形如 sizeof(union Data) = 4；第二行形如 u.f = 1.00，浮点数保留 2 位小数",
+    "sample_input": "1065353216",
+    "sample_output": "sizeof(union Data) = 4\nu.f = 1.00",
+    "test_cases": [
+      { "input": "1065353216\n", "output": "sizeof(union Data) = 4\nu.f = 1.00" },
+      { "input": "0\n", "output": "sizeof(union Data) = 4\nu.f = 0.00" },
+      { "input": "1101004800\n", "output": "sizeof(union Data) = 4\nu.f = 20.00" },
+      { "input": "-1082130432\n", "output": "sizeof(union Data) = 4\nu.f = -1.00" }
+    ],
+    "hints": [
+      "共用体的写法把 struct 换成 union 就行：union Data { int i; float f; char c[4]; };",
+      "sizeof(u) 得到的是共用体占的字节数，想想它应该等于哪个成员的大小。",
+      "只给 u.i 赋值，然后直接 printf(\"%.2f\", u.f) —— 你会读到同一块内存按浮点数解释的样子。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* 共用体：三个成员共用同一块内存，大小取最大的那个成员 */\nunion Data {\n    int i;\n    float f;\n    char c[4];\n};\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    union Data u;\n    /* 三个成员都是 4 字节，所以整个共用体只占 4 字节 */\n    printf(\"sizeof(union Data) = %d\\n\", (int)sizeof(u));\n\n    u.i = n;\n    /* 只写过 u.i，但 u.f 和它共用同一块内存：\n       这里读到的是同一批二进制位被当成 float 解释的结果，不是数值转换 */\n    printf(\"u.f = %.2f\\n\", u.f);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "union 和 struct 的内存布局差在哪",
+        "body": "struct 的成员像排排坐：每个成员各占自己的位置，整个结构体的大小大致是成员大小之和（为了对齐可能还会多一些空隙）。\n\nunion 的成员像同一张床轮流睡：所有成员都从同一个地址开始，所以整个共用体的大小等于最大成员的大小，写一个成员就会盖掉另一个。\n\n它适合「同一时刻只会用到其中一种」的场景，比如一个变量既可能存整数也可能存小数，用 union 就不用把两块空间都留着。代价是没有任何提示告诉你当前存的到底是哪一个，得自己另外用个变量记清楚，忘了就会读出垃圾值。",
+        "code": "union Data { int i; float f; char c[4]; };\n\nprintf(\"%d\\n\", (int)sizeof(union Data));   /* 取最大的成员 */",
+        "output": "4"
+      },
+      {
+        "title": "为什么 1065353216 读出来是 1.00",
+        "body": "关键在于：读 u.f 不会做任何数值转换，它只是把 u.i 写进去的那 4 个字节，按 float 的编码规则重新解释一遍。\n\nint 型的 1065353216 写成十六进制是 0x3F800000，而 0x3F800000 恰好就是 float 的 1.0 在内存里的编码，所以输出 1.00。输入 1101004800（0x41A00000）会得到 20.00，就是这么来的。\n\n随机给一个整数，绝大多数情况下读出来的浮点数是看不懂的值——因为大批整数对应的位模式不是合法的、或者不是好看的浮点数。\n\n还要知道：写了 i 却去读 f，C 标准把它归为「实现定义」的行为，不同编译器、不同机器上的结果未必一致。实战里不要依赖这种写法，本题只是用它来直观感受「共用体的成员确实共享同一块内存」。",
+        "code": "union Data u;\nu.i = 1065353216;            /* 0x3F800000 */\nprintf(\"%.2f\\n\", u.f);       /* 同一批二进制位当成 float */",
+        "output": "1.00"
+      }
+    ]
+  }
+]

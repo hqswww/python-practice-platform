@@ -1,0 +1,247 @@
+[
+  {
+    "id": 201,
+    "title": "整数与小数",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，输出两行：第一行是 n 本身；第二行是 n 除以 2 的结果，保留 1 位小数。",
+    "input_format": "一行，一个整数 n",
+    "output_format": "两行：第一行是整数 n；第二行是 n ÷ 2 的结果，保留 1 位小数",
+    "sample_input": "7",
+    "sample_output": "7\n3.5",
+    "test_cases": [
+      { "input": "7\n", "output": "7\n3.5" },
+      { "input": "10\n", "output": "10\n5.0" },
+      { "input": "0\n", "output": "0\n0.0" },
+      { "input": "-3\n", "output": "-3\n-1.5" }
+    ],
+    "hints": [
+      "第一行照原样输出 n 就行，用 %d。",
+      "第二行要的是小数，得让 C 按「小数除法」来算，别用整数除法。",
+      "把 2 写成 2.0，表达式里只要有一个是小数，结果就是小数；输出用 %.1f。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    /* 第一行按整数输出 */\n    printf(\"%d\\n\", n);\n\n    /* 关键：n / 2 是整数除法，7 / 2 得到 3，小数部分被直接丢掉。\n       写成 n / 2.0 之后，n 会先被隐式转换成 double，结果才是 3.5。 */\n    printf(\"%.1f\\n\", n / 2.0);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "int 和 double 是两种不同的数",
+        "body": "C 里的数字分两大类：整数类型（int、long、long long）和小数类型（float、double）。\n\nint 只能装整数，你写 int a = 3.9; 的话小数部分会被直接丢掉，a 变成 3——编译器多半只给个警告，程序照样能跑，但结果已经错了。\n\ndouble 装小数。float 也是小数，但它只有 4 字节、大约 7 位有效数字；double 有 8 字节、大约 15 位。初学者记住一句就够：**要小数就用 double**。\n\n输出时的格式符必须和类型对上：int 用 %d，double 用 %f。用错了是「未定义行为」——可能输出垃圾值，也可能直接崩。",
+        "code": "int a = 3.9;      /* a 是 3，不是 4 */\ndouble b = 3.9;\nprintf(\"%d\\n\", a);\nprintf(\"%.1f\\n\", b);",
+        "output": "3\n3.9"
+      },
+      {
+        "title": "整数除法的坑",
+        "body": "两个整数相除，结果仍然是整数，小数部分被**直接扔掉**（不是四舍五入）：7 / 2 得到 3，9 / 5 得到 1。\n\n只要参与运算的有一个是浮点数，C 就会先把另一边提升成浮点数，再按小数算：7 / 2.0 得到 3.5。\n\n所以换算公式、求平均值这类地方，一定要检查有没有漏掉小数点。这是初学者最常踩的坑之一：程序不报错，结果就是不对。",
+        "code": "double x = 7 / 2;        /* 先算整数除法得 3，再变成 3.0 */\ndouble y = 7 / 2.0;      /* 3.5 */\ndouble z = (double)7 / 2; /* 3.5：先强转再除 */",
+        "output": "x = 3.0, y = 3.5, z = 3.5"
+      }
+    ]
+  },
+  {
+    "id": 202,
+    "title": "sizeof：类型占多少字节",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，输出 n 个 char、n 个 int、n 个 float、n 个 double 类型变量一共占用多少字节。\n\n各类型的字节数请用 sizeof 运算符算出来，不要把 4、8 这样的数字直接写死在程序里。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 100）",
+    "output_format": "四行，顺序为 char、int、float、double。每行格式是「类型名 + 冒号 + 一个空格 + 字节数」，例如 int: 8",
+    "sample_input": "2",
+    "sample_output": "char: 2\nint: 8\nfloat: 8\ndouble: 16",
+    "test_cases": [
+      { "input": "1\n", "output": "char: 1\nint: 4\nfloat: 4\ndouble: 8" },
+      { "input": "2\n", "output": "char: 2\nint: 8\nfloat: 8\ndouble: 16" },
+      { "input": "0\n", "output": "char: 0\nint: 0\nfloat: 0\ndouble: 0" },
+      { "input": "100\n", "output": "char: 100\nint: 400\nfloat: 400\ndouble: 800" }
+    ],
+    "hints": [
+      "sizeof 是一个运算符，写 sizeof(int) 就能得到 int 占几个字节。",
+      "n 个变量占的字节数就是 n 乘以单个的字节数：n * sizeof(int)。",
+      "sizeof 的结果类型是 size_t，用 %zu 输出，不要用 %d。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    /* sizeof 是运算符，不是函数：sizeof(int) 直接给出这个类型占多少字节。\n       注意别把 4、8 写死——内存布局由平台决定，用 sizeof 算出来的才是对的。 */\n    printf(\"char: %zu\\n\", n * sizeof(char));\n    printf(\"int: %zu\\n\", n * sizeof(int));\n\n    /* float 和 int 都是 4 字节，但 float 能表示的整数范围小得多，\n       因为它把一部分位用来存指数了（详见下面第 3 节）。 */\n    printf(\"float: %zu\\n\", n * sizeof(float));\n    printf(\"double: %zu\\n\", n * sizeof(double));\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "sizeof 是运算符，不是函数",
+        "body": "sizeof 用来问「这个东西占多少字节」。它不需要任何头文件，也不是函数调用——sizeof(int) 的括号只是为了让带空格的类型名能写在一起；对变量甚至可以写 sizeof n。\n\nsizeof 的值在**编译期**就算好了，圆括号里的表达式根本不会真的执行：sizeof(n++) 算完之后 n 一点都没变。\n\n还有一条 C 的特殊规定：sizeof(char) 永远是 1。C 里的「字节（byte）」本来就是按 char 的大小定义的，所以这个 1 不是巧合。",
+        "code": "printf(\"%zu\\n\", sizeof(char));   /* 1 */\nprintf(\"%zu\\n\", sizeof(int));    /* 通常是 4 */\nprintf(\"%zu\\n\", sizeof(double)); /* 通常是 8 */",
+        "output": "1\n4\n8"
+      },
+      {
+        "title": "为什么用 %zu 而不是 %d",
+        "body": "sizeof 的结果类型是 size_t——一种无符号整数类型，在 64 位机器上通常是 8 字节。\n\n拿 %d 去打印它属于格式符和类型不匹配，是未定义行为：小数字看着正常，遇到大值就可能打出乱七八糟的东西，而且编译器不一定报错。%zu 才是 size_t 的专用格式符（z 的意思就是「跟 size_t 一样大」）。\n\n实在想用 %d，就先强制转换：(int)sizeof(int)。",
+        "code": "printf(\"%zu\\n\", sizeof(int));      /* 推荐 */\nprintf(\"%d\\n\", (int)sizeof(int));  /* 也可以 */",
+        "output": "4\n4"
+      },
+      {
+        "title": "每种类型能装多大的数",
+        "body": "类型的大小决定了它能表示的范围：\n\n- char：1 字节，装一个字符，或者 -128 ~ 127 之间的小整数（也就是 ASCII 码）。\n- int：通常 4 字节 = 32 位，范围 -2147483648 ~ 2147483647（约 ±21 亿）。\n- float：4 字节，但它是「符号 + 指数 + 尾数」的浮点表示，能表示极大的数，代价是只有约 7 位有效数字——所以 0.1 + 0.2 得不到 0.3。\n- double：8 字节，约 15 ~ 16 位有效数字，日常计算都用它。\n\n想知道某台机器上确切的范围，别背数字，用头文件里的宏：<limits.h> 提供 INT_MAX、INT_MIN、UINT_MAX，<float.h> 提供 FLT_MAX、DBL_MAX。",
+        "code": "#include <limits.h>\n\nprintf(\"%d %d\\n\", INT_MIN, INT_MAX);",
+        "output": "-2147483648 2147483647"
+      }
+    ]
+  },
+  {
+    "id": 203,
+    "title": "字符与 ASCII 码",
+    "difficulty": "easy",
+    "description": "读入一个大写英文字母，先输出它的 ASCII 码，再输出它对应的小写字母。",
+    "input_format": "一行，一个大写英文字母（A ~ Z）",
+    "output_format": "两行：第一行是该字母的 ASCII 码（一个整数）；第二行是它对应的小写字母",
+    "sample_input": "A",
+    "sample_output": "65\na",
+    "test_cases": [
+      { "input": "A\n", "output": "65\na" },
+      { "input": "M\n", "output": "77\nm" },
+      { "input": "Z\n", "output": "90\nz" }
+    ],
+    "hints": [
+      "字符变量用 char 声明，读入一个字符用 %c。",
+      "同一个 char 变量，用 %c 输出是字符，用 %d 输出就是它的 ASCII 码。",
+      "大写字母和对应的小写字母在 ASCII 表里差 32，所以 c + 32 就是小写字母。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    char c;\n    /* %c 读入一个字符。注意：%c 不会自动跳过空格和换行，输入里多余的空白要小心 */\n    scanf(\"%c\", &c);\n\n    /* char 本质上是 1 字节的小整数。同一个变量换个格式符，看到的就是它的 ASCII 码 */\n    printf(\"%d\\n\", c);\n\n    /* 'a' - 'A' 就是 32。写成两者相减比写死 32 更能说明意图：\n       大写字母排在 65~90，小写字母排在 97~122，中间正好差 32 */\n    printf(\"%c\\n\", c + ('a' - 'A'));\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "char 其实是个小整数",
+        "body": "计算机里没有「字母」这种东西，只有数字。字符是靠一张对照表变成数字存起来的，最通用的那张表叫 ASCII：'A' 是 65，'a' 是 97，'0' 是 48。\n\n所以 char 变量的本质就是 1 字节的整数，只是我们约定「用它来装字符」。用 %c 输出时 printf 把它当字符打印，用 %d 输出时就是那个数字。\n\n注意单引号和双引号的区别：'A' 是字符常量（一个整数 65），\"A\" 是字符串（末尾还带一个 '\\0'，类型是 char*）。写 char c = \"A\"; 是错的，编译器会警告或报错。",
+        "code": "char c = 'A';\nprintf(\"%c\\n\", c);  /* 按字符输出 */\nprintf(\"%d\\n\", c);  /* 按整数输出 */\nprintf(\"%d\\n\", 'A' + 1);",
+        "output": "A\n65\n66"
+      },
+      {
+        "title": "为什么加 32 就变成小写",
+        "body": "ASCII 表把 26 个大写字母排在 65 ~ 90，26 个小写字母排在 97 ~ 122，正好相差 32。所以「大写变小写」就是加 32，「小写变大写」就是减 32。\n\n因为字母在表里是连续的，这种加减法才成立——换成数字字符也成立（'0' 是 48，'7' 是 55）。\n\n新手易错点：c + 32 的结果类型是 int（char 会先被「整型提升」成 int），赋值回 char 变量时如果超出 char 的范围就会被截断。这里 A~Z 加 32 最多到 122，是安全的。\n\n另外 ASCII 只管英文和英文标点。中文一个字在 UTF-8 里占 3 个字节，一个 char 根本装不下——处理中文要用 char 数组。",
+        "code": "printf(\"%c\\n\", 'Z' + 32);  /* z */\nprintf(\"%c\\n\", 'a' - 32);  /* A */",
+        "output": "z\nA"
+      },
+      {
+        "title": "%c 不会跳过空格和换行",
+        "body": "scanf(\"%d\") 会自动跳过输入里的空格、制表符、换行；scanf(\"%c\") 不会——它就老老实实读走缓冲区的下一个字符。\n\n所以「先读一个数、再读一个字符」时最容易出错：读完数字后缓冲区里还剩一个换行符，%c 把它读走了，你拿到的是 '\\n' 而不是下一个字母。\n\n解决办法是在 %c 前面加一个空格，写成 \" %c\"——格式串里的空白字符表示「跳过任意多个空白」。",
+        "code": "int n;\nchar c;\nscanf(\"%d\", &n);\nscanf(\" %c\", &c);   /* 前面的空格：先跳过所有空白字符 */",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 204,
+    "title": "强制类型转换与截断",
+    "difficulty": "medium",
+    "description": "读入一个浮点数 x，输出两行：第一行把 x 强制转换成整数后的值；第二行是 x 减去这个整数后的结果，保留 2 位小数。",
+    "input_format": "一行，一个浮点数 x（可能带小数，也可能是负数）",
+    "output_format": "两行：第一行是一个整数；第二行保留 2 位小数",
+    "sample_input": "3.9",
+    "sample_output": "3\n0.90",
+    "test_cases": [
+      { "input": "3.9\n", "output": "3\n0.90" },
+      { "input": "7.25\n", "output": "7\n0.25" },
+      { "input": "0.0\n", "output": "0\n0.00" },
+      { "input": "-2.7\n", "output": "-2\n-0.70" }
+    ],
+    "hints": [
+      "强制类型转换写成 (int)x，意思是「把 x 转成 int」。",
+      "转换时小数部分会被直接丢掉，不是四舍五入。",
+      "用 double 读入数据要用 %lf：scanf(\"%lf\", &x)。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    double x;\n    /* 读 double 用 %lf；printf 输出 double 用 %f，两者不一样，别记混 */\n    scanf(\"%lf\", &x);\n\n    /* 强制类型转换：(int)x 把小数部分直接丢掉（向 0 截断），不四舍五入。\n       负数也一样：-2.7 变成 -2，而不是向下去取整的 -3 */\n    int n = (int)x;\n    printf(\"%d\\n\", n);\n\n    /* x - n：一边是 double、一边是 int，相减时 int 会被隐式提升成 double，\n       结果仍是小数。所以这一行不会因为类型不同而算错 */\n    printf(\"%.2f\\n\", x - n);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "隐式转换和强制转换",
+        "body": "C 里的类型转换有两种。\n\n**隐式转换**：编译器自动做的。混合运算时「往精度更高的类型靠」——int 和 double 一起算，int 会被提升成 double（这就是 7 / 2.0 得 3.5 的原因）。反过来把 double 赋给 int 变量时，小数部分会被悄悄丢掉，编译器最多给个警告。\n\n**强制转换**：你自己写的 (int)x，意思是「我知道会丢精度，就这么办」。它不会四舍五入，也不会报错。\n\n新手易错点：编译器对「隐式丢精度」往往只给警告，不报错。所以看到 warning 别忽略——里面经常就是真正的 bug。",
+        "code": "int a = 3.99;              /* 隐式：a 是 3 */\nint b = (int)3.99;         /* 强制：也是 3 */\ndouble c = 5 / 2;          /* 隐式：先算整数除法得 2，再变成 2.0 */\ndouble d = (double)5 / 2;  /* 5.0 / 2 = 2.5 */",
+        "output": "a = 3, b = 3, c = 2.0, d = 2.5"
+      },
+      {
+        "title": "(int) 是截断，不是四舍五入",
+        "body": "(int) 的规则是「向 0 取整」：正数向下取整，负数向上取整。所以 (int)3.9 是 3，(int)-3.9 是 -3 而不是 -4。\n\n这一点很容易和「向下取整」搞混：数学上的向下取整（floor）对 -3.9 应该给 -4。C 的强制转换不这么干。\n\n想要真正的四舍五入，可以自己加 0.5 再取整（只对非负数成立），或者用 <math.h> 里的 round()/floor()/ceil()——注意用它们要链接数学库（编译时加 -lm）。",
+        "code": "printf(\"%d %d\\n\", (int)3.9, (int)-3.9);   /* 3 -3 */\nprintf(\"%d\\n\", (int)(3.9 + 0.5));         /* 4：正数四舍五入 */",
+        "output": "3 -3\n4"
+      },
+      {
+        "title": "double 也不是精确的",
+        "body": "double 用二进制小数存数据，像 0.1 这种十进制小数在二进制里是无限循环的，只能存一个近似值。所以 0.1 + 0.2 得到的是 0.30000000000000004，不是 0.3。\n\n打印时用 %.2f 会四舍五入到两位，看起来就正常了；但**比较**两个浮点数不能用 ==，通常写成 fabs(a - b) < 1e-6（需要 <math.h>）。\n\n也正因为如此，涉及「钱」的计算常常改用整数（以分为单位），避免累积误差。",
+        "code": "printf(\"%.17f\\n\", 0.1 + 0.2);\nprintf(\"%.2f\\n\", 0.1 + 0.2);",
+        "output": "0.30000000000000004\n0.30"
+      }
+    ]
+  },
+  {
+    "id": 205,
+    "title": "整数溢出：超出范围会怎样",
+    "difficulty": "medium",
+    "description": "读入一个整数 n，输出 n 乘以 2 的结果。\n\nn 可能大到超出 int 能表示的范围，所以请用 unsigned int 来存和算。",
+    "input_format": "一行，一个非负整数 n（0 ≤ n ≤ 3000000000）",
+    "output_format": "输出一行，n 乘以 2 的结果",
+    "sample_input": "123456789",
+    "sample_output": "246913578",
+    "test_cases": [
+      { "input": "0\n", "output": "0" },
+      { "input": "123456789\n", "output": "246913578" },
+      { "input": "2147483647\n", "output": "4294967294" },
+      { "input": "3000000000\n", "output": "1705032704" }
+    ],
+    "hints": [
+      "先用 unsigned int 声明变量，读入用 %u，输出也用 %u。",
+      "unsigned int 装不下的时候不会报错，它会「回绕」——这就是本题要观察的现象。",
+      "3000000000 × 2 = 6000000000，而 unsigned int 最大只能到 4294967295，多出来的部分会绕回去。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    unsigned int n;\n    /* %u 是无符号整数的格式符。用 %d 读 3000000000 这种数会读成负数 */\n    scanf(\"%u\", &n);\n\n    /* 关键：unsigned int 的运算结果保证「按 2^32 取模」，\n       所以 3000000000 * 2 不会变成负数，而是绕回 1705032704。\n       反过来，有符号 int 溢出在 C 标准里是未定义行为，结果不可预测，不能依赖 */\n    printf(\"%u\\n\", n * 2);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "每种类型都有自己的上限",
+        "body": "类型能表示的范围由它占多少位决定。常见的 int 是 32 位有符号整数：最高位当符号位，所以范围是 -2147483648 ~ 2147483647（约 ±21 亿）。\n\nunsigned int 也是 32 位，但不留符号位，全部用来表示数值，范围是 0 ~ 4294967295。代价是它存不了负数。\n\n别背这些数字，用 <limits.h> 里的宏：INT_MAX、INT_MIN、UINT_MAX、LLONG_MAX。换平台、换编译器时这些宏会跟着变，你写死的数字不会。",
+        "code": "#include <limits.h>\n\nprintf(\"%d\\n\", INT_MAX);   /* 2147483647 */\nprintf(\"%u\\n\", UINT_MAX);  /* 4294967295 */",
+        "output": "2147483647\n4294967295"
+      },
+      {
+        "title": "溢出时到底发生了什么",
+        "body": "数字在内存里就是一串固定长度的二进制位。位数用满之后再往前加，最高位会被挤出去丢掉——就像汽车的里程表走到 999999 再走一公里，显示成 000000。\n\n对 unsigned 类型，C 标准明确规定了这种行为：结果等于对 2^32 取模。所以 4294967295u + 1 一定是 0，可以放心依赖。\n\n对**有符号** int，溢出是「未定义行为」（UB）。编译器有权假设溢出不会发生，从而把判断优化掉、把循环变成死循环。这类 bug 特别难查：同一份代码换个编译器、换个优化等级就表现不一样。所以「结果看着像 -2147483648」只是碰巧，不能依赖。",
+        "code": "unsigned int a = 4294967295u;\nprintf(\"%u\\n\", a + 1);   /* 0：回绕 */",
+        "output": "0"
+      },
+      {
+        "title": "该用多大的类型",
+        "body": "写程序时先估一下结果的数量级：只要可能超过 21 亿，就别用 int，直接用 long long（64 位，上限约 9.2 × 10^18）。\n\n配套的格式符也要一起改：long long 读入和输出都用 %lld，无符号的是 %llu。\n\n这里有个 C 里很隐蔽的坑：格式符和类型不匹配时，编译器不一定报错（scanf 那侧尤其如此），程序会读进一堆垃圾数据。改类型时记得把 scanf/printf 一起改掉。\n\n顺带一提，累加 1 到 100000 的平方和就会超过 int 的范围——循环题里这种溢出非常常见。",
+        "code": "long long s = 0;\nscanf(\"%lld\", &s);\nprintf(\"%lld\\n\", s * 2);",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 206,
+    "title": "用 #define 定义常量",
+    "difficulty": "easy",
+    "description": "读入一个整数半径 r，计算并输出圆的周长和面积。\n\n圆周率取 3.14159，并且要用 #define 把它定义成一个常量 PI 来使用。",
+    "input_format": "一行，一个整数 r（0 ≤ r ≤ 100）",
+    "output_format": "两行：第一行是周长，第二行是面积，都保留 2 位小数",
+    "sample_input": "2",
+    "sample_output": "12.57\n12.57",
+    "test_cases": [
+      { "input": "1\n", "output": "6.28\n3.14" },
+      { "input": "2\n", "output": "12.57\n12.57" },
+      { "input": "0\n", "output": "0.00\n0.00" },
+      { "input": "10\n", "output": "62.83\n314.16" }
+    ],
+    "hints": [
+      "圆的周长是 2 × π × r，面积是 π × r × r。",
+      "在 #include 下面用一行 #define PI 3.14159 定义常量，注意行尾不要加分号。",
+      "PI 是小数，所以整个表达式会按小数运算；输出用 %.2f。"
+    ],
+    "solution": "#include <stdio.h>\n\n/* #define 是预处理指令：编译前把代码里所有的 PI 原样替换成 3.14159。\n   注意行尾不写分号——写了分号，替换出来的就变成 3.14159; ，会直接编译报错 */\n#define PI 3.14159\n\nint main() {\n    int r;\n    scanf(\"%d\", &r);\n\n    /* 2 * PI * r：PI 被替换成小数，所以 r 会被隐式提升成 double，结果是小数。\n       要是把它定义成 #define PI 3，全程就变成整数运算，周长会算成整数 */\n    printf(\"%.2f\\n\", 2 * PI * r);\n    printf(\"%.2f\\n\", PI * r * r);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么要把 3.14159 写成一个名字",
+        "body": "把重复出现、又需要改动的数字抽成一个有意义的名字，好处是改的时候只改一处，别人读代码时也一眼知道这个数字是什么。\n\nC 里最传统的做法就是 #define：它在**预处理阶段**做纯粹的文本替换，编译器看到代码时 PI 这个词已经不存在了。\n\n新手最容易踩的三个坑：\n1. #define 行尾**不要加分号**——宏是替换，不是语句。\n2. 宏没有类型，编译器不会帮你做类型检查。\n3. 宏名习惯全大写（PI、MAX、SIZE），用来和普通变量区分。",
+        "code": "#define PI 3.14159\n#define MAX 100\n\nprintf(\"%.5f\\n\", PI);",
+        "output": "3.14159"
+      },
+      {
+        "title": "#define 和 const 的区别",
+        "body": "const double pi = 3.14159; 定义的是**真正的变量**：有类型、有内存地址、能调试器查看、遵守作用域规则。现代 C 代码更推荐这种写法。\n\n#define 只是编译前的字符串替换：没有类型、没有地址、出了这个文件就不存在，而且替换时不做任何语法检查。\n\n不过读别人的 C 代码一定会遇到 #define，尤其是定义「带参数的宏」时：#define SQUARE(x) ((x) * (x))。这里参数和整体都必须加括号，否则 SQUARE(1 + 2) 会展开成 1 + 2 * 1 + 2，结果是 5 而不是 9。这类展开错误不会报错，只会算错。",
+        "code": "#define SQUARE(x) ((x) * (x))\n\nprintf(\"%d\\n\", SQUARE(3));     /* 9 */\nprintf(\"%d\\n\", SQUARE(1 + 2)); /* 9：括号保住了运算顺序 */",
+        "output": "9\n9"
+      },
+      {
+        "title": "公式里的隐式转换",
+        "body": "2 * PI * r 里，PI 是小数（double），r 是整数（int）。混合运算时 C 会把 int 提升成 double，所以整条表达式按小数算，结果可以用 %.2f 输出。\n\n反过来说：如果常量定义成整数，小数就会凭空消失。2 * 3 * r 在 r = 2 时是 12，而正确结果 12.57 会变成 12.00——程序不报错，结果全错。\n\n判断一个表达式会不会丢小数，就看参与运算的**所有**操作数是不是整数：全是整数就是整数运算，只要有一个小数就按浮点算。",
+        "code": "printf(\"%.2f\\n\", 2 * 3.14159 * 2);  /* 12.57 */\nprintf(\"%.2f\\n\", 2 * 3 * 2);        /* 12.00：整数运算 */",
+        "output": "12.57\n12.00"
+      }
+    ]
+  }
+]

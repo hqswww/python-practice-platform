@@ -1,0 +1,248 @@
+[
+  {
+    "id": 401,
+    "title": "判断奇偶",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，判断它是偶数还是奇数。\n\n偶数输出 even，奇数输出 odd。",
+    "input_format": "一行，一个整数 n（可能是负数，也可能是 0）",
+    "output_format": "输出一行：even 表示偶数，odd 表示奇数",
+    "sample_input": "4",
+    "sample_output": "even",
+    "test_cases": [
+      { "input": "4\n", "output": "even" },
+      { "input": "7\n", "output": "odd" },
+      { "input": "0\n", "output": "even" },
+      { "input": "-3\n", "output": "odd" }
+    ],
+    "hints": [
+      "怎么判断一个数能不能被 2 整除？想想取余运算符 % 的结果是几。",
+      "条件写成 if (n % 2 == 0)，注意是两个等号。",
+      "只有两种情况，用 if / else 就够了，else 里不需要再写条件。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n\n    /* == 是「判断相等」，= 是「赋值」，写混了结果会全错。\n       只有偶数和奇数两种情况：判断完偶数，else 里就一定是奇数，\n       不用再写第二个条件。 */\n    if (n % 2 == 0) {\n        printf(\"even\\n\");\n    } else {\n        printf(\"odd\\n\");\n    }\n\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "if / else：两条路选一条",
+        "body": "if 后面的括号里放条件，条件成立就执行 if 下面大括号里的语句，否则执行 else 里的。\n\n条件本身是一个「真 / 假」的表达式：n % 2 == 0 在 n 是偶数时为真。C 里没有专门的布尔值，判断的结果用整数 1 表示真、0 表示假。\n\n注意大括号和分号：if (条件) 后面**不要**写分号，否则 if 就管不到后面的语句了。",
+        "code": "if (n % 2 == 0) {\n    printf(\"even\\n\");\n} else {\n    printf(\"odd\\n\");\n}",
+        "output": "输入 4 输出 even，输入 7 输出 odd"
+      },
+      {
+        "title": "= 和 == 是两回事",
+        "body": "这是初学者最常犯的错误：\n\n= 是赋值，把右边的值存进左边的变量；== 才是判断两边是否相等。\n\nif (n = 0) 的意思是「把 0 存进 n，然后看 n 是不是非 0」——0 是假，所以这个分支永远不会进去。有的编译器只给一句警告就放过去了，程序跑起来结果全错，还特别难查。\n\n看到 if 的括号里出现孤零零一个 =，几乎可以断定是 bug。",
+        "code": "int x = 5;\nif (x = 0) {                 /* 错：这是赋值，x 变成 0，条件为假 */\n    printf(\"会执行吗\\n\");     /* 永远不执行 */\n}\nif (x == 0) {                /* 对：判断相等 */\n    printf(\"x 是 0\\n\");\n}",
+        "output": "x 是 0"
+      },
+      {
+        "title": "为什么 else 里不用再判断一次",
+        "body": "很多同学会写成 if (n % 2 == 0) ... else if (n % 2 == 1) ...。对 7 这种正数它看起来是对的，但输入 -3 就不成立了：C 里 -3 % 2 的结果是 -1，不是 1，两个条件都为假，程序什么都不输出。\n\n**取余的结果符号跟着被除数走**，所以判断奇数千万别拿 n % 2 == 1 当条件。既然只有偶数和奇数两类，把偶数判断掉，剩下的自然就是奇数。",
+        "code": "/* 不推荐：负数会漏判 */\nif (n % 2 == 0)      printf(\"even\\n\");\nelse if (n % 2 == 1) printf(\"odd\\n\");   /* -3 % 2 等于 -1，这里不成立 */",
+        "output": "输入 -3 时什么都不输出"
+      }
+    ]
+  },
+  {
+    "id": 402,
+    "title": "成绩分档",
+    "difficulty": "easy",
+    "description": "读入一个 0 到 100 之间的整数成绩，按下面的规则输出等级：\n\n90 分及以上为 A，80 到 89 分为 B，60 到 79 分为 C，60 分以下为 D。",
+    "input_format": "一行，一个整数 score（0 ≤ score ≤ 100）",
+    "output_format": "输出一个大写字母：A、B、C 或 D",
+    "sample_input": "85",
+    "sample_output": "B",
+    "test_cases": [
+      { "input": "95\n", "output": "A" },
+      { "input": "80\n", "output": "B" },
+      { "input": "60\n", "output": "C" },
+      { "input": "59\n", "output": "D" }
+    ],
+    "hints": [
+      "四个等级对应四种情况，一个 if / else 装不下，要把判断串成一条链。",
+      "用 else if 接在后面：if (score >= 90) ... else if (score >= 80) ...",
+      "从高分往低分写，每个 else if 只需要写一个下界就够了。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int score;\n    scanf(\"%d\", &score);\n\n    /* 从高到低依次判断：只要有一支成立，执行完就跳出整条链，\n       所以 else if 里只需写下界，不必再写 score < 90 这样的上界。 */\n    if (score >= 90) {\n        printf(\"A\\n\");\n    } else if (score >= 80) {\n        printf(\"B\\n\");\n    } else if (score >= 60) {\n        printf(\"C\\n\");\n    } else {\n        printf(\"D\\n\");\n    }\n\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "else if：多分支用链条",
+        "body": "两种以上情况就要用 else if。判断顺序是从上往下，一旦某个条件成立，执行完这一段就跳出整条链，后面的条件连看都不看。\n\n正因为这样，else if (score >= 80) 隐含的意思就是「不到 90，但够 80」——上界已经被前面那一支替我们排除掉了。写成 score >= 80 && score < 90 也不算错，只是多写了一个永远为真的比较，更容易写错。",
+        "code": "if (score >= 90) {\n    printf(\"A\\n\");\n} else if (score >= 80) {   /* 隐含条件：score < 90 */\n    printf(\"B\\n\");\n} else if (score >= 60) {\n    printf(\"C\\n\");\n} else {\n    printf(\"D\\n\");\n}",
+        "output": "输入 95 输出 A，输入 80 输出 B，输入 60 输出 C，输入 59 输出 D"
+      },
+      {
+        "title": "顺序写反了会怎样",
+        "body": "如果改成从小往大写：if (score >= 60) ... else if (score >= 80) ...，那么 95 分会在第一支就被判成 C——因为 95 >= 60 已经成立，后面的分支根本轮不到。\n\n分档类题目一定要先想清楚「从宽到严」还是「从严到宽」。写完后拿边界值（59、60、79、80、89、90）自己验一遍，比盯着代码看有效得多。",
+        "code": "/* 错误示范：95 分会被判成 C */\nif (score >= 60)      printf(\"C\\n\");\nelse if (score >= 80) printf(\"B\\n\");\nelse if (score >= 90) printf(\"A\\n\");",
+        "output": "输入 95 输出 C（错的）"
+      }
+    ]
+  },
+  {
+    "id": 403,
+    "title": "判断闰年",
+    "difficulty": "medium",
+    "description": "读入一个年份，判断它是不是闰年。\n\n规则：能被 4 整除但不能被 100 整除的年份是闰年；能被 400 整除的年份也是闰年。\n\n是闰年输出 Yes，不是则输出 No。",
+    "input_format": "一行，一个整数 year（年份，保证为正数）",
+    "output_format": "输出一行：Yes 表示闰年，No 表示平年",
+    "sample_input": "2024",
+    "sample_output": "Yes",
+    "test_cases": [
+      { "input": "2024\n", "output": "Yes" },
+      { "input": "2023\n", "output": "No" },
+      { "input": "1900\n", "output": "No" },
+      { "input": "2000\n", "output": "Yes" }
+    ],
+    "hints": [
+      "「能被 x 整除」在 C 里写成 year % x == 0。",
+      "条件分成两半：一半管普通闰年，一半管整百年，中间用 || 连起来。",
+      "完整条件：year % 4 == 0 && year % 100 != 0 || year % 400 == 0，建议自己再加一层括号看清分组。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int year;\n    scanf(\"%d\", &year);\n\n    /* 口诀：四年一闰，百年不闰，四百年再闰。\n       整个条件 = (能被 4 整除 且 不能被 100 整除) 或 (能被 400 整除)\n       括号不省：&& 优先级高于 ||，括起来逻辑一眼可见。 */\n    if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {\n        printf(\"Yes\\n\");\n    } else {\n        printf(\"No\\n\");\n    }\n\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "三个条件一个都不能少",
+        "body": "闰年的规则看着简单，其实是三段拼接：\n\n1. year % 4 == 0 —— 能被 4 整除，绝大多数闰年都属于这种（2024）。\n2. year % 100 != 0 —— 但整百年不算闰年（1900 不是）。\n3. year % 400 == 0 —— 整百年里能被 400 整除的又算闰年（2000 是）。\n\n只写第一条，1900 会被错判成闰年；漏掉第三条，2000 会被错判成平年。本题的四个用例就是围着这三种情况设计的：2024 走第一条，1900 走第二条的排除，2000 走第三条。",
+        "code": "if (year % 4 != 0) {\n    printf(\"No\\n\");          /* 2023 */\n} else if (year % 100 != 0) {\n    printf(\"Yes\\n\");         /* 2024 */\n} else if (year % 400 == 0) {\n    printf(\"Yes\\n\");         /* 2000 */\n} else {\n    printf(\"No\\n\");          /* 1900 */\n}",
+        "output": "输入 2000 输出 Yes，输入 1900 输出 No"
+      },
+      {
+        "title": "&& 和 || 的优先级",
+        "body": "C 里 &&（逻辑与）的优先级比 ||（逻辑或）高，所以\n\nyear % 4 == 0 && year % 100 != 0 || year % 400 == 0\n\n会被理解成 (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)，恰好是我们要的意思。\n\n但别靠背优先级过日子——多写一对括号，读代码的人（包括三个月后的你自己）能少想好几秒。原则是「先分组，再组合」。",
+        "code": "/* 推荐：两个条件各自括起来 */\nif ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {\n    printf(\"Yes\\n\");\n}",
+        "output": ""
+      },
+      {
+        "title": "嵌套 / 串联写法也可以",
+        "body": "把 &&、|| 撮成一长串条件容易看晕，这时可以拆成一串 else if：先判断能不能被 4 整除，再往里看是不是整百年、能不能被 400 整除。\n\n逻辑完全等价，读起来更像人话。要记住的是：**只有外层条件成立，内层才会被判断**，这一点和 && 的「短路」行为是一致的——这也是两种写法能互相转换的原因。",
+        "code": "if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {\n    printf(\"Yes\\n\");\n} else {\n    printf(\"No\\n\");\n}",
+        "output": "输入 1900 输出 No，输入 2024 输出 Yes"
+      }
+    ]
+  },
+  {
+    "id": 404,
+    "title": "三个数中的最大值",
+    "difficulty": "easy",
+    "description": "读入三个整数，输出其中最大的一个。\n\n请用条件运算符 ?: 完成（用 if 写出来结果一样，也算对）。",
+    "input_format": "一行，三个整数 a、b、c，用空格分隔",
+    "output_format": "输出一个整数，即三个数中的最大值",
+    "sample_input": "3 7 5",
+    "sample_output": "7",
+    "test_cases": [
+      { "input": "3 7 5\n", "output": "7" },
+      { "input": "10 2 8\n", "output": "10" },
+      { "input": "2 5 9\n", "output": "9" },
+      { "input": "-1 -5 -3\n", "output": "-1" }
+    ],
+    "hints": [
+      "先想两个数怎么取最大：a > b ? a : b。",
+      "三个数就比两次——先求 a、b 里较大的，再拿它和 c 比。",
+      "把结果存进一个变量，第二次比较直接用它，比嵌套两个 ?: 清楚得多。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int a, b, c;\n    scanf(\"%d %d %d\", &a, &b, &c);\n\n    /* 条件运算符是 C 里唯一的三目运算符：\n       条件 ? 成立时的值 : 不成立时的值\n       分两步比，比把两个 ?: 嵌套在一起好读得多。 */\n    int max = a > b ? a : b;   /* 先取 a、b 中较大的那个 */\n    max = max > c ? max : c;   /* 再和 c 比一次 */\n\n    printf(\"%d\\n\", max);\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "三目运算符 ?: 是什么",
+        "body": "条件运算符是 C 里唯一需要三个操作数的运算符，写法是：\n\n条件 ? 值1 : 值2\n\n条件成立取「值1」，不成立取「值2」。它和 if / else 的区别在于：?: 的结果是一个**值**，所以能直接写在赋值的右边、printf 的参数里；而 if 是语句，不能这么用。\n\nmax = a > b ? a : b; 等价于\n\nint max;\nif (a > b) max = a;\nelse       max = b;",
+        "code": "int a = 3, b = 7;\nint max = a > b ? a : b;\nprintf(\"%d\\n\", max);   /* 7 */",
+        "output": "7"
+      },
+      {
+        "title": "三个数为什么不能一次问完",
+        "body": "?: 一次只能比较两个值，所以三个数要比两次。\n\n常见写法是把两个 ?: 嵌套起来，比如 a > b ? a : b > c ? b : c。它能算对，但嵌套的 ?: 阅读成本很高，稍不留神就漏括号、写错分支，还容易和「先算哪一步」较劲。\n\n本题的做法是分两步：先把 a、b 的较大值存进 max，再让 max 和 c 比。多写一行，换来一眼能看懂的逻辑——这笔账永远划算。",
+        "code": "/* 推荐：分两步 */\nint max = a > b ? a : b;\nmax = max > c ? max : c;\n\n/* 用 if 写同样清楚 */\nint m = a;\nif (b > m) m = b;\nif (c > m) m = c;",
+        "output": "输入 -1 -5 -3 时输出 -1"
+      },
+      {
+        "title": "新手常犯的两个小错",
+        "body": "第一，把中间的冒号写成分号：a > b ? a ; b —— 编译直接报错，看清楚是 : 不是 ;。\n\n第二，两个分支写成同一个值：a > b ? a : a，无论条件真假都得到 a，逻辑上等于白比。\n\n另外别忘了 ?: 的优先级比比较运算符低，所以 a > b ? a : b 会被理解成 (a > b) ? a : b，这正是我们想要的；但一旦在分支里混入别的运算（比如 a > b ? a : b + 1），就该主动加括号了。",
+        "code": "int max = a > b ? a : b;      /* 对 */\nint bad = a > b ? a : a;      /* 错：两个分支一样，条件白判了 */",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 405,
+    "title": "这一个月有多少天",
+    "difficulty": "medium",
+    "description": "读入一个月份，按平年（2 月 28 天）输出这个月的天数。\n\n如果输入的月份不在 1 到 12 之间，输出 invalid。",
+    "input_format": "一行，一个整数 month（可能是 1~12 之外的数）",
+    "output_format": "输出该月的天数（28 / 30 / 31 中的一种）；月份不在 1~12 范围内时输出 invalid",
+    "sample_input": "4",
+    "sample_output": "30",
+    "test_cases": [
+      { "input": "2\n", "output": "28" },
+      { "input": "4\n", "output": "30" },
+      { "input": "8\n", "output": "31" },
+      { "input": "13\n", "output": "invalid" }
+    ],
+    "hints": [
+      "12 个月份只有 3 种天数，用 if 要写一长串条件——换 switch 更合适。",
+      "case 后面只能跟整数常量，每个分支处理完记得写 break，否则会继续往下执行。",
+      "天数相同的月份（4、6、9、11）把 case 摞在一起，共用一个 printf 和一个 break 就行。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int month;\n    scanf(\"%d\", &month);\n\n    /* switch 从匹配到的 case 开始一直往下执行，直到遇见 break。\n       所以结果相同的 case 可以摞在一起，只在最后写一次 printf。 */\n    switch (month) {\n        case 2:\n            printf(\"28\\n\");\n            break;\n        case 4:\n        case 6:\n        case 9:\n        case 11:\n            printf(\"30\\n\");   /* 上面四个 case 故意共用这一段 */\n            break;\n        case 1:\n        case 3:\n        case 5:\n        case 7:\n        case 8:\n        case 10:\n        case 12:\n            printf(\"31\\n\");\n            break;\n        default:\n            printf(\"invalid\\n\");  /* 1~12 以外的情况兜底 */\n            break;\n    }\n\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "switch 的结构：case 与 break",
+        "body": "switch 把「一个整数表达式」和一组固定的常量做比较，从匹配的 case 开始往下执行，遇到 break 才跳出整个 switch。\n\n关键点：**case 只是一个入口标签，不是一堵墙**。所以匹配到哪一个 case 之后就一路往下跑，这叫做「穿透」（fallthrough）。\n\n下面这段漏了 break，输入 2 会把后面全打出来：",
+        "code": "int x = 2;\nswitch (x) {\n    case 1: printf(\"one\\n\");\n    case 2: printf(\"two\\n\");\n    case 3: printf(\"three\\n\");\n    default: printf(\"other\\n\");\n}",
+        "output": "two\nthree\nother"
+      },
+      {
+        "title": "穿透不总是 bug：本题就靠它偷懒",
+        "body": "「漏写 break」通常是错误，但穿透本身是语言特性，用好了能省很多重复代码。\n\n本题里 4、6、9、11 月都是 30 天，没必要写四遍 printf：把四个 case 摞在一起，让前三个 case 空着往下穿，最后统一执行一次 printf(\"30\\n\")。\n\n同样地，1、3、5、7、8、10、12 共用 31 天分支。想让别人知道这是有意为之，最好加一句注释，否则下一个人会以为你忘了 break。",
+        "code": "case 4:\ncase 6:\ncase 9:\ncase 11:\n    printf(\"30\\n\");   /* 故意共用 */\n    break;",
+        "output": "输入 6 输出 30"
+      },
+      {
+        "title": "switch 用不了的东西",
+        "body": "C 的 switch 有三条硬性限制，记住了能省很多试错时间：\n\n1. 判断对象必须是整数类型（int、char、枚举都可以），float、double 不行。\n2. case 后面只能写**编译期就确定的整数常量**，不能是变量，也不能写成 1..12 这样的区间。\n3. 字符串不能用 switch 比较（C 里字符串是数组，比较要用 strcmp）。\n\n一旦发现条件不是「等于某个常量」而是「大于、小于、在区间内」，就该回头用 if / else if。default 可以放在任意位置，习惯写在最后，用来兜底那些没被任何 case 覆盖的输入。",
+        "code": "/* 想判断分数段，switch 就不好使了 —— 用 if */\nif (score >= 90)      printf(\"A\\n\");\nelse if (score >= 60) printf(\"C\\n\");\nelse                  printf(\"D\\n\");",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 406,
+    "title": "三角形的判定",
+    "difficulty": "medium",
+    "description": "读入三条边的长度（整数），判断它们能不能构成一个三角形。\n\n能构成输出 Yes，并在第二行输出类型；不能构成只输出 No。\n\n构成条件：任意两边之和都大于第三边。类型说明：三边全相等是 equilateral（等边），只有两边相等是 isosceles（等腰），三边互不相等是 scalene（不等边）。",
+    "input_format": "一行，三个整数 a、b、c，用空格分隔",
+    "output_format": "不能构成三角形时输出一行 No；能构成时输出两行：第一行 Yes，第二行是 equilateral / isosceles / scalene 之一",
+    "sample_input": "3 4 5",
+    "sample_output": "Yes\nscalene",
+    "test_cases": [
+      { "input": "3 4 5\n", "output": "Yes\nscalene" },
+      { "input": "5 5 5\n", "output": "Yes\nequilateral" },
+      { "input": "5 5 8\n", "output": "Yes\nisosceles" },
+      { "input": "1 2 3\n", "output": "No" }
+    ],
+    "hints": [
+      "先判断能不能构成：三个「两边之和大于第三边」的条件都要写，用 && 连起来。",
+      "能构成之后再判断类型：先看三边是不是全相等，再看不全等但有两边相等。",
+      "等边三角形同时满足「有两边相等」，所以必须先判断等边，顺序颠倒 5 5 5 就会被判成等腰。"
+    ],
+    "solution": "#include <stdio.h>\n\nint main() {\n    int a, b, c;\n    scanf(\"%d %d %d\", &a, &b, &c);\n\n    /* 构成条件：任意两边之和都大于第三边，三个条件缺一不可。\n       1 2 3 这种「刚好相等」是退化三角形，不算数（要 > 不能 >=）。 */\n    if (a + b > c && a + c > b && b + c > a) {\n        printf(\"Yes\\n\");\n\n        /* 顺序很重要：等边也满足「有两边相等」，\n           所以必须先判三边全等，否则 5 5 5 会被判成 isosceles。 */\n        if (a == b && b == c) {\n            printf(\"equilateral\\n\");\n        } else if (a == b || b == c || a == c) {\n            printf(\"isosceles\\n\");\n        } else {\n            printf(\"scalene\\n\");\n        }\n    } else {\n        printf(\"No\\n\");\n    }\n\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "三个条件为什么都要写",
+        "body": "「任意两边之和大于第三边」听起来是一句话，写代码时却是三个不等式：a+b>c、a+c>b、b+c>a。\n\n只写 a+b>c 就错了一半：输入 2 5 1 时，2+5>1 成立，但 2+1>5 不成立，构不成三角形。三边无序，你必须假设最长的那条可能出现在任意位置——所以三个条件全写上，用 && 连起来最稳妥。\n\n另外注意是严格大于：1 2 3 满足 1+2=3，但两条短边正好顶到最长边，只能压成一条直线，不是三角形。写成 >= 就会把它错判成 Yes。",
+        "code": "if (a + b > c && a + c > b && b + c > a) {\n    printf(\"Yes\\n\");\n} else {\n    printf(\"No\\n\");\n}",
+        "output": "输入 3 4 5 输出 Yes，输入 1 2 3 输出 No"
+      },
+      {
+        "title": "嵌套 if：先粗判，再细分",
+        "body": "判断类型要在大前提成立之后才能做，这就是嵌套 if 的典型场景：外层决定「是不是三角形」，内层决定「是哪种三角形」。注意内层那几行只有外层条件成立时才会被执行。\n\n等边 / 等腰 / 不等边这三种情况是互斥的，所以内层直接用 if / else if / else 串起来，不需要写额外的范围条件——判断顺序本身就表达了「上一个不成立」。",
+        "code": "if (a == b && b == c) {\n    printf(\"equilateral\\n\");   /* 三边全等 */\n} else if (a == b || b == c || a == c) {\n    printf(\"isosceles\\n\");     /* 已有两边不等，再有两边相等就是等腰 */\n} else {\n    printf(\"scalene\\n\");\n}",
+        "output": "输入 5 5 5 输出 equilateral，输入 5 5 8 输出 isosceles"
+      },
+      {
+        "title": "&& 和 || 在这题里的分工",
+        "body": "「三边全相等」用 && 连乘式表达：a == b && b == c（由传递性可知 a 也就等于 c，不用再写第三对）。\n\n「有两边相等」用 || 表达：a == b || b == c || a == c——任意一对相等就算。\n\n把这两个搞混是本题最常见的错：写成 a == b || b == c 来判断等边，5 5 8 会被判成等边；写成 a == b && b == c 来判断等腰，5 5 8 直接掉进 scalene。判断「全部满足」用 &&，判断「满足任意一个」用 ||，先在纸上写中文再翻译成代码，比对着屏幕猜快得多。",
+        "code": "int all_equal = (a == b && b == c);            /* 三边全相等：用 && */\nint two_equal = (a == b || b == c || a == c);  /* 任意两边相等：用 || */",
+        "output": ""
+      }
+    ]
+  }
+]
