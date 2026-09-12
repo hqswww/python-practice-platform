@@ -6,7 +6,7 @@
 >
 > ⚠️ 本文档记录的是 v1.0 时期的设计决策，其中「捆绑 Python runtime」等表述
 > 只适用于 Python；C 走系统编译器路线。多语言部分见 `docs/MACOS_MIGRATION.md`
-> 与 `tools/C_BANK_SPEC.md`。
+> 与 `tools/BANK_SPEC.md`。
 
 ## 一、核心闭环
 学生选题 → 写代码 → 运行（Python 解释执行 / C 先编译）→ 比对输出 → 对/错反馈 + 进度记录

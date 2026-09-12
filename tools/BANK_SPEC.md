@@ -1,7 +1,10 @@
-# C 题库编写规格
+# 题库编写规格（C / C++）
 
-> 给编写/扩充 `assets/problems/c/*.json` 的人（或 AI）看的。
+> 给编写/扩充 `assets/problems/<语言>/*.json` 的人（或 AI）看的。
 > **范例：`assets/problems/c/01_basics.json`** —— 结构、文风、注释密度都以它为准。
+
+支持的编译型语言：`c`（clang，`-std=c11`）、`cpp`（clang++，`-std=c++17`）。
+两门语言**分类同名同结构**，只是题目内容不同。
 
 ---
 
@@ -24,6 +27,29 @@
 | `10_structs.json` | 结构体与共用体 | struct / union / enum / typedef | 1001–1006 |
 | `11_advanced.json` | 进阶 | 预处理器、文件读写、malloc/free | 1101–1106 |
 | `12_challenges.json` | 综合挑战 | 跨知识点应用题 | 1201–1206 |
+
+### C++（`assets/problems/cpp/`）
+
+分类与 id 段**完全同上**（同样的 12 个分类名、同样的 id 段），
+只有内容换成 C++ 的：
+
+| 文件 | 分类名 | 与 C 的差别 |
+|------|--------|------------|
+| `01_basics.json` | 基础语法 | 用 `<iostream>` 的 `cout`/`cin`，不是 `printf`/`scanf` |
+| `02_datatype.json` | 变量与数据类型 | 多了 `auto`、`bool`、初始化列表 |
+| `03_operators.json` | 运算符与表达式 | 基本同 C |
+| `04_conditionals.json` | 判断与分支 | 基本同 C |
+| `05_loops.json` | 循环 | 多了**范围 for**（`for (int x : v)`） |
+| `06_functions.json` | 函数与重载 | 多了**默认参数**与**函数重载** |
+| `07_arrays.json` | 数组与字符串 | 用 `std::string`（不是 `char[]`） |
+| `08_pointers.json` | 指针与引用 | 多了**引用**（`int&`），讲清与指针的区别 |
+| `09_classes.json` | 类与对象 | 类、构造/析构、封装、成员函数 |
+| `10_inheritance.json` | 继承与多态 | 继承、虚函数、多态 |
+| `11_stl.json` | 模板与 STL | `vector`/`map`/`set`、`sort`、模板初步 |
+| `12_challenges.json` | 综合挑战 | 综合运用 |
+
+> ⚠️ C++ 分类的 key 与 C **同名**（都叫 `01_basics`），不会冲突 ——
+> 题库路径带语言目录，分类 key 只在同一语言内需要唯一。
 
 分类顺序对齐 runoob 的 C 教程目录。「指针」是 C 的分水岭，可以多放 medium。
 
@@ -105,8 +131,10 @@
 ## 五、必须自检到全绿
 
 ```bash
-python3 tools/verify_c_bank.py 09_pointers   # 只查某个分类
-python3 tools/verify_c_bank.py               # 查全部
+python3 tools/verify_bank.py --lang c                    # C：查全部
+python3 tools/verify_bank.py --lang c 09_pointers        # C：只查某个分类
+python3 tools/verify_bank.py --lang cpp                  # C++：查全部
+python3 tools/verify_bank.py --lang cpp 09_classes       # C++：只查某个分类
 ```
 
 脚本会真用 clang 编译每道题的 `solution`，真跑它的每个 `test_cases`，
@@ -117,7 +145,8 @@ python3 tools/verify_c_bank.py               # 查全部
 另外 Flutter 侧有一条等价的自检测试（用**真判题引擎**跑）：
 
 ```bash
-flutter test test/c_runtime_test.dart
+flutter test test/c_runtime_test.dart     # C
+flutter test test/cpp_runtime_test.dart   # C++
 ```
 
 两边都要过。写完一个分类至少跑一次脚本自检。
@@ -132,3 +161,5 @@ flutter test test/c_runtime_test.dart
 | 参考答案编译失败 | 少了 `#include`、漏分号、用了 C99 以上才允许的写法 |
 | 多行输出少了/多了空行 | 判题会去掉首尾空行，但**中间**的空行是算数的 |
 | 浮点输出对不上 | `%.2f` 的四舍五入 vs 学生用 `%g`；用例里写清保留几位 |
+| **C++ 报一屏 `Undefined symbols for architecture …`** | 用 **C 编译器**编了 C++（漏了 `++`）。判题侧已修并有回归测试锁死；手写命令时注意用 `clang++` 而不是 `clang` |
+| C++ 输出多了/少了尾随空格 | `cout << a << endl` 每个值都会紧跟输出，不像 `printf` 有格式串控制；题目里写清分隔方式 |

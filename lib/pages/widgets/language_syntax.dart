@@ -49,13 +49,11 @@ class LanguageSyntax {
       '|(\\b${_alt(keywords)}\\b)'
       '|(\\b${_alt(builtins)}\\b)';
 
-  /// 取某语言的语法描述。
-  ///
-  /// C / C++ 目前**还没有题库**，暂时回退到 Python 的描述；
-  /// 接入时把这里改成返回 `c` / `cpp` 即可。
+  /// 取某语言的语法描述
   static LanguageSyntax of(ProgrammingLanguage language) => switch (language) {
         ProgrammingLanguage.python => python,
-        ProgrammingLanguage.c || ProgrammingLanguage.cpp => python,
+        ProgrammingLanguage.c => c,
+        ProgrammingLanguage.cpp => cpp,
       };
 
   // ------------------------------------------------------------------ Python
@@ -88,10 +86,7 @@ class LanguageSyntax {
 
   // --------------------------------------------------------------------- C
 
-  /// C：`//` 与 `/* */` 注释、`#预处理指令`。
-  ///
-  /// 这一份已经写好但**还没接上**（`of()` 仍返回 Python）——
-  /// 等 C 题库就位再切过来，届时请补一组高亮测试。
+  /// C：`//` 与 `/* */` 注释、`#预处理指令`
   static const LanguageSyntax c = LanguageSyntax(
     keywords: [
       'auto', 'break', 'case', 'char', 'const', 'continue', 'default', 'do',
@@ -105,6 +100,33 @@ class LanguageSyntax {
       'strcpy', 'strcmp', 'strcat', 'memset', 'memcpy', 'fopen', 'fclose',
       'fgets', 'fprintf', 'sprintf', 'exit', 'atoi', 'atof', 'abs', 'pow',
       'sqrt', 'NULL',
+    ],
+    comment: r'//[^\n]*|/\*[\s\S]*?\*/',
+    string: r'\x22(?:[^\x22\\\n]|\\.)*\x22|\x27(?:[^\x27\\\n]|\\.)*\x27',
+    extra: r'^\s*#\s*\w+',
+  );
+
+  // ------------------------------------------------------------------- C++
+
+  /// C++：注释与字符串规则同 C，关键字多了类/模板/命名空间那一套，
+  /// 内置符号按初学者最常用的 `<iostream>` 与 `<string>` / `<vector>` 来选。
+  static const LanguageSyntax cpp = LanguageSyntax(
+    keywords: [
+      'alignas', 'alignof', 'auto', 'bool', 'break', 'case', 'catch', 'char',
+      'class', 'const', 'constexpr', 'continue', 'decltype', 'default',
+      'delete', 'do', 'double', 'else', 'enum', 'explicit', 'extern', 'false',
+      'float', 'for', 'friend', 'goto', 'if', 'inline', 'int', 'long',
+      'mutable', 'namespace', 'new', 'noexcept', 'nullptr', 'operator',
+      'private', 'protected', 'public', 'register', 'return', 'short',
+      'signed', 'sizeof', 'static', 'struct', 'switch', 'template', 'this',
+      'throw', 'true', 'try', 'typedef', 'typename', 'union', 'unsigned',
+      'using', 'virtual', 'void', 'volatile', 'while',
+    ],
+    builtins: [
+      'cout', 'cin', 'cerr', 'endl', 'string', 'vector', 'map', 'set', 'pair',
+      'sort', 'reverse', 'size', 'push_back', 'pop_back', 'begin', 'end',
+      'length', 'substr', 'printf', 'scanf', 'malloc', 'free', 'abs', 'max',
+      'min', 'sqrt', 'pow', 'NULL', 'std',
     ],
     comment: r'//[^\n]*|/\*[\s\S]*?\*/',
     string: r'\x22(?:[^\x22\\\n]|\\.)*\x22|\x27(?:[^\x27\\\n]|\\.)*\x27',

@@ -174,43 +174,40 @@ builtins.input = _judge_input
   }
 }
 
-// --------------------------------------------------------------------- C
+// ------------------------------------------------------- 编译型语言公共实现
 
-/// C 运行时：**编译型**，需要先编译再运行
+/// C / C++ 的公共实现
 ///
-/// 与 Python 最大的差别有两点：
-/// 1. 判题流程多一个编译阶段。编译失败会直接判编译错误，不会再去运行。
-/// 2. **编译一次、所有测试用例复用同一个产物** —— 比 Python 每个用例
-///    起一次解释器还快。
-class CLanguageRuntime extends LanguageRuntime {
-  const CLanguageRuntime({this.commandOverride});
+/// 两者的判题流程**完全一样**（编译一次 → 所有用例复用产物），
+/// 差别只有四处：源码扩展名、编译器、标准版本参数、以及报错文案。
+/// 把它们收在这里，加新编译型语言（Rust/Go…）时只要再继承一次。
+abstract class CompiledLanguageRuntime extends LanguageRuntime {
+  const CompiledLanguageRuntime();
 
-  /// 覆盖编译器路径（测试注入 / 设置页自定义）
-  final String? commandOverride;
+  /// 传给编译器的标准版本参数（`-std=c11` / `-std=c++17`）
+  ///
+  /// **必须显式指定**：不同编译器/版本的默认标准不一样，
+  /// 不锁的话同一份代码可能在这台机器编得过、那台编不过。
+  String get stdFlag;
 
-  @override
-  ProgrammingLanguage get language => ProgrammingLanguage.c;
-
-  @override
-  String get sourceFileName => 'solution.${CRuntime.extensionFor(language)}';
+  /// 解析编译器路径（各语言默认编译器不同）
+  String resolveCompiler();
 
   @override
   String get binaryName => 'solution';
 
-  /// 编译命令：clang solution.c -o solution -std=c11 …
+  /// 编译命令：<编译器> solution.c -o solution -std=… -O0 -lm
   ///
-  /// `-std=c11`：锁住标准，避免不同编译器默认标准不一致导致同一份代码
-  /// 在 A 机器能编过、B 机器编不过。
-  /// `-O0`：判题不需要优化，编得越快越好。
+  /// `-O0`：判题不需要优化，编得越快越好（C++ 尤其明显）。
   /// `-lm`：链接数学库，否则用了 sqrt/pow 的学生会莫名其妙链接失败。
   @override
   RunSpec? compileSpec(Directory workDir, File sourceFile) => RunSpec(
-        command: commandOverride ?? CRuntime.resolveCompiler(language),
+        command: resolveCompiler(),
         args: [
           sourceFile.absolute.path,
           '-o',
           '${workDir.path}${Platform.pathSeparator}$binaryName',
-          '-std=c11',
+          stdFlag,
           '-O0',
           '-lm',
         ],
@@ -223,10 +220,12 @@ class CLanguageRuntime extends LanguageRuntime {
         args: const [],
       );
 
+  /// 编译型语言的运行期错误都走 stderr（没有任何输出反而是异常）
   @override
   bool looksLikeRuntimeError(String stderr, String output) =>
       stderr.trim().isNotEmpty;
 
+  /// 崩溃/除零这类**两种语言共有**的提示；子类可以再补自己特有的
   @override
   String? explainRuntimeError(String stderr, String output,
       {int exitCode = 0}) {
@@ -235,21 +234,18 @@ class CLanguageRuntime extends LanguageRuntime {
     // 被信号杀掉（段错误 = SIGSEGV = 11，浮点异常 = 8，中止 = 6）。
     // Shell 那边通常只打印 "Segmentation fault"，学生看不懂。
     if (exitCode < 0 || combined.contains('Segmentation fault')) {
-      return '⚠️ 程序崩溃了。C 里最常见的原因是：\n'
+      return '⚠️ 程序崩溃了。${language.displayName} 里最常见的原因是：\n'
           '· 数组下标越界（比如长度为 5 的数组访问了 a[5]）\n'
-          '· 用了没初始化的指针，或用完 free 之后又访问\n'
+          '· 用了没初始化的指针，或用完释放之后又访问\n'
           '· 指针指向了非法地址（忘了取地址 & 或忘了分配内存）\n'
           '\n$combined';
     }
     if (combined.contains('Floating point exception')) {
       return '⚠️ 浮点异常，通常是**整数除以 0**。\n\n$combined';
     }
-    if (combined.contains('Timeout') || combined.contains('超时')) {
-      return null; // 交给引擎的超时文案
-    }
     if (combined.trim().isEmpty) {
       return '⚠️ 程序非正常退出（退出码 $exitCode），但没有输出错误信息。\n'
-          '检查一下是不是调用了 return 了非 0 的值，或者中途异常退出。';
+          '检查一下是不是 return 了非 0 的值，或者中途异常退出。';
     }
     return null; // 有 stderr 但没见过 → 交给通用兜底，把原文显示出来
   }
@@ -265,7 +261,7 @@ class CLanguageRuntime extends LanguageRuntime {
   /// ```
   /// 清洗后：
   /// ```
-  /// 第 3 行: error: expected ';' after expression
+  /// 第 3 行（第 5 列）: error: expected ';' after expression
   ///     printf("hi")
   ///     ^
   /// 1 error generated.
@@ -274,23 +270,109 @@ class CLanguageRuntime extends LanguageRuntime {
   String cleanDiagnostics(String raw, Directory workDir) {
     var out = raw;
 
-    // 1) 抹掉临时目录的绝对路径（它每次判题都不一样，对学生毫无意义）
+    // 1) 抹掉临时目录的绝对路径（每次判题都不一样，对学生毫无意义）
     out = out.replaceAll('${workDir.path}${Platform.pathSeparator}', '');
     out = out.replaceAll(workDir.path, '');
 
-    // 2) 行:列 翻成中文（两种编译器格式一致：file:line:col:）
+    // 2) 行:列 翻成中文（clang/gcc 格式一致：file:line:col:）
+    //    扩展名覆盖 C 与 C++ 常见写法
+    const ext = r'c|cpp|cc|cxx|h|hpp';
     out = out.replaceAllMapped(
-      RegExp(r'([\w./\-]+\.(?:c|cpp|h)):(\d+):(\d+):'),
+      RegExp('([\\w./\\-]+\\.(?:$ext)):(\\d+):(\\d+):'),
       (m) => '第 ${m.group(2)} 行（第 ${m.group(3)} 列）:',
     );
     // 只带行号的情况（gcc 某些提示、链接错误）
     out = out.replaceAllMapped(
-      RegExp(r'([\w./\-]+\.(?:c|cpp|h)):(\d+):'),
+      RegExp('([\\w./\\-]+\\.(?:$ext)):(\\d+):'),
       (m) => '第 ${m.group(2)} 行:',
     );
 
     // 3) 去掉开头多余空行
     return out.trim();
+  }
+}
+
+// --------------------------------------------------------------------- C
+
+/// C 运行时：编译型
+class CLanguageRuntime extends CompiledLanguageRuntime {
+  const CLanguageRuntime({this.commandOverride});
+
+  /// 覆盖编译器路径（测试注入 / 设置页自定义）
+  final String? commandOverride;
+
+  @override
+  ProgrammingLanguage get language => ProgrammingLanguage.c;
+
+  @override
+  String get sourceFileName => 'solution.${CRuntime.extensionFor(language)}';
+
+  @override
+  String get stdFlag => '-std=c11';
+
+  @override
+  String resolveCompiler() =>
+      commandOverride ?? CRuntime.resolveCompiler(language);
+}
+
+// ------------------------------------------------------------------- C++
+
+/// C++ 运行时：编译型
+///
+/// 与 C 共用同一套「编译一次、多用例复用产物」的流程，差别在：
+/// 源码扩展名 `.cpp`、编译器 `clang++`/`g++`、标准 `-std=c++17`，
+/// 以及 C++ 特有的报错文案（模板报错、链接错误等）。
+class CppLanguageRuntime extends CompiledLanguageRuntime {
+  const CppLanguageRuntime({this.commandOverride});
+
+  final String? commandOverride;
+
+  @override
+  ProgrammingLanguage get language => ProgrammingLanguage.cpp;
+
+  @override
+  String get sourceFileName => 'solution.${CRuntime.extensionFor(language)}';
+
+  /// C++17：范围 for、结构化绑定、`std::optional` 这些都在里面，
+  /// 对初学者够用又不至于像 C++20 那样各家编译器支持参差。
+  @override
+  String get stdFlag => '-std=c++17';
+
+  @override
+  String resolveCompiler() =>
+      commandOverride ?? CRuntime.resolveCompiler(language);
+
+  /// 在「崩溃/除零」这些通用提示之外，补 C++ 特有的
+  @override
+  String? explainRuntimeError(String stderr, String output,
+      {int exitCode = 0}) {
+    final generic = super.explainRuntimeError(stderr, output, exitCode: exitCode);
+    // 崩溃/非正常退出这类结论明确的，直接用它
+    if (generic != null && (exitCode < 0 || stderr.trim().isEmpty)) {
+      return generic;
+    }
+
+    final combined = '$stderr\n$output';
+    if (combined.contains('undefined reference to')) {
+      return '⚠️ 链接错误：用到了某个函数/变量，但编译器找不到它的定义。\n'
+          '· 函数只写了声明（或原型）没写函数体\n'
+          '· 类成员函数在类外定义时忘了写 `类名::`\n'
+          '\n$combined';
+    }
+    if (combined.contains('was not declared in this scope')) {
+      return '⚠️ 名字找不到：用了一个当前作用域里不存在的名字。\n'
+          '· 拼写错了，或者变量声明在用了之后\n'
+          '· 忘了 `#include` 对应的头文件（比如用 `std::string` 要 `#include <string>`）\n'
+          '· 忘了写 `std::` 前缀\n'
+          '\n$combined';
+    }
+    if (combined.contains('no matching function') ||
+        combined.contains('invalid conversion')) {
+      return '⚠️ 类型不匹配：参数的类型和函数要求的对不上。\n'
+          '· 检查实参类型与个数（C++ 对类型比 C 严格得多，int 和 double 不会自动互相顶替）\n'
+          '\n$combined';
+    }
+    return generic;
   }
 }
 
@@ -310,10 +392,6 @@ LanguageRuntime runtimeFor(
     case ProgrammingLanguage.c:
       return CLanguageRuntime(commandOverride: commandOverride);
     case ProgrammingLanguage.cpp:
-      // C++ 复用同一套编译流程，差别在源码扩展名与编译器命令；
-      // 等 C 跑通后再接（见 PROJECT_BACKLOG）
-      throw UnsupportedError(
-        '${language.displayName} 的运行时尚未接入（题库也还没做）',
-      );
+      return CppLanguageRuntime(commandOverride: commandOverride);
   }
 }

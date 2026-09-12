@@ -25,27 +25,51 @@ class CRuntime {
 
   /// 按平台给的兜底候选路径（优先于 PATH 查找：这些是官方安装位置，更可信）。
   ///
+  /// ⚠️ **必须按语言区分**。这里踩过一个坑：原先把 C 和 C++ 共用一份列表，
+  /// macOS 上第一个候选是 `/usr/bin/clang`，于是 C++ 也被它命中 ——
+  /// 用 C 编译器去编 C++，`<iostream>` 那些标准库符号一个都链不上，
+  /// 报一屏 `Undefined symbols for architecture …`。所有 C++ 题都会挂。
+  ///
   /// 和 Python 那边同一个理由：从 Finder 启动的 `.app` 只有极简 PATH，
   /// 光靠 `Process.start('gcc')` 在 macOS 上虽然能命中 /usr/bin，
-  /// 但 MinGW / MacPorts 装在别处时就找不到了。
-  static const Map<String, List<String>> _fallbackByPlatform = {
-    'macos': [
-      '/usr/bin/clang', // Xcode Command Line Tools
-      '/opt/homebrew/bin/gcc-14', // Apple Silicon Homebrew
-      '/usr/local/bin/gcc-14', // Intel Homebrew
-      '/opt/local/bin/gcc', // MacPorts
-    ],
-    'linux': [
-      '/usr/bin/gcc',
-      '/usr/bin/cc',
-      '/usr/local/bin/gcc',
-    ],
-    'windows': [
-      r'C:\mingw64\bin\gcc.exe',
-      r'C:\msys64\mingw64\bin\gcc.exe',
-      r'C:\Program Files\mingw-w64\mingw64\bin\gcc.exe',
-    ],
-  };
+  /// 但 MinGW / Homebrew / MacPorts 装在别处时就找不到了。
+  static List<String> _fallbackPaths(ProgrammingLanguage language) {
+    final cpp = language == ProgrammingLanguage.cpp;
+    if (Platform.isMacOS) {
+      return cpp
+          ? [
+              '/usr/bin/clang++', // Xcode Command Line Tools
+              '/opt/homebrew/bin/g++-14', // Apple Silicon Homebrew
+              '/usr/local/bin/g++-14', // Intel Homebrew
+              '/opt/local/bin/g++', // MacPorts
+            ]
+          : [
+              '/usr/bin/clang',
+              '/opt/homebrew/bin/gcc-14',
+              '/usr/local/bin/gcc-14',
+              '/opt/local/bin/gcc',
+            ];
+    }
+    if (Platform.isLinux) {
+      return cpp
+          ? ['/usr/bin/g++', '/usr/bin/c++', '/usr/local/bin/g++']
+          : ['/usr/bin/gcc', '/usr/bin/cc', '/usr/local/bin/gcc'];
+    }
+    if (Platform.isWindows) {
+      return cpp
+          ? [
+              r'C:\mingw64\bin\g++.exe',
+              r'C:\msys64\mingw64\bin\g++.exe',
+              r'C:\Program Files\mingw-w64\mingw64\bin\g++.exe',
+            ]
+          : [
+              r'C:\mingw64\bin\gcc.exe',
+              r'C:\msys64\mingw64\bin\gcc.exe',
+              r'C:\Program Files\mingw-w64\mingw64\bin\gcc.exe',
+            ];
+    }
+    return const [];
+  }
 
   /// 解析当前平台该用的编译器命令。
   ///
@@ -54,36 +78,29 @@ class CRuntime {
     final custom = settings.runtimePath(language).trim();
     if (custom.isNotEmpty) return custom;
 
-    final names = _compilerNames(language);
-    final fallbacks = <String>[
-      if (Platform.isMacOS) ..._fallbackByPlatform['macos']!,
-      if (Platform.isLinux) ..._fallbackByPlatform['linux']!,
-      if (Platform.isWindows) ..._fallbackByPlatform['windows']!,
-    ];
-    for (final candidate in fallbacks) {
+    for (final candidate in _fallbackPaths(language)) {
       if (_isExecutable(candidate)) return candidate;
     }
-    for (final name in names) {
+    for (final name in _compilerNames(language)) {
       final found = _which(name);
       if (found != null) return found;
     }
     // 没找到也返回名字：让 Process.start 抛 ProcessException，
     // 由判题引擎翻译成「请先安装编译器」的可操作提示。
-    return names.first;
+    return _compilerNames(language).first;
   }
 
-  /// 编译器候选命令名（按优先级）
+  /// 编译器候选命令名（按优先级，仅作 PATH 查找用）
+  ///
+  /// 注意：**这只是「命令名」**，真正优先的是 [_fallbackPaths] 里的绝对路径。
+  /// clang 显式排在 gcc 之前：macOS 上 `/usr/bin/gcc` 其实就是 clang 的转发，
+  /// 报错格式按 clang 处理更一致。
   static List<String> _compilerNames(ProgrammingLanguage language) {
+    final cpp = language == ProgrammingLanguage.cpp;
     if (Platform.isWindows) {
-      return language == ProgrammingLanguage.cpp
-          ? ['g++.exe', 'gcc.exe']
-          : ['gcc.exe'];
+      return cpp ? ['g++.exe', 'gcc.exe'] : ['gcc.exe'];
     }
-    // clang 显式排在 gcc 之前：macOS 上 /usr/bin/gcc 其实就是 clang 的转发，
-    // 报错格式按 clang 处理更一致
-    return language == ProgrammingLanguage.cpp
-        ? ['clang++', 'g++', 'c++']
-        : ['clang', 'gcc', 'cc'];
+    return cpp ? ['clang++', 'g++', 'c++'] : ['clang', 'gcc', 'cc'];
   }
 
   /// 该语言源码的扩展名

@@ -63,6 +63,7 @@ flutter:
     # 题库按语言分目录；新增语言时记得在这里加一行
     - assets/problems/python/
     - assets/problems/c/
+    - assets/problems/cpp/
 
   fonts:
     - family: SarasaGothicSC

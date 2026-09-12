@@ -43,12 +43,22 @@ void main() {
           '/custom/python3');
     });
 
-    test('尚未接入的语言抛出可读错误，而不是静默跑错', () {
-      // C 已接入；C++ 还没有（复用同一套编译流程，等 C 验收后接）
-      expect(runtimeFor(ProgrammingLanguage.c).language,
-          ProgrammingLanguage.c);
-      expect(() => runtimeFor(ProgrammingLanguage.cpp),
-          throwsA(isA<UnsupportedError>()));
+    test('三门语言都接入后，runtimeFor 都能返回对应运行时', () {
+      for (final lang in ProgrammingLanguage.values) {
+        expect(runtimeFor(lang).language, lang,
+            reason: '${lang.displayName} 应有运行时');
+      }
+    });
+
+    test('C 与 C++ 共用编译流程但解析到不同编译器', () {
+      // 踩过的坑：兜底路径曾不分语言，C++ 被 /usr/bin/clang 命中，
+      // 用 C 编译器编 C++ → 一屏 Undefined symbols，所有 C++ 题全挂
+      final c = runtimeFor(ProgrammingLanguage.c);
+      final cpp = runtimeFor(ProgrammingLanguage.cpp);
+      expect(c.sourceFileName, 'solution.c');
+      expect(cpp.sourceFileName, 'solution.cpp');
+      expect(c.compileSpec(Directory.systemTemp, File('x'))!.command,
+          isNot(cpp.compileSpec(Directory.systemTemp, File('x'))!.command));
     });
 
     test('Python 能识别自己的运行时错误特征', () {
@@ -111,10 +121,10 @@ void main() {
       expect(pattern, contains(r'/\*'));
     });
 
-    test('of() 目前对 C/C++ 回退到 Python 描述（题库还没做）', () {
-      expect(LanguageSyntax.of(ProgrammingLanguage.c), LanguageSyntax.python);
-      expect(LanguageSyntax.of(ProgrammingLanguage.cpp), LanguageSyntax.python);
+    test('of() 按语言返回各自的描述，不再回退 Python', () {
       expect(LanguageSyntax.of(ProgrammingLanguage.python), LanguageSyntax.python);
+      expect(LanguageSyntax.of(ProgrammingLanguage.c), LanguageSyntax.c);
+      expect(LanguageSyntax.of(ProgrammingLanguage.cpp), LanguageSyntax.cpp);
     });
 
     test('没有「扩展」语法的语言用永不匹配的片段占位，组号不会错位', () {
@@ -212,7 +222,7 @@ void main() {
     });
 
     test('拒绝切到没有题库的语言（避免进到空科目）', () async {
-      // Python 和 C 都已接入；C++ 还没有题库
+      // Python 和 C 都有题库；C++ 的题库还没写，分类也没登记
       final svc = LanguageService();
       await svc.select(ProgrammingLanguage.cpp);
       expect(svc.value, ProgrammingLanguage.python,

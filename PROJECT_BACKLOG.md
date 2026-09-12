@@ -152,9 +152,9 @@
 - [x] **C 题库补齐到 12 分类**：基础语法 / 数据类型与变量 / 运算符 / 判断与分支 /
       循环 / 函数与作用域 / 数组 / 字符串 / 指针 / 结构体与共用体 / 进阶 / 综合挑战
       —— 共 **72 题 / 162 个教程小节**，与 Python 规模对齐。
-      全部 72 份参考答案经真判题引擎编译并判过（`tools/verify_c_bank.py` + Flutter 自检测试）
-- [x] `tools/C_BANK_SPEC.md`：题库编写规格（JSON 结构、判题比对规则、id 分配、文风要求）
-- [x] `tools/verify_c_bank.py`：独立的题库自检脚本（真编译真跑，一轮几秒）
+      全部 72 份参考答案经真判题引擎编译并判过（`tools/verify_bank.py` + Flutter 自检测试）
+- [x] `tools/BANK_SPEC.md`：题库编写规格（JSON 结构、判题比对规则、id 分配、文风要求）
+- [x] `tools/verify_bank.py`：独立的题库自检脚本（真编译真跑，一轮几秒）
 - [x] `test/c_bank_structure_test.dart`：结构守卫（id 段、跨分类撞号、字段完整性）
 - [ ] Windows 端 MinGW 一键安装脚本（自动下载 + 配置 PATH）
 - [ ] C 接入后补一组语法高亮的实际用例（`LanguageSyntax.c` 已备好但 `of()` 还没切过去）
