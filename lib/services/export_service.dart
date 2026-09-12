@@ -121,7 +121,7 @@ class ExportService {
   Future<Directory> _exportDir() async {
     try {
       final docs = await getApplicationDocumentsDirectory();
-      final dir = Directory('${docs.path}/PythonPractice导出');
+      final dir = Directory('${docs.path}/编程练习册导出');
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }

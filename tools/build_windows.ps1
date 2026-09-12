@@ -1,7 +1,7 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 # ============================================================
-# Python 练习平台 · Windows 一键打包脚本
+# 编程练习册 · Windows 一键打包脚本
 # （在 Windows 机器上的项目根目录运行）
 #
 # 用法：
@@ -12,7 +12,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 # 1. flutter build windows --release → 编译 exe
 # 2. 下载嵌入式 Python 到临时目录
 # 3. 把 Python 复制到 Release\python\ （判题引擎按 exe 相对路径找它）
-# 4. 把打包结果复制到 dist\Python练习平台\ （开箱即用文件夹）
+# 4. 把打包结果复制到 dist\编程练习册\ （开箱即用文件夹）
 # ============================================================
 
 $ErrorActionPreference = "Stop"
@@ -21,7 +21,7 @@ $ErrorActionPreference = "Stop"
 $PY_MAJOR = "3.12" # 嵌入式 Python 大版本
 $PY_VER = "3.12.10" # 完整版本（用于下载 URL）
 $RELEASE_DIR = Join-Path $PWD "build\windows\x64\runner\Release"
-$DIST_DIR = Join-Path $PWD "dist\Python练习平台"
+$DIST_DIR = Join-Path $PWD "dist\编程练习册"
 
 Write-Host "=== 1/4 编译 Windows Release 版 ===" -ForegroundColor Cyan
 flutter build windows --release
@@ -73,5 +73,5 @@ Copy-Item -Path "$PY_TMP\*" -Destination "$DIST_DIR\python" -Recurse -Force
 Remove-Item -Recurse -Force $PY_TMP
 
 Write-Host "`n✅ 完成！分发目录: $DIST_DIR" -ForegroundColor Green
-Write-Host " 直接把整个『Python练习平台』文件夹拷给用户即可。"
-Write-Host " 用户双击 Python练习平台.exe 即可运行（判题用捆绑 python 无需装 Python）。"
+Write-Host " 直接把整个『编程练习册』文件夹拷给用户即可。"
+Write-Host " 用户双击 编程练习册.exe 即可运行（判题用捆绑 python 无需装 Python）。"

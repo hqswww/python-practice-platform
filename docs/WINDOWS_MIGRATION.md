@@ -1,6 +1,6 @@
 # 🪟 Windows 迁移手册
 
-> 目标：把「Python 练习平台」在 Windows 上打出可分发、免装 Python 的 `.exe`。
+> 目标：把「编程练习册」在 Windows 上打出可分发、免装 Python 的 `.exe`。
 > 本手册 = 阶段 A（Linux 侧已备好代码/脚本）+ 阶段 B（Windows 虚拟机实操）。
 
 ---
@@ -51,20 +51,20 @@ powershell -ExecutionPolicy Bypass -File tools\build_windows.ps1
 1. `flutter build windows --release` 编译 exe
 2. 下载嵌入式 Python
 3. 配置 `.pth`（可选开启 site-packages）
-4. 组装到 `dist\Python练习平台\`（exe + data + python/）
+4. 组装到 `dist\编程练习册\`（exe + data + python/）
 
 ---
 
 ## 四、验证与分发
 
 ### 验证（关键！）
-1. 双击 `dist\Python练习平台\Python练习平台.exe` 能启动
+1. 双击 `dist\编程练习册\编程练习册.exe` 能启动
 2. **重点测判题**：随便挑一题写对代码提交，应显示「通过」而非乱码/报错
    - 中文输出的题尤其要测（验证编码加固是否生效）
 3. 测试交互终端、成就、主题色是否正常
 
 ### 分发
-把整个 `Python练习平台` 文件夹打包成 zip 发给用户。
+把整个 `编程练习册` 文件夹打包成 zip 发给用户。
 用户双击 exe，**无需安装 Python**。
 
 ---

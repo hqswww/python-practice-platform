@@ -100,7 +100,7 @@
 - [x] 沙盒前后对比实验：证明关沙盒才能拿到真实 `~/Documents` / `~/Downloads`
 - [x] `setup_macos_platform.sh` 跑通，生成 `macos/` 且沙盒回读校验通过
 - [x] `build_macos.sh` 全流程跑通：universal 双 Python → 裁减 → 签 14 个 Mach-O →
-      `valid on disk` → 出 `dist/Python练习平台-macOS-universal.zip`（82MB）
+      `valid on disk` → 出 `dist/编程练习册-macOS-universal.zip`（82MB）
 - [x] 打包产物真机启动成功，日志确认运行时解析到
       `Contents/Resources/python-x86_64/bin/python3`
 
@@ -162,7 +162,7 @@
       该分类实际没有出文件题 —— 要么把描述里的「文件读写」去掉，要么补一道用
       `fopen` 写临时文件的题（需先确认判题工作目录可写）
 - [ ] C++：复用同一套编译流程，改扩展名 + 编译器命令 + `LanguageSyntax.cpp`
-- [ ] 应用名是否要从「Python 练习平台」改成更中性的名字（现在已支持多语言，
+- [ ] 应用名是否要从「编程练习册」改成更中性的名字（现在已支持多语言，
       README / CFBundleDisplayName / 关于页都还写着 Python）
 
 **踩过的坑（题库编写阶段）**
@@ -188,7 +188,7 @@
 2. 打 tag（如 `v1.1`）
 3. 推 GitHub（`git push --tags`）
 4. 你在 Windows 重新跑 `tools\build_windows.ps1` 出一版新 .exe
-5. 分发 `dist\Python练习平台\` 文件夹
+5. 分发 `dist\编程练习册\` 文件夹
 
 ---
 

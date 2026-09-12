@@ -895,7 +895,7 @@ class _SettingsPageState extends State<SettingsPage> {
         onTap: () {
           showAboutDialog(
             context: context,
-            applicationName: 'Python 练习平台',
+            applicationName: '编程练习册',
             applicationVersion: 'V1.2',
             applicationLegalese: '为学弟学妹准备的编程练习与判题工具',
             children: const [
@@ -1030,12 +1030,13 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 收集可导入的 JSON 文件（导出文件夹 + 下载目录），按修改时间倒序。
   Future<List<ListTile>> _buildImportFileList() async {
     final candidates = <File>[];
-    // 导出目录
+    // 导出目录（含改名前的旧目录名，否则老用户导入时看不到自己以前导出的文件）
     try {
       final docs = await getApplicationDocumentsDirectory();
-      final exportDir = Directory('${docs.path}/PythonPractice导出');
-      if (await exportDir.exists()) {
-        await for (final e in exportDir.list()) {
+      for (final name in const ['编程练习册导出', 'PythonPractice导出']) {
+        final dir = Directory('${docs.path}/$name');
+        if (!await dir.exists()) continue;
+        await for (final e in dir.list()) {
           if (e is File && e.path.toLowerCase().endsWith('.json')) {
             candidates.add(e);
           }

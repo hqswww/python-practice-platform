@@ -1,5 +1,5 @@
 name: python_practice
-description: "A new Flutter project."
+description: "编程练习册 —— 面向初学者的本地编程练习与判题平台（Python / C）"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

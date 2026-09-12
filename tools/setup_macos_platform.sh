@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Python 练习平台 · macOS 脚手架生成 + 关键配置修正
+# 编程练习册 · macOS 脚手架生成 + 关键配置修正
 #
 # 用法（项目根目录）：
 #   bash tools/setup_macos_platform.sh
@@ -26,7 +26,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-Python 练习平台}"
+APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-编程练习册}"
 BUNDLE_ID="${BUNDLE_ID:-com.sakiri.python-practice}"
 
 echo "=== 1/4 前置检查 ==="

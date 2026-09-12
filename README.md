@@ -1,4 +1,4 @@
-# 🐍 Python 练习平台
+# 🐍 编程练习册
 
 一个面向初学者的**本地自习 + 刷题** Flutter 桌面应用（Linux / Windows / macOS）。
 

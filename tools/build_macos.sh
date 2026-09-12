@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Python 练习平台 · macOS 一键打包脚本（对标 tools/build_windows.ps1）
+# 编程练习册 · macOS 一键打包脚本（对标 tools/build_windows.ps1）
 #
 # 用法（项目根目录）：
 #   bash tools/build_macos.sh
@@ -33,7 +33,7 @@ cd "$(dirname "$0")/.."
 # ---- 可调参数 ----
 PY_VER="${PY_VER:-3.12.14}"            # 与 Windows 版同为 3.12 线
 PBS_TAG="${PBS_TAG:-20260901}"         # python-build-standalone 发布 tag
-APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-Python 练习平台}"
+APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-编程练习册}"
 TRIM="${TRIM:-1}"                      # 1=裁减无用组件
 SKIP_PYTHON=0
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"    # 默认 ad-hoc（"-"）
@@ -318,7 +318,7 @@ codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | tail -3 || true
 echo
 echo "=== 6/6 打包分发 zip ==="
 mkdir -p "$DIST_DIR"
-NAME_SAFE="Python练习平台"
+NAME_SAFE="编程练习册"
 ZIP="$DIST_DIR/${NAME_SAFE}-macOS-${ARCH_TAG}.zip"
 rm -f "$ZIP"
 # ditto 才能正确保留符号链接与扩展属性（用 zip 命令会破坏 .app）
@@ -333,7 +333,7 @@ cat <<'EOF'
 分发提示：
   1. 未公证的包在别人机器上首次打开会被 Gatekeeper 拦（"来自身份不明的开发者"）。
      让对方右键 →「打开」，或执行：
-         xattr -dr com.apple.quarantine "/Applications/Python 练习平台.app"
+         xattr -dr com.apple.quarantine "/Applications/编程练习册.app"
   2. 想彻底免提示，需要 Apple Developer 账号（$99/年）走 codesign + notarytool 公证，
      用 --sign "Developer ID Application: ..." 重跑本脚本，再 notarytool submit。
   3. universal 包会同时带 x86_64 与 arm64 两份 Python，所以体积比单架构大约一倍。

@@ -45,7 +45,7 @@ class PythonPracticeApp extends StatelessWidget {
       listenable: settings,
       builder: (context, _) {
         return MaterialApp(
-          title: 'Python 练习平台',
+          title: '编程练习册',
           debugShowCheckedModeBanner: false,
           theme: _buildTheme(Brightness.light),
           darkTheme: _buildTheme(Brightness.dark),

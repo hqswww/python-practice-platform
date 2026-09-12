@@ -218,7 +218,7 @@ class ErrorLogService {
   /// 导出当前日志到用户可访问的位置（返回文件路径）
   Future<String> export({Directory? to}) async {
     final entries = await readRecent(limit: 10000);
-    final buffer = StringBuffer('Python 练习平台日志导出\n'
+    final buffer = StringBuffer('编程练习册日志导出\n'
         '时间：${DateTime.now().toLocal().toIso8601String()}\n'
         '共 ${entries.length} 条\n'
         '${'=' * 60}\n');

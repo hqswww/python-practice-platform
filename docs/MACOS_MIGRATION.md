@@ -1,6 +1,6 @@
 # 🍎 macOS 迁移手册
 
-> 目标：把「Python 练习平台」在 macOS 上打出**可分发、免装 Python** 的 `.app`（对标 Windows 绿色版）。
+> 目标：把「编程练习册」在 macOS 上打出**可分发、免装 Python** 的 `.app`（对标 Windows 绿色版）。
 > 本手册 = 环境准备 + 关键差异 + 一键流程 + 排查表。**所有结论均为实测**（2026-09-10，Intel Mac + Xcode 26.3）。
 
 ---
@@ -22,7 +22,7 @@
 
 | | Windows | macOS |
 |---|---|---|
-| 产物 | `Python练习平台.exe` + 同目录 `python/` | `Python 练习平台.app`（Python 在 `Contents/Resources/` 内） |
+| 产物 | `编程练习册.exe` + 同目录 `python/` | `编程练习册.app`（Python 在 `Contents/Resources/` 内） |
 | 解释器兜底 | `python.exe` | **不能靠 PATH**：`.app` 从 Finder 启动只有 `/usr/bin:/bin:/usr/sbin:/sbin` |
 | 系统 Python | 通常没装 | `/usr/bin/python3` 是 Xcode CLT 的 **shim**，没装 CLT 时会弹安装提示 |
 | 签名 | 无 | **必须签名**；且嵌套代码的位置有讲究（Frameworks 放不了 Python 大树） |
@@ -234,7 +234,7 @@ bash tools/build_macos.sh --sign "Developer ID Application: 你的名字 (TEAMID
 3. 每份解包到 `<App>.app/Contents/Resources/python-<arch>/`（**不是 Frameworks**，见第四节）
 4. 每份裁掉 Tcl/Tk、idlelib、2to3 等判题用不到的组件（各约 12MB）
 5. **自底向上签名**（先签 14 个嵌套 Mach-O，再签 `.app` 本体）
-6. `ditto` 打成 `dist/Python练习平台-macOS-<arch|universal>.zip`
+6. `ditto` 打成 `dist/编程练习册-macOS-<arch|universal>.zip`
 
 > 架构：`flutter build macos` 产出 universal（两种架构都在），且**没有架构开关**。
 > 所以脚本会把两份 Python 都带上，运行时按 `Abi.current()` 挑。
@@ -365,7 +365,7 @@ bash tools/build_macos.sh          # 重新打包（会自动重打完整尺寸�
 
 ```bash
 # 让对方执行（或右键 →「打开」）
-xattr -dr com.apple.quarantine "/Applications/Python 练习平台.app"
+xattr -dr com.apple.quarantine "/Applications/编程练习册.app"
 ```
 
 **要彻底免提示**（推荐正式分发时做）：
@@ -377,7 +377,7 @@ xattr -dr com.apple.quarantine "/Applications/Python 练习平台.app"
    ```
 3. 公证：
    ```bash
-   xcrun notarytool submit dist/Python练习平台-macOS-universal.zip \
+   xcrun notarytool submit dist/编程练习册-macOS-universal.zip \
      --apple-id "你的AppleID" --team-id "TEAMID" --password "App专用密码" --wait
    xcrun stapler staple "build/macos/Build/Products/Release/python_practice.app"
    ```
