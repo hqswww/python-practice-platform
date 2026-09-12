@@ -1,0 +1,217 @@
+[
+  {
+    "id": 501,
+    "title": "1 到 n 求和（for 循环）",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，计算 1 + 2 + 3 + ... + n 的结果并输出。\n\n请用循环一项一项地加，不要直接套求和公式。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 10000）",
+    "output_format": "输出一个整数，表示 1 到 n 的和；n = 0 时输出 0",
+    "sample_input": "10",
+    "sample_output": "55",
+    "test_cases": [
+      { "input": "0\n", "output": "0" },
+      { "input": "1\n", "output": "1" },
+      { "input": "10\n", "output": "55" },
+      { "input": "100\n", "output": "5050" }
+    ],
+    "hints": [
+      "需要一个变量，把每一项一点一点地累加起来。",
+      "让循环变量 i 从 1 走到 n，每走一步就把 i 加到结果变量上：for (int i = 1; i <= n; i++) { ... }",
+      "别忘了给结果变量初值：int sum = 0;，循环条件要写 i <= n 才加得到 n。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // sum 一定要初始化为 0。局部变量不初始化时里面是内存里的随机值，\n    // 在随机数上做累加，输出会是一堆垃圾数据，而且时对时错。\n    int sum = 0;\n    for (int i = 1; i <= n; i++) {\n        sum += i;\n    }\n\n    cout << sum << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "for 循环的三个部分",
+        "body": "for 的括号里正好有三段，用两个分号隔开：\n\nfor (初始化; 继续循环的条件; 每轮结束后的更新)\n\n执行顺序是：先做一次初始化 → 判断条件，成立才执行循环体 → 一轮结束后执行更新 → 再判断条件……直到条件不成立为止。\n\n两个最容易翻车的地方：\n\n1. 在 for 后面多打了一个分号：for (int i = 1; i <= n; i++); —— 这个分号本身就是循环体（一句空语句），下面花括号里的代码只会在循环结束后执行一次。程序能编译、能运行，结果却是错的，非常难查。\n2. 循环条件写成 i < n。题目要加到 n，就得写 i <= n；写 i < n 会少加最后一项，n = 1 时甚至一次都不加，直接输出 0。",
+        "code": "int sum = 0;\nfor (int i = 1; i <= n; i++) {\n    sum += i;\n}",
+        "output": "输入 10 时 sum = 55"
+      },
+      {
+        "title": "累加变量为什么要写成 0",
+        "body": "int sum; 只是申请了一块能放整数的空间，并没有把它擦干净——里面装的是内存里遗留的随机数据。所以声明之后直接 sum += i，等于在随机数上做加法，每次运行的结果都可能不一样。\n\n写 int sum = 0; 才是把账本清零。这条规则对累加成立，累乘则相反：累乘要从 1 开始（下一题就会遇到）。\n\n还有一件事：结果可能超出 int 的范围。int 一般只有 4 字节，最大约 21 亿；本题 n ≤ 10000，和是 50005000，还很安全，但如果题目把 n 放大到几十万，就得换成 long long 了。",
+        "code": "int sum = 0;      // 对：从 0 开始累加\nint sum;          // 错：里面的值是随机的\nsum += 1;",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 502,
+    "title": "n 的阶乘（while 循环）",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，计算 n! = 1 × 2 × 3 × ... × n 并输出。\n\n规定 0! = 1。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 20）",
+    "output_format": "输出一个整数，表示 n!",
+    "sample_input": "5",
+    "sample_output": "120",
+    "test_cases": [
+      { "input": "0\n", "output": "1" },
+      { "input": "1\n", "output": "1" },
+      { "input": "10\n", "output": "3628800" },
+      { "input": "20\n", "output": "2432902008176640000" }
+    ],
+    "hints": [
+      "阶乘就是连乘，需要一个变量保存「乘到现在的积」。",
+      "用 while 循环：循环变量从 1 开始，每轮把它乘进结果，再让它自己加 1。",
+      "n 最大到 20，20! 远超 int 的范围，结果要用 long long 存（cout 会自动按类型输出）。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 累乘要从 1 开始！初值写 0 的话乘什么都还是 0。\n    // 0! 按定义等于 1，这个初值正好也对上。\n    long long fact = 1;\n\n    int i = 1;\n    while (i <= n) {\n        fact *= i;\n        i++;          // 漏掉这一句就是死循环：i 永远是 1\n    }\n\n    // 20! = 2432902008176640000，远超 int 的范围（约 21 亿），\n    // 所以用 long long 存；C++ 的 cout 按变量类型输出，不用记 %lld。\n    cout << fact << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "while：先判断，后执行",
+        "body": "while 的写法是 while (条件) { 循环体 }。它和 for 能力上等价，区别只是习惯：\n\n· 循环次数事先就知道（从 1 数到 n）→ 用 for 更清楚；\n· 循环什么时候结束要看具体情况（比如一直读到输入结束）→ 用 while 更自然。\n\n写 while 最大的坑是忘记让循环变量变化。下面的代码里 i 永远是 1，条件永远成立，程序会卡在死循环里，只能强制退出。\n\n另一个差别在变量的作用范围：for (int i = 1; ...) 里的 i 出了循环就用不了，而 while 用到的 i 必须在循环之前声明，循环结束后它还活着。",
+        "code": "int i = 1;\nwhile (i <= n) {\n    fact *= i;\n    i++;      // 忘了这句 = 死循环\n}",
+        "output": ""
+      },
+      {
+        "title": "累乘从 1 开始，还要当心溢出",
+        "body": "累加从 0 开始，累乘要从 1 开始——0 乘任何数都是 0，long long fact = 0; 会让结果永远停在 0。\n\n为什么 0! = 1？一个数都不乘的「空乘积」规定为 1，这正好和 fact = 1 的初值一致：n = 0 时循环一次都不进，直接输出 1。\n\nint 一般只有 4 字节，最大约 21 亿，13! 就已经装不下，会发生「溢出」变成负数。long long 大约能到 9.2 × 10^18，20! 正好放得下。\n\n在 C 里换了类型还得同步改 printf 的格式符（%d → %lld），格式符和变量类型对不上又是一类莫名其妙的输出；C++ 的 cout 直接看变量类型，这一坑天然就没有了。",
+        "code": "long long fact = 1;\nfor (int i = 1; i <= 20; i++) {\n    fact *= i;\n}\ncout << fact << endl;",
+        "output": "2432902008176640000"
+      }
+    ]
+  },
+  {
+    "id": 503,
+    "title": "这个数有几位（do-while）",
+    "difficulty": "easy",
+    "description": "读入一个非负整数 n，输出它一共有几位数字。\n\n约定：0 也算 1 位数。",
+    "input_format": "一行，一个非负整数 n（0 ≤ n ≤ 1000000000）",
+    "output_format": "输出一个整数，表示 n 的位数",
+    "sample_input": "2024",
+    "sample_output": "4",
+    "test_cases": [
+      { "input": "0\n", "output": "1" },
+      { "input": "7\n", "output": "1" },
+      { "input": "100\n", "output": "3" },
+      { "input": "1000000000\n", "output": "10" }
+    ],
+    "hints": [
+      "把一个十进制整数去掉最后一位，只要让它除以 10 就行。",
+      "反复除以 10，除到变成 0 为止，除的次数就是位数，用一个计数器记下来。",
+      "用 do-while：它先执行一次循环体再判断条件，n = 0 这种情况正好靠它兜住。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // do-while 先执行一次循环体，再判断条件。\n    // 换成 while (n > 0) 的话，n = 0 时一次都不执行，位数是 0；\n    // 而 0 本身是 1 位数。\n    int count = 0;\n    do {\n        count++;\n        n /= 10;          // 整数除法：123 / 10 得到 12，正好抹掉最后一位\n    } while (n > 0);      // 结尾这个分号不能少\n\n    cout << count << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "do-while：至少执行一次",
+        "body": "do-while 和 while 的唯一区别是判断条件的时机：\n\n· while：先判断条件，成立才执行循环体——有可能一次都不执行。\n· do-while：先执行一次循环体，再判断条件——循环体至少执行一次。\n\n本题正好用得上这个特性。n = 0 时，while 版本因为条件 0 > 0 不成立而一次都不进，计数器停在 0，输出「0 位数」，显然是错的；do-while 版本会先老老实实数掉 1 位，输出 1。\n\n写法是 do { ... } while (条件); ——结尾那个分号千万别漏，漏了编译直接报错。这一条和普通的 while 不一样：while (条件) 后面写分号是合法的（那会变成空循环体），而 do-while 少了分号就不合法。",
+        "code": "int count = 0;\ndo {\n    count++;\n    n /= 10;\n} while (n > 0);      // 分号在这里",
+        "output": "输入 0 时输出 1"
+      },
+      {
+        "title": "整数除法的「丢小数」在这里是好事",
+        "body": "两整数相除结果还是整数，小数部分直接丢掉：123 / 10 得到 12。平时这算个坑，但在本题里正好等于「抹掉最后一位」。\n\n换个说法：位数 = 一直除以 10 直到变成 0 的次数。100 要除 3 次（100 → 10 → 1 → 0），所以是 3 位数；1000000000 要除 10 次，所以输出 10。\n\n要注意 n 是被循环一点点改掉的，循环结束时原来的数已经不存在了。后面如果还需要原值，得先备份：int t = n; 然后对 t 做除法。",
+        "code": "int t = n;                 // 需要原值时先备份\nwhile (t > 0) { t /= 10; }",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 504,
+    "title": "统计正数（范围 for）",
+    "difficulty": "medium",
+    "description": "先读入一个整数 n，再读入 n 个整数。统计其中正数的个数，以及这些正数的总和。\n\n0 和负数都不算正数。",
+    "input_format": "第一行一个整数 n（0 ≤ n ≤ 1000）；第二行 n 个整数，用空格分隔（n = 0 时第二行为空）",
+    "output_format": "输出一行两个整数：正数的个数、正数的和，用一个空格分隔",
+    "sample_input": "5\n3 -1 4 0 -2",
+    "sample_output": "2 7",
+    "test_cases": [
+      { "input": "0\n", "output": "0 0" },
+      { "input": "3\n-1 0 -5\n", "output": "0 0" },
+      { "input": "5\n3 -1 4 0 -2\n", "output": "2 7" },
+      { "input": "4\n10 20 30 40\n", "output": "4 100" }
+    ],
+    "hints": [
+      "要先把 n 个数存起来，才能用范围 for 挨个处理它们。",
+      "C++ 里用 vector<int> v(n); 开一个能装 n 个整数的可变长数组，再用下标把数读进去。",
+      "遍历用 for (int x : v)，遇到非正数就 continue 跳过本轮——这样统计代码只对正数生效。"
+    ],
+    "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // vector 是 C++ 的可变长数组：长度可以在运行时决定。\n    // vector<int> v(n) 创建了 n 个 int，下标范围还是 0 ~ n-1。\n    vector<int> v(n);\n    for (int i = 0; i < n; i++) {\n        cin >> v[i];\n    }\n\n    int count = 0;\n    int sum = 0;\n\n    // 范围 for：把 v 里的元素一个一个取出来放进 x。\n    // 不用维护下标，也就不会写出越界的 v[n]。\n    for (int x : v) {\n        if (x <= 0) {\n            continue;     // 非正数：跳过本轮剩下的语句，直接看下一个元素\n        }\n        count++;\n        sum += x;\n    }\n\n    // n = 0 时 v 是空容器，范围 for 一圈都不转，输出 0 0。\n    cout << count << \" \" << sum << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "范围 for：C++ 特有的遍历写法",
+        "body": "范围 for 是 C++11 引入的语法，形状是 for (元素类型 变量名 : 容器)：把容器里的元素从头到尾一个一个取出来，每取一个就执行一次循环体。\n\n和下标循环对比一下：\n\n· 下标循环：for (int i = 0; i < n; i++) cin >> v[i]; —— 要自己维护 i，边界写成 i <= n 就访问越界了。\n· 范围 for：for (int x : v) cout << x << endl; —— 完全不碰下标，容器里有几个元素就转几圈，天然不会越界。\n\n本题读入时用下标循环（要往指定位置写数），统计时用范围 for（只是挨个看），这正是两者的典型分工。\n\n这里用到的 vector 可以理解成「长度运行时才确定的数组」，需要 #include <vector>；它和范围 for 是天生一对，学到 STL 那一章会讲得更细。\n\n还有一个细节：范围 for 里的 x 是元素的副本，在循环体里改 x 不会影响 v 本身。想直接改原元素要写成 int& x（引用），那是后面章节的内容。",
+        "code": "vector<int> v = {3, -1, 4};\nfor (int x : v) {\n    cout << x << endl;\n}",
+        "output": "3\n-1\n4"
+      },
+      {
+        "title": "continue：跳过本次，不是结束循环",
+        "body": "· break：立刻结束整个循环，跳到循环后面的语句。\n· continue：只结束本轮循环剩下的代码，回到循环头部开始下一轮。\n\n统计正数时，非正数不该计入。一种写法是把 count++; sum += x; 全塞进 if (x > 0) { } 里，越写越深；另一种就是本题的写法——发现非正数就 continue，后面的统计代码天然只对正数生效，逻辑更平。\n\n范围 for 里用 continue 很安全，下一个元素由编译器自动取。但在 while 里手写 i++ 时，如果 i++ 恰好在 continue 后面，就会出现 i 永远不变、程序死循环的情况——这是 continue 最经典的坑。\n\n另外别忘了给 count 和 sum 初始化：n = 0 时循环一次都不执行，只有初值写对了，才能输出正确的 0 0。",
+        "code": "for (int x : v) {\n    if (x <= 0) {\n        continue;   // 这一轮到此为止\n    }\n    count++;\n    sum += x;\n}",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 505,
+    "title": "判断素数（break 提前跳出）",
+    "difficulty": "medium",
+    "description": "读入一个整数 n，判断它是不是素数。\n\n素数是指大于 1、并且只能被 1 和它本身整除的整数。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 1000000）",
+    "output_format": "如果 n 是素数输出 yes，否则输出 no",
+    "sample_input": "97",
+    "sample_output": "yes",
+    "test_cases": [
+      { "input": "1\n", "output": "no" },
+      { "input": "2\n", "output": "yes" },
+      { "input": "9\n", "output": "no" },
+      { "input": "97\n", "output": "yes" }
+    ],
+    "hints": [
+      "先想清楚：什么样的数一定不是素数？把这些情况单独处理掉。",
+      "从 2 开始一个一个试除，只要 n % i == 0，就说明 i 是 n 的因子。",
+      "一旦找到因子就能下结论了，不必再接着试 —— 用 break 提前跳出循环；另外别忘了 0 和 1 要单独判断。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 0 和 1 都不是素数，先单独处理掉，\n    // 否则下面的循环一次试除都不会做，很容易被漏判成 yes。\n    bool is_prime = true;\n    if (n < 2) {\n        is_prime = false;\n    }\n\n    // 只需要试除到根号 n：如果 n 有一个大于根号 n 的因子，\n    // 就必然还有一个小于根号 n 的因子，早该被试出来了。\n    // i * i <= n 比调 sqrt() 更省事，也不用引 <cmath>。\n    for (int i = 2; i * i <= n; i++) {\n        if (n % i == 0) {\n            is_prime = false;\n            break;        // 已经确定不是素数，再试下去没有意义\n        }\n    }\n\n    // 注意：bool 变量直接输出只会得到 1 / 0，这里要的是 yes / no，\n    // 所以用三目运算符自己挑字符串。\n    cout << (is_prime ? \"yes\" : \"no\") << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "break：不必等到循环条件不成立",
+        "body": "正常情况下循环要一直跑到条件不成立为止。但有些时候答案已经确定了，再跑下去纯属浪费时间——这时用 break 立刻结束整个循环，程序接着执行循环后面的语句。\n\n判断素数就是典型场景：97 要一路试除到 9 才知道没有因子；而 100 第一次试除（100 % 2 == 0）就确定不是素数，用 break 可以马上收工。\n\n两个坑：\n\n· n = 0 和 n = 1 不是素数，但循环开始时它们连一次试除都不做，很容易被漏判成 yes，所以要提前用 if (n < 2) 处理。\n· break 只跳出它所在的那一层循环。在嵌套循环里，它不会把外层循环一起停掉，这一点在下一题的图形输出里也要留意。\n\n顺带认识一下 bool：C++ 有真正的布尔类型，取值只有 true 和 false，比 C 里用 0/1 当真假更清楚。",
+        "code": "for (int i = 2; i * i <= n; i++) {\n    if (n % i == 0) {\n        is_prime = false;\n        break;\n    }\n}",
+        "output": ""
+      },
+      {
+        "title": "为什么试除到根号 n 就够了，以及 bool 的输出坑",
+        "body": "如果 n 有一个大于 √n 的因子，那必定还有一个小于 √n 的因子跟它配对（两个因子相乘等于 n），而小的那个早就被试过了。\n\n所以条件写 i <= n / 2 也能算对，但多做了一半无用功；写 i * i <= n 正好停在 √n。另一种写法是 i <= sqrt(n)，但那要 #include <cmath>，而且 sqrt 返回浮点数，可能因为精度差一点点。用乘法比较既准确又不用引头文件。\n\n最后是 C++ 特有的一个坑：cout 输出 bool 变量得到的是 1 或 0，不是 true / false。想要文字形式可以写 cout << boolalpha << is_prime;，但本题要的是 yes / no，用 (is_prime ? \"yes\" : \"no\") 更直接。",
+        "code": "for (int i = 2; i * i <= n; i++)   // 等价于 i <= sqrt(n)\n\ncout << boolalpha << is_prime << endl;   // 输出 true / false\ncout << is_prime << endl;                // 输出 1 / 0",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 506,
+    "title": "星号直角三角形（嵌套循环）",
+    "difficulty": "medium",
+    "description": "读入一个整数 n，输出 n 行由星号 * 组成的直角三角形：\n第 1 行 1 颗星，第 2 行 2 颗星，……，第 n 行 n 颗星。",
+    "input_format": "一行，一个整数 n（1 ≤ n ≤ 20）",
+    "output_format": "输出 n 行，第 i 行是 i 个 *（行首行尾都不要多余空格）",
+    "sample_input": "3",
+    "sample_output": "*\n**\n***",
+    "test_cases": [
+      { "input": "1\n", "output": "*" },
+      { "input": "3\n", "output": "*\n**\n***" },
+      { "input": "5\n", "output": "*\n**\n***\n****\n*****" }
+    ],
+    "hints": [
+      "这是二维的图形：既要决定印几行，又要决定每行印几颗星，需要两个循环配合。",
+      "外层循环控制行数，内层循环控制这一行印几颗星，内层的循环条件要用到外层的变量。",
+      "换行要放在内层循环结束之后、外层循环里面；另外别给内外两层起同一个循环变量名。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 外层走一步 = 印一行，内层走一圈 = 把这一行的星号印完\n    for (int i = 1; i <= n; i++) {\n        for (int j = 1; j <= i; j++) {\n            cout << \"*\";     // 只印星号，不印空格\n        }\n        // 换行必须写在内层循环结束之后、外层循环里面。\n        // 写进内层循环就会变成每颗星单独占一行。\n        cout << endl;\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "嵌套循环：外层走一步，内层走一圈",
+        "body": "嵌套循环的执行顺序是：外层循环做一次，内层循环就跑完它自己的一整圈，然后外层才进入下一次。\n\n以 n = 3 为例：\n\n· 第 1 轮外层（i = 1）：内层 j 从 1 到 1，印 1 颗星，然后换行；\n· 第 2 轮外层（i = 2）：内层 j 从 1 到 2，印 2 颗星，然后换行；\n· 第 3 轮外层（i = 3）：内层 j 从 1 到 3，印 3 颗星，然后换行。\n\n内层条件写 j <= i，因为第 i 行要印 i 颗星——内层条件依赖外层变量，这是嵌套循环最典型的用法。\n\n两个新手常见错误：\n\n1. 把 cout << endl; 写进了内层循环，结果每颗星单独占一行，图形被拉成一条竖线；\n2. 内外两层用了同一个变量名（都叫 i）。内层会把外层的 i 改掉，循环立刻乱套。",
+        "code": "for (int i = 1; i <= n; i++) {\n    for (int j = 1; j <= i; j++) {\n        cout << \"*\";\n    }\n    cout << endl;      // 一行印完才换行\n}",
+        "output": "输入 3 时输出：\n*\n**\n***"
+      },
+      {
+        "title": "循环次数先算一算，输出别多打空格",
+        "body": "嵌套循环的总次数是外层次数乘以内层次数。本题一共要印 1 + 2 + ... + n = n(n+1)/2 颗星，n = 20 时也才 210 次输出，完全不用担心效率；但如果 n 是十万，嵌套循环就可能跑到超时，那时要想别的办法。\n\n还有一点：每行的星号后面不要多打空格。本题每行长度都不一样，行尾多余的空白虽然判题时会忽略，但养成「不输出多余空白」的习惯，在写表格、对格式要求严格的题目里才不会吃亏。用 cout 时尤其要注意：它不像 printf 有格式串统一控制，多写一个 << \" \" 就会实实在在多出一个空格。",
+        "code": "cout << \"*\" << endl;    // 每行一个星号\ncout << \" \" << endl;    // 千万别顺手多输出空格",
+        "output": ""
+      }
+    ]
+  }
+]

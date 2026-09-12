@@ -1,0 +1,187 @@
+[
+  {
+    "id": 101,
+    "title": "Hello, C++!",
+    "difficulty": "easy",
+    "description": "编写一个 C++ 程序，在屏幕上输出一行文字：Hello, C++!",
+    "input_format": "无输入",
+    "output_format": "输出一行 Hello, C++!",
+    "sample_input": "",
+    "sample_output": "Hello, C++!",
+    "test_cases": [
+      { "input": "", "output": "Hello, C++!" }
+    ],
+    "hints": [
+      "C++ 用 <iostream> 头文件里的 cout 输出，不是 printf。",
+      "输出的每个部分用 << 串起来：cout << \"文字\" << endl;",
+      "endl 表示换行，等价于输出一个 '\\n' 并刷新缓冲区。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    // cout 是「标准输出流」，<< 把它后面的内容送进去\n    cout << \"Hello, C++!\" << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "C++ 的 Hello World 长什么样",
+        "body": "C++ 程序的骨架和 C 一样（main 函数、return 0），但输入输出换了一套：\n\n`#include <iostream>` 引入输入输出流库。`using namespace std;` 让我们可以直接写 `cout` 而不用写 `std::cout`（`std` 是标准库的命名空间）。\n\n`cout << \"文字\" << endl;` 里的 `<<` 是「输出运算符」——它把右边的东西送进左边的流里。可以连着写多个，像传送带一样。",
+        "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << \"Hello, C++!\" << endl;\n    return 0;\n}",
+        "output": "Hello, C++!"
+      },
+      {
+        "title": "endl 和 \\n 有什么不一样",
+        "body": "`endl` 做两件事：输出一个换行符**并且刷新输出缓冲区**。\n\n`\"\\n\"` 只换行，不刷新。判题时两者效果一样，但大量输出时 `\\n` 更快。初学阶段用 `endl` 更直观。",
+        "code": "cout << \"第一行\" << endl;\ncout << \"第二行\" << \"\\n\";",
+        "output": "第一行\n第二行"
+      }
+    ]
+  },
+  {
+    "id": 102,
+    "title": "读入整数并原样输出",
+    "difficulty": "easy",
+    "description": "读入一个整数，把它原样输出。",
+    "input_format": "一行，一个整数 n",
+    "output_format": "输出这个整数",
+    "sample_input": "42",
+    "sample_output": "42",
+    "test_cases": [
+      { "input": "42\n", "output": "42" },
+      { "input": "-7\n", "output": "-7" },
+      { "input": "0\n", "output": "0" }
+    ],
+    "hints": [
+      "用 cin 读入，方向和数据流相反：cin >> n。",
+      "先声明变量：int n;，C++ 里读入不需要写取地址符。",
+      "输出用 cout << n << endl;"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    // cin 是「标准输入流」，>> 把数据从流里取出来存进 n\n    cin >> n;\n    cout << n << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "cin 比 scanf 省心在哪",
+        "body": "C 里 `scanf(\"%d\", &n)` 必须写对格式串、还必须加取地址符 `&`——漏了就崩溃。\n\nC++ 的 `cin >> n` 不用写格式串也不用写 `&`，编译器会根据 `n` 的类型自动决定怎么读。这是 C++ 相比 C 最直观的改进之一。\n\n注意箭头方向：`cin >> n` 是**从流里取出**存进变量；`cout << x` 是**把变量送进**流。",
+        "code": "int n;\ncin >> n;\ncout << n << endl;",
+        "output": "输入 42 时输出 42"
+      }
+    ]
+  },
+  {
+    "id": 103,
+    "title": "两数之和",
+    "difficulty": "easy",
+    "description": "读入两个整数，输出它们的和。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "输出一个整数，表示 a + b",
+    "sample_input": "3 5",
+    "sample_output": "8",
+    "test_cases": [
+      { "input": "3 5\n", "output": "8" },
+      { "input": "100 250\n", "output": "350" },
+      { "input": "-7 2\n", "output": "-5" }
+    ],
+    "hints": [
+      "cin 可以连着读多个：cin >> a >> b;",
+      "多个 >> 之间用空格或换行读入都一样，cin 会自动跳过空白。",
+      "输出用 cout << a + b << endl;"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    // 直接把表达式写进 cout 也可以\n    cout << a + b << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "一次读多个数",
+        "body": "`cin >> a >> b;` 会依次从输入里取出两个整数。中间的空格、换行、制表符 cin 都会自动跳过，所以输入写成 `3 5` 或者分两行写都能正确读到。\n\n这和 C 的 `scanf(\"%d %d\", &a, &b)` 效果一样，但少写格式串也少写两个 `&`。",
+        "code": "int a, b;\ncin >> a >> b;\ncout << a + b << endl;",
+        "output": "输入 3 5 时输出 8"
+      }
+    ]
+  },
+  {
+    "id": 104,
+    "title": "交换两个数",
+    "difficulty": "easy",
+    "description": "读入两个整数 a 和 b，交换它们的值后输出：先输出 a，再输出 b（各占一行）。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "两行，第一行是交换后的 a，第二行是交换后的 b",
+    "sample_input": "3 8",
+    "sample_output": "8\n3",
+    "test_cases": [
+      { "input": "3 8\n", "output": "8\n3" },
+      { "input": "-1 5\n", "output": "5\n-1" },
+      { "input": "0 0\n", "output": "0\n0" }
+    ],
+    "hints": [
+      "交换需要一个临时变量暂存其中一个值。",
+      "C++ 标准库直接提供了 swap：swap(a, b);（在 <utility> 里，iostream 通常已带上）",
+      "手写也一样：int t = a; a = b; b = t;"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n\n    // C++ 标准库直接提供 swap，不用自己写临时变量\n    swap(a, b);\n\n    cout << a << endl;\n    cout << b << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "标准库帮你把临时变量藏起来了",
+        "body": "在 C 里交换两个数要自己写三步：\n\n```\nint t = a;\na = b;\nb = t;\n```\n\nC++ 标准库提供了 `swap(a, b)`，内部做的就是这三步，但不用你操心顺序。\n\n**注意**：`swap` 交换的是变量的值，两个变量必须是同一类型。它的实参是「引用」，所以直接传变量名就行，不用取地址。",
+        "code": "int a = 3, b = 8;\nswap(a, b);\ncout << a << \" \" << b << endl;",
+        "output": "8 3"
+      }
+    ]
+  },
+  {
+    "id": 105,
+    "title": "分三行输出",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，输出三行内容：\n第一行 n\n第二行 n 的平方\n第三行 n 的立方",
+    "input_format": "一行，一个整数 n",
+    "output_format": "三行，依次是 n、n*n、n*n*n",
+    "sample_input": "3",
+    "sample_output": "3\n9\n27",
+    "test_cases": [
+      { "input": "3\n", "output": "3\n9\n27" },
+      { "input": "1\n", "output": "1\n1\n1" },
+      { "input": "10\n", "output": "10\n100\n1000" }
+    ],
+    "hints": [
+      "cout 可以连着输出多个值：cout << a << endl << b << endl;",
+      "每输出一个值后面跟一个 endl 就会换行。",
+      "注意最后一行的结尾也要换行。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    // 一条语句串起三次输出，endl 决定在哪里换行\n    cout << n << endl\n         << n * n << endl\n         << n * n * n << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "cout 是一条传送带",
+        "body": "`cout << A << B << C;` 会把 A、B、C 依次送进输出流，顺序就是从前往后。\n\n所以只要在需要换行的地方插一个 `endl` 就行：`cout << n << endl << n*n << endl << n*n*n << endl;`\n\n这和 C 的 `printf(\"%d\\n%d\\n%d\\n\", ...)` 效果相同，但**不用记格式符**——`%d`、`%f`、`%s` 这些在 C++ 里由编译器按变量类型自动决定。",
+        "code": "cout << n << endl << n * n << endl;",
+        "output": "输入 3 时输出：\n3\n9"
+      }
+    ]
+  },
+  {
+    "id": 106,
+    "title": "摄氏温度转华氏",
+    "difficulty": "easy",
+    "description": "读入一个摄氏温度 c（整数），按公式 F = c × 9 / 5 + 32 换算成华氏温度并输出。\n\n结果保留 2 位小数。",
+    "input_format": "一行，一个整数 c",
+    "output_format": "输出华氏温度，保留 2 位小数",
+    "sample_input": "100",
+    "sample_output": "212.00",
+    "test_cases": [
+      { "input": "100\n", "output": "212.00" },
+      { "input": "0\n", "output": "32.00" },
+      { "input": "37\n", "output": "98.60" },
+      { "input": "-40\n", "output": "-40.00" }
+    ],
+    "hints": [
+      "用 double 存结果，避免整数除法丢小数：c * 9.0 / 5 + 32。",
+      "如果写成 c * 9 / 5，C++ 会按整数除法算，结果不对。",
+      "C++ 用 <iomanip> 里的 fixed 和 setprecision(2) 控制小数位数。"
+    ],
+    "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main() {\n    int c;\n    cin >> c;\n\n    // 关键：9.0 是浮点数，整个表达式才会按小数运算。\n    // 写成 9 / 5 的话会做整数除法，得到 1。\n    double f = c * 9.0 / 5 + 32;\n\n    // fixed + setprecision(2) = 保留 2 位小数（默认还会四舍五入）\n    cout << fixed << setprecision(2) << f << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "整数除法这个坑，C++ 一样有",
+        "body": "两个整数相除，结果还是整数，小数部分直接丢掉：`9 / 5` 得到 `1`。\n\n只要表达式里有一个浮点数（这里写 `9.0`），整个运算就按浮点规则走。这是 C/C++ 共有的坑——**程序不报错，就是结果不对**。",
+        "code": "double f = c * 9.0 / 5 + 32;",
+        "output": "输入 100 时 f = 212"
+      },
+      {
+        "title": "C++ 怎么控制小数位数",
+        "body": "C 里用 `printf(\"%.2f\")`。C++ 用 `<iomanip>` 里的两个「流操纵符」：\n\n· `fixed` —— 表示用定点小数形式输出\n· `setprecision(2)` —— 保留 2 位小数\n\n它们一旦设置就**持续生效**，后面所有浮点输出都按这个格式。要改回来得再设一次。",
+        "code": "#include <iomanip>\ncout << fixed << setprecision(2) << 3.14159 << endl;",
+        "output": "3.14"
+      }
+    ]
+  }
+]

@@ -1,0 +1,241 @@
+[
+  {
+    "id": 201,
+    "title": "bool 类型与真值输出",
+    "difficulty": "easy",
+    "description": "读入两个整数 a 和 b，依次判断三种关系：a 大于 b、a 等于 b、a 小于 b。\n\n把每个判断的结果存进 bool 变量再输出：真输出 1，假输出 0，每个结果占一行。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "三行，依次是 a > b、a == b、a < b 的结果。用 1 表示真、0 表示假",
+    "sample_input": "3 5",
+    "sample_output": "0\n0\n1",
+    "test_cases": [
+      { "input": "3 5\n", "output": "0\n0\n1" },
+      { "input": "5 3\n", "output": "1\n0\n0" },
+      { "input": "4 4\n", "output": "0\n1\n0" },
+      { "input": "-7 -7\n", "output": "0\n1\n0" }
+    ],
+    "hints": [
+      "比较表达式（a > b 这种）的结果本身就是真或假，可以直接存进变量。",
+      "用 bool 声明变量：bool ok = a > b;",
+      "cout 默认把 bool 按整数打印：true 是 1，false 是 0，不用自己写 if 去分支。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n\n    // 比较表达式的结果类型就是 bool，直接存起来即可\n    bool greater = a > b;\n    bool equal = (a == b);\n    bool less = a < b;\n\n    // 关键：cout 默认把 bool 当整数输出，true 打印成 1、false 打印成 0，\n    // 而不是 true / false。想打印单词要加流操纵符 boolalpha。\n    cout << greater << endl;\n    cout << equal << endl;\n    cout << less << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "bool 是 C++ 才有的真值类型",
+        "body": "C 里没有真正的布尔类型，比较的结果就是 int 的 1 和 0。C++ 有 bool：它只有 true 和 false 两个字面量，比较表达式（a > b）的结果类型就是 bool。\n\n**最容易踩的坑**：cout 默认把 bool 当整数输出——true 打印成 1，false 打印成 0，不是 \"true\" / \"false\"。做题前先看清题目要的是哪一种。想打印成单词就加流操纵符 boolalpha，设置之后同一个 bool 变量会输出 true / false。\n\nbool 通常占 1 字节，但它不是「小整数」——别拿它去做加减法。",
+        "code": "bool ok = 3 > 5;\ncout << ok << endl;                  // 0\ncout << boolalpha << ok << endl;     // false",
+        "output": "0\nfalse"
+      },
+      {
+        "title": "0 以外的值都会被当成真",
+        "body": "bool 变量可以由整数转换而来：0 变成 false，**任何非 0 的值**都变成 true。所以 bool b = 3.9; 里 b 是 true，bool b = -1; 里也是 true。\n\n新手易错点：\n1. 写 if (flag == true) 是多余的，直接写 if (flag) 就行。\n2. 更危险的是漏掉一个等号：if (flag = true) 会把 true **赋**给 flag，并且条件永远成立。编译器一般不拦，逻辑已经错了。\n3. 题目要求输出 1/0 时别自作主张加 boolalpha，否则判题对不上。",
+        "code": "bool a = 0;      // false\nbool b = 3.9;    // true：非 0 就是真\nbool c = -1;     // true\ncout << a << b << c << endl;",
+        "output": "011"
+      }
+    ]
+  },
+  {
+    "id": 202,
+    "title": "auto 推导与整数除法",
+    "difficulty": "easy",
+    "description": "读入两个整数 a 和 b，输出两行：第一行是它们的和；第二行是它们的平均值，保留 2 位小数。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "两行：第一行是 a + b（整数）；第二行是平均值的 2 位小数形式",
+    "sample_input": "7 2",
+    "sample_output": "9\n4.50",
+    "test_cases": [
+      { "input": "7 2\n", "output": "9\n4.50" },
+      { "input": "10 4\n", "output": "14\n7.00" },
+      { "input": "-7 2\n", "output": "-5\n-2.50" },
+      { "input": "0 0\n", "output": "0\n0.00" }
+    ],
+    "hints": [
+      "和是整数、平均值是小数，这两行得用不同类型的变量来存。",
+      "让表达式里出现一个小数字面量（写成 2.0），整个表达式才会按小数计算。",
+      "可以用 auto 让编译器从右边推导类型：auto sum = a + b; 推导出 int，auto avg = (a + b) / 2.0; 推导出 double。"
+    ],
+    "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main() {\n    // 花括号初始化：int a{}; 一定会把 a 初始化成 0。\n    // 对比 C 风格的 int a; —— 局部变量不初始化就是内存里的随机值。\n    int a{}, b{};\n    cin >> a >> b;\n\n    // auto 让编译器从等号右边推导类型：a + b 是 int，所以 sum 就是 int\n    auto sum = a + b;\n\n    // 关键：a + b 是整数，直接除以 2 会做整数除法（7 / 2 得到 3）。\n    // 写成 2.0 之后整个表达式变成 double 运算，结果才是 3.5。\n    auto avg = (a + b) / 2.0;\n\n    cout << sum << endl;\n    cout << fixed << setprecision(2) << avg << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "auto：让编译器替你写类型",
+        "body": "auto 是 C++11 引入的写法：`auto x = 表达式;` 里 x 的类型由编译器根据右边推导出来。\n\n它不是「动态类型」——x 的类型在编译期就定死了，之后不能换成别的类型；编译后和手写类型完全没有区别。\n\n最大的好处是表达式很长时不用抄类型名，比如 `auto it = m.begin();`。\n\n**新手易错点**：auto 会把右边的类型原样保留，`auto x = 5 / 2;` 推导出的是 int，值是 2 而不是 2.5。想要小数，右边本身就必须有小数字面量。所以 auto 不会「帮你保留小数」，它只是省了打字。",
+        "code": "auto i = 5;        // int\nauto d = 5 / 2.0;  // double\nauto q = 5 / 2;    // int，值是 2，不是 2.5\ncout << q << endl;",
+        "output": "2"
+      },
+      {
+        "title": "int x{5} 这种初始化写法",
+        "body": "C++11 起可以用花括号初始化变量：`int x{5};` 是 5，`int y{};` 是 0。\n\n它比 `=` 更严格，因为**花括号里不允许窄化转换**：`int x = 3.9;` 只会得到一个警告（x 变成 3，程序照跑），而 `int x{3.9};` 直接编译报错。把错误提前到编译期抓出来，正是我们想要的。\n\n还有个经典陷阱：`int x();` 看着像「用 0 初始化」，其实被编译器当成**函数声明**，报错信息会说 x 是个函数。想要初值 0 就写 `int x{};` 或 `int x = 0;`。",
+        "code": "int a{5};     // 5\nint b{};      // 0\n// int c{3.9};   // 编译错误：窄化转换\ncout << a << b << endl;",
+        "output": "50"
+      },
+      {
+        "title": "为什么平均值不是 4.5",
+        "body": "整数除法是初学者遇到的第一个「程序不报错、结果就是不对」的坑。\n\n两个 int 相除，C++ 做的是整数除法：结果**向 0 截断**，小数部分直接丢掉。7 / 2 得 3，-7 / 2 得 -3（不是 -4）。\n\n注意截断和四舍五入不一样：3 / 2 得 1，不是 2。\n\n补救办法有三种，效果一样：\n· 把除数写成小数：`(a + b) / 2.0`\n· 先转换：`static_cast<double>(a + b) / 2`\n· 干脆把参与运算的变量声明成 double\n\n判断一个表达式会不会丢小数，就看参与运算的是不是全是整数。",
+        "code": "cout << 7 / 2 << endl;                      // 3\ncout << 7 / 2.0 << endl;                    // 3.5\ncout << -7 / 2 << endl;                     // -3：向 0 截断\ncout << static_cast<double>(7) / 2 << endl; // 3.5",
+        "output": "3\n3.5\n-3\n3.5"
+      }
+    ]
+  },
+  {
+    "id": 203,
+    "title": "字符与 ASCII 码互转",
+    "difficulty": "easy",
+    "description": "读入一个小写英文字母，输出两行：第一行是这个字母的 ASCII 码（一个整数）；第二行是它对应的大写字母。",
+    "input_format": "一行，一个小写英文字母（a ~ z）",
+    "output_format": "两行：第一行是该字母的 ASCII 码（整数）；第二行是对应的大写字母",
+    "sample_input": "a",
+    "sample_output": "97\nA",
+    "test_cases": [
+      { "input": "a\n", "output": "97\nA" },
+      { "input": "m\n", "output": "109\nM" },
+      { "input": "z\n", "output": "122\nZ" }
+    ],
+    "hints": [
+      "char 变量用 cin 读入一个字符，cin 会自动跳过输入里的空格和换行。",
+      "cout 直接输出 char 看到的是字符；想看到数字必须显式转换：static_cast<int>(c)。",
+      "小写字母的 ASCII 码比对应的大写字母大 32，可以写 c - ('a' - 'A')，也可以写 c - 32。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    // cin >> c 会自动跳过空白字符，所以输入末尾的回车不会被当成字符读进来\n    char c;\n    cin >> c;\n\n    // char 本质上是 1 字节的小整数。cout 默认按「字符」打印它，\n    // 想看数字就必须显式转换。C++ 推荐 static_cast 而不是 C 的 (int) 写法：\n    // 它更显眼、更容易搜索，也不会被误读成别的转换。\n    cout << static_cast<int>(c) << endl;\n\n    // 'a' 是 97、'A' 是 65，正好相差 32。\n    // 写成 ('a' - 'A') 比写死 32 更能说明意图。\n    // 注意 c - (...) 的结果是 int，要打印成字符得再转回 char。\n    cout << static_cast<char>(c - ('a' - 'A')) << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "char 其实是个小整数",
+        "body": "计算机里没有「字母」，只有数字。字符靠 ASCII 对照表变成数字存放：'A' 是 65，'a' 是 97，'0' 是 48。\n\n所以 char 变量的本质就是 1 字节的整数。cout 直接输出它，看到的是字符；先转成 int 再输出，看到的就是那个数字。反过来把一个整数转成 char 再输出，就会打印出对应的字符——这就是「字符和整数互转」。\n\n**两个必踩的坑**：\n1. 单引号和双引号不能混：'A' 是字符常量（整数 65），\"A\" 是字符串。写 char c = \"A\"; 是错的。\n2. `cout << 'A' + 1` 打印的是 66 而不是 B——因为 + 运算会先把 char 提升成 int，结果不再是 char。想打印字符要转回去：static_cast<char>('A' + 1)。",
+        "code": "char c = 'A';\ncout << c << endl;                           // A\ncout << static_cast<int>(c) << endl;         // 65\ncout << 'A' + 1 << endl;                     // 66：加法把 char 提升成了 int\ncout << static_cast<char>('A' + 1) << endl;  // B",
+        "output": "A\n65\n66\nB"
+      },
+      {
+        "title": "为什么减 32 就变成大写",
+        "body": "ASCII 表把 26 个大写字母排在 65 ~ 90，26 个小写字母排在 97 ~ 122，正好相差 32，而且各自都是连续的。所以「小写变大写」就是减 32，「大写变小写」就是加 32。\n\n靠的就是「连续」这一点：只要字母在表里是连着的，加减法才成立。\n\n同样的规律对数字字符也成立：'0' 是 48，'7' 是 55，所以 `ch - '0'` 就能把字符 '7' 变成整数 7。这是把输入里的数字字符转成数值的标准写法，比用 atoi 安全（不会因为越界而崩溃）。\n\nASCII 只管英文和英文标点。中文在 UTF-8 里一个字占 3 个字节，一个 char 根本装不下——处理中文要用 std::string。",
+        "code": "cout << static_cast<char>('Z' + 32) << endl;  // z\ncout << '7' - '0' << endl;                   // 7：字符 → 数值\ncout << static_cast<char>('0' + 7) << endl;  // 7：数值 → 字符",
+        "output": "z\n7\n7"
+      }
+    ]
+  },
+  {
+    "id": 204,
+    "title": "static_cast 与截断",
+    "difficulty": "medium",
+    "description": "读入一个浮点数 x，输出两行：第一行是 x 去掉小数部分后的整数；第二行是 x 减去这个整数后的结果，保留 2 位小数。\n\n例如输入 3.9，第一行输出 3，第二行输出 0.90。",
+    "input_format": "一行，一个浮点数 x（可能带小数，也可能是负数）",
+    "output_format": "两行：第一行是一个整数；第二行保留 2 位小数",
+    "sample_input": "3.9",
+    "sample_output": "3\n0.90",
+    "test_cases": [
+      { "input": "3.9\n", "output": "3\n0.90" },
+      { "input": "5.5\n", "output": "5\n0.50" },
+      { "input": "0.0\n", "output": "0\n0.00" },
+      { "input": "-2.7\n", "output": "-2\n-0.70" }
+    ],
+    "hints": [
+      "把浮点数转成整数用 static_cast<int>(x)，小数部分会被丢掉。",
+      "丢掉小数不是四舍五入：3.9 变成 3，-2.7 变成 -2（规则是「向 0 截断」）。",
+      "x 减去整数部分时，一边是 double 一边是 int，int 会被隐式提升成 double，所以结果仍然是小数。"
+    ],
+    "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main() {\n    double x;\n    cin >> x;\n\n    // static_cast<int>(x) 是 C++ 推荐的显式转换写法，效果和 C 的 (int)x 一样，\n    // 但写成 static_cast 之后在代码里搜「类型转换」一搜就能找到。\n    // 规则是「向 0 截断」：3.9 得 3，-2.7 得 -2，都不四舍五入。\n    int whole = static_cast<int>(x);\n\n    cout << whole << endl;\n\n    // x - whole：int 会被隐式提升成 double，相减结果仍是小数，不会算错\n    cout << fixed << setprecision(2) << (x - whole) << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "隐式转换和显式转换",
+        "body": "C++ 里的类型转换分两种。\n\n**隐式转换**是编译器自动做的：混合运算时往精度更高的类型靠（int 和 double 一起算，int 先变成 double）；反过来把 double 赋给 int 变量时，小数部分被悄悄丢掉，编译器可能只给个警告。\n\n**显式转换**是你自己写的 static_cast<int>(x)，意思是「我知道会丢精度，就这么办」。\n\nC++ 提供四种显式转换：static_cast（普通转换）、dynamic_cast（多态类型的安全向下转换）、const_cast（去掉 const）、reinterpret_cast（按位重新解释）。初学阶段 99% 用 static_cast 就够了。\n\n**不推荐**再用 C 风格的 (int)x：它太隐蔽，看代码时容易漏掉，出了问题也更难定位。",
+        "code": "int a = 3.99;                            // 隐式：a 是 3，可能只有警告\nint b = static_cast<int>(3.99);          // 显式：也是 3\ndouble c = 5 / 2;                        // 先整数除法得 2，再变成 double\ndouble d = static_cast<double>(5) / 2;   // 2.5\n// 注意 cout 打印 double 时不会补小数点：c 显示成 2，不是 2.0。\n// 想固定显示成 2.0 得用 fixed 和 setprecision(1)。",
+        "output": "a = 3, b = 3, c = 2, d = 2.5"
+      },
+      {
+        "title": "static_cast 是截断，不是四舍五入",
+        "body": "static_cast<int> 的规则是「向 0 取整」：正数向下取整，负数向上取整。所以 3.9 得 3，-3.9 得 -3 而不是 -4。\n\n这一点很容易和数学上的「向下取整（floor）」搞混：floor(-3.9) 应该是 -4，C++ 的转换不这么干。想要 floor / ceil / round 得用 <cmath> 里的函数（编译时加 -lm）。\n\n还要分清两件常被混在一起的事：\n· **转换**会真的改变变量的值。\n· **输出格式**只是显示方式，值本身没变——`setprecision(2)` 打出来的 3.14 仍然是那个 3.14159。",
+        "code": "cout << static_cast<int>(3.9) << endl;    // 3\ncout << static_cast<int>(-3.9) << endl;   // -3：向 0 截断\ncout << fixed << setprecision(2) << 3.14159 << endl;  // 3.14：只是显示格式",
+        "output": "3\n-3\n3.14"
+      },
+      {
+        "title": "浮点数不是精确的",
+        "body": "double 用二进制小数存数据，像 0.1、0.9 这种十进制小数在二进制里是无限循环的，只能存一个近似值。\n\n所以 0.1 + 0.2 并不等于 0.3，而是 0.30000000000000004。平时看不出来是因为 cout 默认只显示 6 位有效数字，把它遮住了。\n\n**这也意味着比较两个浮点数不能用 ==。** 判断相等要写成 fabs(a - b) < 1e-9（需要 <cmath>）。本题第二行输出 0.90 就是靠 setprecision 四舍五入遮住了误差——所以题目里的浮点输出都写清了保留几位小数。",
+        "code": "cout << (0.1 + 0.2) << endl;                      // 0.3：默认只显示 6 位有效数字\ncout << setprecision(17) << (0.1 + 0.2) << endl;  // 真相\ncout << (0.1 + 0.2 == 0.3) << endl;               // 0：不能用 == 比较浮点数",
+        "output": "0.3\n0.30000000000000004\n0"
+      }
+    ]
+  },
+  {
+    "id": 205,
+    "title": "类型范围与整数溢出",
+    "difficulty": "medium",
+    "description": "读入一个非负整数 n，输出 n 乘以 2 的结果。\n\n注意 n 可以很大，最大到 2147483647。",
+    "input_format": "一行，一个非负整数 n（0 ≤ n ≤ 2147483647）",
+    "output_format": "输出一行，n × 2 的结果",
+    "sample_input": "123456789",
+    "sample_output": "246913578",
+    "test_cases": [
+      { "input": "0\n", "output": "0" },
+      { "input": "1\n", "output": "2" },
+      { "input": "123456789\n", "output": "246913578" },
+      { "input": "2147483647\n", "output": "4294967294" }
+    ],
+    "hints": [
+      "先想想 n 取最大时 2n 有多大，再对照 int 能表示的范围，看装不装得下。",
+      "装得下更大范围的类型叫 long long（64 位，上限约 9.2 × 10^18）。",
+      "只把结果变量改成 long long 还不够：乘法本身也要在 long long 里做，写 n * 2LL，或者读入时就用 long long。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 坑：如果写成 long long r = n * 2;，等号右边是先按 int 算完再赋值的。\n    // n = 2147483647 时这个乘法已经在 int 里溢出了，而有符号整数溢出是\n    // 「未定义行为」——结果不可预测，并不是简单地在某个数上绕回。\n    //\n    // 加上 LL 后缀（long long 字面量）之后，n 会先被提升成 long long，\n    // 整个乘法在 64 位里完成，结果才是对的。\n    long long r = n * 2LL;\n\n    cout << r << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "每种类型能装多大的数",
+        "body": "类型能表示的范围由它占多少位决定：\n\n· char：1 字节，通常是有符号的 -128 ~ 127（ASCII 码正好落在里面）。\n· int：通常 4 字节 = 32 位，最高位当符号位，范围 -2147483648 ~ 2147483647（约 ±21 亿）。\n· long long：至少 64 位，上限约 9.2 × 10^18，日常刷题用它是安全的。\n· bool：1 字节，但只有 true / false 两个值。\n· double：8 字节，能表示极大极小的数，代价是只有约 15 位有效数字。\n\n**别背这些数字**，用 <limits> 里的 numeric_limits 去问编译器：numeric_limits<int>::max()。它和 sizeof(int) 一样，换平台、换编译器会自动跟着变，你写死的数字不会。",
+        "code": "#include <limits>\n\ncout << sizeof(int) << endl;                       // 4\ncout << numeric_limits<int>::max() << endl;        // 2147483647\ncout << numeric_limits<long long>::max() << endl;  // 9223372036854775807",
+        "output": "4\n2147483647\n9223372036854775807"
+      },
+      {
+        "title": "溢出的时候到底发生了什么",
+        "body": "数字在内存里就是一串固定长度的二进制位。位数用满之后再往上加，最高位会被挤出去丢掉——像汽车里程表走到 999999 再走一公里，显示成 000000。\n\n对**无符号**类型，C++ 标准明确规定了这种行为：结果等于对 2^32 取模。所以 4294967295u + 1 一定是 0，可以放心依赖。\n\n对**有符号** int，溢出是**未定义行为**。编译器有权假设它不会发生，于是可能把 if (x + 1 < x) 这类判断直接优化掉，或者算出任何结果。同一份代码换个优化等级表现就不一样——这类 bug 极难排查。所以「结果看着像变成负数了」只是碰巧，不能依赖。\n\n本题输入最大 2147483647，2 倍之后是 4294967294，已经超过 int 的上限，所以必须用更宽的类型。",
+        "code": "unsigned int u = 4294967295u;\ncout << u + 1 << endl;   // 0：无符号溢出是有定义的\n\nint a = 2147483647;\n// cout << a + 1;        // 未定义行为，不要依赖它的结果",
+        "output": "0"
+      },
+      {
+        "title": "乘法要在更大的类型里做",
+        "body": "这是「明明用了 long long，结果还是错」的经典原因：**类型由表达式本身决定，和左边接收它的变量无关**。\n\n`long long r = n * 2;` 里，等号右边先算完：n 和 2 都是 int，于是这就是一次 int 乘法，可能已经溢出，溢出后的结果才被提升成 long long 赋给 r。左边写得再宽也救不回来。\n\n三种补救办法，效果一样：\n· 把字面量写成 long long：`n * 2LL`\n· 先转换：`static_cast<long long>(n) * 2`\n· 一开始就把 n 声明成 long long，cin 会根据变量类型自动决定怎么读\n\nC 里同样有这个坑，而且 C 还要额外操心 scanf / printf 的 %lld 格式符；C++ 的 cin / cout 按类型自动处理，少了一整类错误。",
+        "code": "int n = 2000000000;\n// cout << n * 2;                                    // 已经溢出，结果不可依赖\ncout << n * 2LL << endl;                             // 4000000000\ncout << static_cast<long long>(n) * 2 << endl;       // 4000000000",
+        "output": "4000000000\n4000000000"
+      }
+    ]
+  },
+  {
+    "id": 206,
+    "title": "用 const 定义常量",
+    "difficulty": "easy",
+    "description": "读入一个整数半径 r，计算并输出圆的周长和面积。\n\n圆周率取 3.14159，并且要用 const 把它定义成一个常量 PI 来使用。",
+    "input_format": "一行，一个整数 r（0 ≤ r ≤ 100）",
+    "output_format": "两行：第一行是周长，第二行是面积，都保留 2 位小数",
+    "sample_input": "2",
+    "sample_output": "12.57\n12.57",
+    "test_cases": [
+      { "input": "1\n", "output": "6.28\n3.14" },
+      { "input": "2\n", "output": "12.57\n12.57" },
+      { "input": "0\n", "output": "0.00\n0.00" },
+      { "input": "10\n", "output": "62.83\n314.16" }
+    ],
+    "hints": [
+      "圆的周长是 2 × π × r，面积是 π × r × r。",
+      "在 main 上面写一行 const double PI = 3.14159;。const 变量必须有初值，之后不能再改。",
+      "PI 是小数，表达式里含它就按小数运算；输出前用 fixed 和 setprecision(2) 控制小数位数。"
+    ],
+    "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\n// const 定义的是真正的常量：有类型、有作用域，编译器会做类型检查。\n// 它比 #define PI 3.14159 安全——#define 只是编译前的文本替换，\n// 没有类型，也不会被编译器检查。\nconst double PI = 3.14159;\n\nint main() {\n    int r;\n    cin >> r;\n\n    // 2 * PI * r：PI 是 double，所以 r 会被隐式提升成 double，整条表达式按小数算。\n    // 如果把 PI 写成整数 3，全程就变成整数运算，周长会算成一个整数。\n    double circumference = 2 * PI * r;\n    double area = PI * r * r;\n\n    // fixed + setprecision(2) 一旦设置就持续生效，后面所有浮点输出都保留 2 位小数\n    cout << fixed << setprecision(2);\n    cout << circumference << endl;\n    cout << area << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "const 和 #define 该用哪个",
+        "body": "C 里定义常量习惯写 `#define PI 3.14159`，那是**预处理阶段的文本替换**：编译器看到代码时 PI 这个词已经不存在了，没有类型、没有地址，替换错了也不报错。\n\nC++ 推荐写 `const double PI = 3.14159;`。它是**真正的变量**：有类型（编译器会检查）、有作用域（写在函数里就只在那个函数里有效）、调试器里看得到，而且只能读不能写。\n\n两条硬规则：\n1. const 变量**定义时必须给初值**，写 const int x; 是编译错误。\n2. 之后想改它（PI = 3;）也是编译错误——这正是我们要的，编译器帮你挡住了手误。\n\n顺带一提：如果初值在编译期就能算出来（比如这里的 3.14159），C++11 起还可以写 `constexpr double PI = 3.14159;`，表示「编译期常量」，能用在数组大小这类必须写常量表达式的地方。",
+        "code": "const double PI = 3.14159;   // 必须有初值\n// PI = 3.14;                // 编译错误：不能给常量赋值\n// const int x;              // 编译错误：常量必须有初值\ncout << PI << endl;",
+        "output": "3.14159"
+      },
+      {
+        "title": "为什么圆周率一定要写成小数",
+        "body": "`2 * PI * r` 里 PI 是 double、r 是 int，混合运算时 int 会被提升成 double，所以整条表达式按小数算，结果可以用 fixed + setprecision(2) 输出。\n\n反过来：如果常量写成整数（`#define PI 3` 或 `const int PI = 3`），r = 2 时周长会算成 12，而正确答案 12.57 会变成 12.00——程序不报错，结果全错。\n\n判断一个表达式会不会丢小数很简单：看参与运算的**所有**操作数是不是整数。全是整数就是整数运算，只要有一个浮点数就按浮点算。这也是为什么平均数要写成 `x / 2.0` 而不是 `x / 2`。",
+        "code": "int r = 2;\ncout << 2 * 3.14159 * r << endl;   // 12.5664：有小数参与\ncout << 2 * 3 * r << endl;         // 12：全是整数",
+        "output": "12.5664\n12"
+      },
+      {
+        "title": "setprecision 会一直生效",
+        "body": "fixed 和 setprecision(2) 是「流操纵符」，设置一次之后**后面所有**浮点输出都按这个格式来，不会自动恢复。程序里有的数要 2 位小数、有的要 4 位时，就得在每次输出前重新设置一遍。\n\n另一个易混点：`setprecision(2)` 单独用（不配 fixed）时的含义是「2 位**有效数字**」，不是 2 位小数——3.14159 会变成 3.1。加上 fixed 才表示小数点后保留几位。\n\n这两个操纵符都在 <iomanip> 头文件里，用之前记得 include。",
+        "code": "cout << setprecision(2) << 3.14159 << endl;           // 3.1：2 位有效数字\ncout << fixed << setprecision(2) << 3.14159 << endl;  // 3.14：2 位小数\ncout << 2.5 << endl;                                  // 2.50：fixed 仍然生效",
+        "output": "3.1\n3.14\n2.50"
+      }
+    ]
+  }
+]

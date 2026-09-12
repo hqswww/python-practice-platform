@@ -1,0 +1,217 @@
+[
+  {
+    "id": 601,
+    "title": "用函数求各位数字之和",
+    "difficulty": "easy",
+    "description": "读入一个非负整数 n，输出它十进制各位数字之和。\n\n要求把「求各位数字之和」写成一个自定义函数 digit_sum，函数定义放在 main 之后，并在 main 之前补上函数原型声明。",
+    "input_format": "一行，一个非负整数 n（0 ≤ n ≤ 1000000）",
+    "output_format": "输出一个整数，表示 n 的各位数字之和",
+    "sample_input": "1234",
+    "sample_output": "10",
+    "test_cases": [
+      { "input": "0\n", "output": "0" },
+      { "input": "7\n", "output": "7" },
+      { "input": "1234\n", "output": "10" },
+      { "input": "1000000\n", "output": "1" }
+    ],
+    "hints": [
+      "取最后一位用 % 10，去掉最后一位用 / 10（两个整数相除会丢掉小数部分）。",
+      "函数写成 int digit_sum(int n)；定义放在 main 后面时，main 之前要写一行 int digit_sum(int n);",
+      "别忘了 n = 0 的情况：循环一次都不进，累加器要初始化为 0，才会返回 0。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\n// 函数原型声明：把函数头抄一遍，末尾加个分号。\n// 定义写在 main 后面时，没有这一行，编译器读到 main 里的调用就不认识 digit_sum。\nint digit_sum(int n);\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 传进去的是 n 的一份拷贝，函数里怎么改都影响不到 main 里的 n\n    cout << digit_sum(n) << endl;\n    return 0;\n}\n\n// 函数定义：返回 n 的各位数字之和\nint digit_sum(int n) {\n    int sum = 0;\n    // n 是形参，只在函数体里有效，相当于一个局部变量\n    while (n > 0) {\n        sum += n % 10;   // % 10 取出最后一位\n        n /= 10;         // 整数除法丢掉最后一位\n    }\n    // n 为 0 时循环一次也不进，sum 保持 0 —— 正好是正确答案\n    return sum;\n}\n",
+    "tutorial": [
+      {
+        "title": "把重复的动作打包成函数",
+        "body": "同一个动作要用好几遍时，写成函数只写一次：调用处各写一行，将来要改也只改一个地方。\n\n定义函数的格式是「返回类型 函数名(参数列表) { 函数体 }」。括号里的 n 是形参，它相当于函数内部的局部变量，只在函数体里有效；调用时传进去的具体值（比如 digit_sum(1234) 里的 1234）叫实参。\n\n调用 digit_sum(1234) 时，实参的值会拷贝一份给形参 n，函数在这份副本上折腾，再把 return 的值交回调用方。拷贝这件事看起来只是细节，其实决定了函数能不能改到外面的变量 —— 604 题会用引用传参来对比。\n\n返回类型必须和 return 交回的东西对得上：声明成 int 就只能 return 整数；什么都不返回的函数返回类型要写 void。",
+        "code": "int digit_sum(int n) {\n    int sum = 0;\n    while (n > 0) {\n        sum += n % 10;\n        n /= 10;\n    }\n    return sum;\n}",
+        "output": "digit_sum(1234) 得到 10"
+      },
+      {
+        "title": "定义写在 main 后面，必须先写原型声明",
+        "body": "编译器是从上往下读代码的。函数定义如果写在 main 之后，编译器读到 main 里的调用时还没见过这个函数，不知道它要几个参数、返回什么类型，于是直接报错。\n\n（C 语言遇到这种情况只会给一句「隐式声明」警告，然后按返回 int 去猜，链接时才发现对不上；C++ 里是硬错误，根本不给编译通过的机会。）\n\n解决办法是在 main 之前写一行原型声明：把函数头原样抄一遍，末尾加分号。声明只是提前告诉编译器「有这么个函数、长什么样」，真正的实现还在后面。分号千万别漏 —— 漏了它就从声明变成了定义，后面那份定义会报「重复定义」。\n\n也可以干脆把整个函数定义挪到 main 前面，那样就不需要声明；但函数一多，main 会被挤到文件最底下不好找，所以「先声明、后定义」是更常见的组织方式。",
+        "code": "int digit_sum(int n);   // 原型声明，末尾有分号\n\nint main() {\n    int n;\n    cin >> n;\n    cout << digit_sum(n) << endl;\n    return 0;\n}",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 602,
+    "title": "带默认参数的 power 函数",
+    "difficulty": "easy",
+    "description": "写一个函数 power(base, exp) 计算 base 的 exp 次方，其中 exp 有一个默认值 2。\n\n读入一个整数 n（1 ≤ n ≤ 12），输出两行：第一行是 n 的平方（调用 power(n)，不给第二个实参，让它走默认值），第二行是 n 的立方（调用 power(n, 3)，显式传入次方数）。",
+    "input_format": "一行，一个整数 n（1 ≤ n ≤ 12）",
+    "output_format": "两行：第一行是 n 的平方，第二行是 n 的立方",
+    "sample_input": "3",
+    "sample_output": "9\n27",
+    "test_cases": [
+      { "input": "1\n", "output": "1\n1" },
+      { "input": "3\n", "output": "9\n27" },
+      { "input": "10\n", "output": "100\n1000" },
+      { "input": "12\n", "output": "144\n1728" }
+    ],
+    "hints": [
+      "默认参数就写在参数列表里：long long power(int base, int exp = 2);",
+      "默认值只能出现一次。声明里写了 = 2，下面函数定义里就不要再写一遍，否则报「重定义默认参数」。",
+      "调用 power(n) 时 exp 自动取 2；调用 power(n, 3) 时用 3，默认值被实参覆盖。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\n// 默认参数写在声明里：不传 exp 时就按 2 算。\n// 默认值只能出现一次 —— 这里声明写了 = 2，下面的定义就不要再写。\nlong long power(int base, int exp = 2);\n\nint main() {\n    int n;\n    cin >> n;\n\n    cout << power(n) << endl;      // 只给一个实参 → exp 用默认值 2\n    cout << power(n, 3) << endl;   // 给了第二个实参 → 覆盖默认值\n    return 0;\n}\n\nlong long power(int base, int exp) {\n    long long result = 1;\n    for (int i = 0; i < exp; i++) {\n        result *= base;\n    }\n    // exp 为 0 时循环一次都不进，result 保持 1\n    return result;\n}\n",
+    "tutorial": [
+      {
+        "title": "默认参数：调用时可以不写这个实参",
+        "body": "默认参数是 C++ 比 C 多出来的东西。写法是在参数列表里给某个形参一个初值：int power(int base, int exp = 2);。调用时如果省略了对应的实参，编译器自动把默认值填进去 —— 相当于替你把 power(n) 补成 power(n, 2)。\n\n为什么 C 做不到这件事？C 的规定是：一个函数名只能对应一个函数，调用处必须给出全部实参，编译器没有「缺省填充参数」这套机制（C 的 printf 能少给参数，靠的是可变参数和格式串，不是默认参数）。C++ 把参数信息编进了函数名里（name mangling），编译器手里有完整的参数列表，才有条件做默认填充，也才能支持重载。\n\n默认参数有两条硬规则：\n\n1. 必须从右往左连续排列。int f(int a = 1, int b) 是错的 —— 你不能跳过左边的 a 却给出右边的 b，因为实参是按位置一个个对上去的。\n2. 默认值只能写一次。声明里写了，定义里再写一遍会报「重定义默认参数」。",
+        "code": "void show(int a, int b = 10, int c = 20);\n\nshow(1);        // 等于 show(1, 10, 20)\nshow(1, 2);     // 等于 show(1, 2, 20)\nshow(1, 2, 3);  // 三个都用实参",
+        "output": ""
+      },
+      {
+        "title": "默认参数撞上重载：二义性是怎么来的",
+        "body": "默认参数和重载放在一起很容易踩坑。看这两个声明：\n\nvoid print(int a);\nvoid print(int a, int b = 0);\n\n调用 print(5) 时，第一个版本正好匹配，第二个版本也能靠默认值匹配 —— 两条路都走得通，编译器不知道该选哪条，直接报二义性错误（错误信息里会出现 ambiguous）。\n\n关键要记住：这种情况下编译器不会「随便挑一个先跑跑看」，而是当场拒绝编译。重载的挑选规则是「找唯一的最佳匹配」，一旦有两条同样可行的路，程序就是错的。\n\n规律是：默认参数让「这个函数能接受几个实参」变得模糊，而重载恰恰是靠实参个数和类型来区分的，两者信息一重叠就会打架。所以写代码时的原则是——同一组功能不要既用重载又用默认参数去凑参数个数，要么全用重载，要么一个函数配默认参数。",
+        "code": "// 一个函数配默认值就够了，不需要再写一个只收一个参数的版本\nlong long power(int base, int exp = 2);\n\npower(5);      // 5 的平方\npower(5, 3);   // 5 的立方",
+        "output": "25\n125"
+      }
+    ]
+  },
+  {
+    "id": 603,
+    "title": "同名不同参数：函数重载",
+    "difficulty": "medium",
+    "description": "定义三个同名的函数 maxOf：一个比较两个 int，一个比较三个 int（内部调用两个参数的版本），一个比较两个 double。\n\n读入三行：第一行两个整数 a 和 b，第二行一个整数 c，第三行两个浮点数 x 和 y。\n输出两行：第一行是 a、b、c 三个整数中的最大值，第二行是 x、y 中的较大者（保留 2 位小数）。",
+    "input_format": "共三行：\n第一行两个整数 a、b，用空格分隔\n第二行一个整数 c\n第三行两个浮点数 x、y，用空格分隔",
+    "output_format": "两行：\n第一行一个整数，是 a、b、c 中的最大值\n第二行一个浮点数，是 x、y 中的较大者，保留 2 位小数",
+    "sample_input": "3 7\n5\n2.5 1.5",
+    "sample_output": "7\n2.50",
+    "test_cases": [
+      { "input": "3 7\n5\n2.5 1.5\n", "output": "7\n2.50" },
+      { "input": "0 0\n-1\n0.5 0.25\n", "output": "0\n0.50" },
+      { "input": "-5 -2\n-9\n0.0 -1.5\n", "output": "-2\n0.00" },
+      { "input": "10 10\n10\n3.14159 3.14158\n", "output": "10\n3.14" }
+    ],
+    "hints": [
+      "三个函数名都叫 maxOf，区别只在参数列表（个数或类型）—— 这就是函数重载。",
+      "三个参数的版本不用把比较逻辑再抄一遍，直接复用：return maxOf(maxOf(a, b), c);",
+      "浮点版本要保留 2 位小数，记得 #include <iomanip> 并用 fixed << setprecision(2)。"
+    ],
+    "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\n// 三个同名函数靠参数列表区分，这就是函数重载。\n// 注意：返回类型不参与区分，只有返回类型不同的两个同名函数是非法重载。\nint maxOf(int a, int b);\nint maxOf(int a, int b, int c);\ndouble maxOf(double a, double b);\n\nint main() {\n    int a, b, c;\n    double x, y;\n\n    // cin 的 >> 会自动跳过空格和换行，所以分几行读都行\n    cin >> a >> b;\n    cin >> c;\n    cin >> x >> y;\n\n    // 实参是三个 int → 命中三参数的 int 版本\n    cout << maxOf(a, b, c) << endl;\n\n    // 实参是两个 double → 命中 double 版本。\n    // 编译器是看实参类型挑版本，不会「看心情」乱选\n    cout << fixed << setprecision(2) << maxOf(x, y) << endl;\n    return 0;\n}\n\nint maxOf(int a, int b) {\n    return a > b ? a : b;\n}\n\nint maxOf(int a, int b, int c) {\n    // 重载之间可以互相调用，不必把两两比较的代码再抄一遍\n    return maxOf(maxOf(a, b), c);\n}\n\ndouble maxOf(double a, double b) {\n    return a > b ? a : b;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么 C++ 能重载，C 却不能",
+        "body": "C 里一个函数名只能对应一个函数。编译出来的目标文件里，函数名就是符号名本身（比如 _maxOf），两个同名函数会直接撞符号；而且 C 的调用在编译期只认名字，实参类型对不上就按默认规则硬转。\n\nC++ 换了做法：把参数信息编进符号名，这叫 name mangling（名字改编）。int maxOf(int, int) 会被编成类似 _Z5maxOfii 的符号，double maxOf(double, double) 编成 _Z5maxOfdd —— 名字不一样了，自然可以共存。\n\n所以重载不是「同一个名字有两个函数」的魔法，而是编译器在背后替你把名字改掉了。想亲眼看看的话，编译出目标文件后用 nm 命令就能看到这些带类型后缀的符号。\n\n这也解释了一条容易搞错的规则：返回类型不参与重载。因为调用 maxOf(1, 2) 时，编译器只看得到实参，你还没写「拿返回值干什么」，它没法凭返回类型挑版本。下面这种写法是编译错误：\n\nint    f(int a);\ndouble f(int a);   // 错误：参数列表完全相同\n\n同理，两个函数如果只是形参名字不同（int f(int x) 和 int f(int y)），也不是重载，而是重复定义。",
+        "code": "int    maxOf(int a, int b);\ndouble maxOf(double a, double b);   // 参数列表不同 → 合法重载",
+        "output": ""
+      },
+      {
+        "title": "编译器怎么挑版本：精确匹配优先，模糊就报错",
+        "body": "遇到重载调用时，编译器会做三步：列出所有同名函数 → 排除实参个数对不上的 → 在剩下的里面找最匹配的那个。\n\n匹配的优先级是「不需要转换」高于「需要转换」：\n\n· maxOf(1, 2) 和 int 版本精确匹配，胜出\n· maxOf(1.5, 2.5) 和 double 版本精确匹配，胜出\n· maxOf(1, 2.5) 两个版本都要做一次类型转换，谁也占不到便宜，编译器报二义性错误\n\n第三条是最容易翻车的地方：程序不是「随便挑一个跑」，而是直接编译失败。以后看到 ambiguous 这个词，第一反应就该是「实参类型和哪个重载都对不上」。\n\n真遇到这种情况，可以手工转换来明确表态，比如写 maxOf((double)a, b)，告诉编译器你要的是 double 版本。\n\n另外，int 和 double 混着用的场合要特别小心：maxOf(3, 2) 走 int 版本得到 3，而 maxOf(3.0, 2.0) 走 double 版本，虽然结果看起来一样，但选的函数是两回事。重载让同一个名字承担了不同的行为，读代码时一定要盯住实参的类型。",
+        "code": "maxOf(1, 2);        // int 版本：精确匹配\nmaxOf(1.5, 2.5);    // double 版本：精确匹配\nmaxOf(1, 2.5);      // 两个版本都要转换 → 二义性，编译错误",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "id": 604,
+    "title": "引用传参：函数真的能改到实参",
+    "difficulty": "medium",
+    "description": "写两个交换函数：值传递版 void swap_value(int a, int b) 和引用传递版 void swap_ref(int& a, int& b)，两个函数内部都老老实实按三步交换。\n\n读入两个整数 a 和 b，在 main 里按顺序：先调用 swap_value(a, b)，再调用 swap_ref(a, b)。每调用完一个就输出一次 main 里 a 和 b 的值，最后再输出一次。\n\n你会看到值传递那次白换了，引用传递那次才真正改到了 main 的变量。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "输出三行，每行是两个整数、用一个空格分隔，前面的文字照抄：\n值传递后: a b\n引用传递后: a b\n最终: a b",
+    "sample_input": "3 8",
+    "sample_output": "值传递后: 3 8\n引用传递后: 8 3\n最终: 8 3",
+    "test_cases": [
+      { "input": "3 8\n", "output": "值传递后: 3 8\n引用传递后: 8 3\n最终: 8 3" },
+      { "input": "0 0\n", "output": "值传递后: 0 0\n引用传递后: 0 0\n最终: 0 0" },
+      { "input": "-1 5\n", "output": "值传递后: -1 5\n引用传递后: 5 -1\n最终: 5 -1" }
+    ],
+    "hints": [
+      "值传递版的形参是实参的拷贝，函数里换的是两份副本，函数一结束副本就销毁了 —— 这不是代码写错了，而是 C/C++ 默认的传参方式。",
+      "引用版的形参写成 int& a，意思是「a 是某个 int 变量的别名」，函数里改 a 就是改外面那个变量。",
+      "调用引用版时直接写 swap_ref(a, b)，不要写成 swap_ref(&a, &b)（那是指针写法，类型对不上会编译失败）。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nvoid swap_value(int a, int b);\nvoid swap_ref(int& a, int& b);\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n\n    swap_value(a, b);\n    // a、b 一点没变：函数里交换的是两份拷贝\n    cout << \"值传递后: \" << a << \" \" << b << endl;\n\n    swap_ref(a, b);\n    // a、b 真的换了：形参就是它们的别名\n    cout << \"引用传递后: \" << a << \" \" << b << endl;\n\n    cout << \"最终: \" << a << \" \" << b << endl;\n    return 0;\n}\n\n// 值传递：形参 a、b 是 main 里那两个变量的副本\nvoid swap_value(int a, int b) {\n    int t = a;\n    a = b;\n    b = t;\n    // 这三步本身没错，麻烦在于换的是副本，函数一返回副本就没了\n}\n\n// 引用传递：形参 a、b 直接绑定到实参身上，就是同一个变量\nvoid swap_ref(int& a, int& b) {\n    int t = a;\n    a = b;\n    b = t;\n}\n",
+    "tutorial": [
+      {
+        "title": "值传递：形参只是实参的复印件",
+        "body": "C 和 C++ 默认都是值传递：调用 swap_value(a, b) 时，编译器把 a、b 的值各拷贝一份交给形参，函数里那两个 a、b 只是恰好同名的新变量，和 main 里的毫无关系。\n\n所以在 swap_value 里交换得再漂亮，改的也只是复印件；函数一返回，复印件跟着栈帧一起销毁，main 里的 a、b 从头到尾没被碰过。\n\n初学者常以为「函数返回类型是 void 所以改不到外面」，其实和返回类型无关 —— 根因是拷贝。想让函数改到实参，就得别传拷贝：C 里的办法是传指针（void swap(int *a, int *b)，调用写 swap(&a, &b)，函数里写 *a），C++ 里更省事的办法是传引用。",
+        "code": "void swap_value(int a, int b) {\n    int t = a;\n    a = b;\n    b = t;\n}\n\nint x = 3, y = 8;\nswap_value(x, y);\ncout << x << \" \" << y << endl;   // 还是 3 8",
+        "output": "3 8"
+      },
+      {
+        "title": "引用是变量的别名",
+        "body": "int& a 读作「a 是一个 int 的引用」。引用不是新变量、不占独立的内存，它就是某个已有变量的别名 —— 给引用赋值，等于给那个变量赋值。\n\nint x = 3;\nint& r = x;    // r 就是 x 的另一个名字\nr = 10;        // x 也变成 10\n\n形参写成引用时，函数里的 a 和调用处的实参是同一个变量，所以交换才真的生效。和指针比，引用有两个好处：\n\n1. 语法上就是普通变量，函数体里写 a = b 而不是 *a = *b，不用解引用。\n2. 引用必须初始化、一旦绑定就不能改绑，所以不存在「空引用」；指针忘了判 NULL 会崩溃，引用根本没有这个问题。\n\n两个坑要记住：\n\n· 函数签名里的 & 千万别漏。写成 void swap_ref(int a, int b) 就退化成值传递了 —— 编译通过、运行不报错、结果就是不对，这种错最难查。\n· 调用时不要写 swap_ref(&a, &b)。& 只在声明形参的场合表示引用；写在实参位置是「取地址」，类型变成 int*，和 int& 对不上，编译器会直接拒绝。\n\n顺带一提，引用还有个性能上的好处：大对象（以后要学的 std::string、vector）传引用能避免整个拷贝一份，这就是常说的「传 const 引用」——加上 const 表示函数只读不改，既快又安全。",
+        "code": "void swap_ref(int& a, int& b) {\n    int t = a;\n    a = b;\n    b = t;\n}\n\nint x = 3, y = 8;\nswap_ref(x, y);\ncout << x << \" \" << y << endl;   // 变成 8 3",
+        "output": "8 3"
+      }
+    ]
+  },
+  {
+    "id": 605,
+    "title": "递归求阶乘",
+    "difficulty": "medium",
+    "description": "读入一个整数 n（0 ≤ n ≤ 20），用递归函数 factorial 计算并输出 n 的阶乘。\n\nn! = 1 × 2 × … × n，并且规定 0! = 1。要求 factorial 通过调用它自己来完成计算，并在 n 为 0 或 1 时直接返回 1。",
+    "input_format": "一行，一个整数 n（0 ≤ n ≤ 20）",
+    "output_format": "输出一个整数，表示 n!",
+    "sample_input": "5",
+    "sample_output": "120",
+    "test_cases": [
+      { "input": "0\n", "output": "1" },
+      { "input": "1\n", "output": "1" },
+      { "input": "5\n", "output": "120" },
+      { "input": "20\n", "output": "2432902008176640000" }
+    ],
+    "hints": [
+      "递归函数必须有「不再调用自己」的出口：n <= 1 时直接 return 1。",
+      "递归关系是 n! = n × (n-1)!：先算出 factorial(n - 1)，再乘上 n。",
+      "返回类型用 long long。20! 有 19 位，int 装不下（int 最大约 21 亿）。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nlong long factorial(int n);\n\nint main() {\n    int n;\n    cin >> n;\n    cout << factorial(n) << endl;\n    return 0;\n}\n\nlong long factorial(int n) {\n    // 基准情形：递归的出口。0! 和 1! 都等于 1。\n    // 少了这一句，函数会一直调用自己，直到把栈空间耗尽而崩溃（栈溢出）。\n    if (n <= 1) {\n        return 1;\n    }\n\n    // 递归情形：把大问题拆成小一号的同类问题。\n    // n 是 int、factorial 返回 long long，相乘时 n 会自动转成 long long，不会溢出\n    return n * factorial(n - 1);\n}\n",
+    "tutorial": [
+      {
+        "title": "递归：自己调用自己，但一定要有出口",
+        "body": "递归就是把大问题拆成一个「小一号的同类问题」，再用同样的办法解决它。求 n! 时：\n\n· 5! = 5 × 4!\n· 4! = 4 × 3!\n· 3! = 3 × 2!\n· 2! = 2 × 1!\n· 1! = 1   ← 到这里不用再拆了\n\n展开写就是 factorial(5) → 5 * factorial(4) → 5 * 4 * factorial(3) → … → 5 * 4 * 3 * 2 * 1。等最里面那层返回 1 之后，各层的乘法再从里往外一层层算完。\n\n写递归必须凑齐两个要素，缺一不可：\n\n1. 基准情形：某个条件下不再调用自己，直接返回结果（这里 n <= 1 时返回 1）。\n2. 递推关系：把问题变小并调用自己（这里返回 n * factorial(n - 1)）。\n\n最容易翻车的是忘了基准情形，或者写得覆盖不全，比如只写 if (n == 1)。那样调用 factorial(0) 就会走进死循环：函数会无休止地调用自己，每层调用都要占一块栈空间，最后栈被撑爆，程序直接崩溃（报 segmentation fault 或 stack overflow）。所以看到这类报错，第一反应就是回头检查递归出口。\n\n还有个新手常犯的小错：把 return n * factorial(n - 1); 写成 factorial(n - 1) * n 倒也没问题，但写成 factorial(n) * factorial(n - 1) 就是无脑递归，永远不会结束。",
+        "code": "long long factorial(int n) {\n    if (n <= 1) {\n        return 1;                 // 基准情形\n    }\n    return n * factorial(n - 1);  // 递推关系\n}",
+        "output": "factorial(5) 得到 120"
+      },
+      {
+        "title": "阶乘涨得有多快：为什么必须用 long long",
+        "body": "阶乘的增长速度快得吓人：\n\n· 5! = 120\n· 10! = 3628800\n· 12! = 479001600\n· 13! = 6227020800  ← 已经超过 int 的上限 2147483647\n\nint 只有 4 字节，最大约 21 亿。溢出时 C++ 不会报错，也不会给你一个明显离谱的结果，它只是把超出的高位丢掉，得到一个看起来像随机数的值，有时甚至是负数。这种错误光看代码根本发现不了，只能靠提前估算数值范围。\n\nlong long 有 8 字节，最大约 9.2 × 10 的 18 次方，装得下 20!（2432902008176640000，19 位数）。再往上，21! 连 long long 也装不下了，那就得用高精度（大整数）算法。\n\n所以写这类题的第一步永远是：先估一下答案最大会有多大，再决定用什么类型。这道题里 n 最大 20，答案 19 位，long long 正好够。",
+        "code": "// 13! 装不进 int，这里得到的不是正确答案\nint bad = 1;\nfor (int i = 1; i <= 13; i++) {\n    bad *= i;\n}\ncout << bad << endl;\n\n// 换成 long long 就对了\nlong long good = 1;\nfor (int i = 1; i <= 13; i++) {\n    good *= i;\n}\ncout << good << endl;",
+        "output": "1932053504\n6227020800"
+      }
+    ]
+  },
+  {
+    "id": 606,
+    "title": "递归求斐波那契数列",
+    "difficulty": "hard",
+    "description": "斐波那契数列的定义是：F(1) = 1，F(2) = 1，从第 3 项起每一项等于前两项之和（F(n) = F(n-1) + F(n-2)）。\n\n读入一个整数 n（1 ≤ n ≤ 30），输出两行：\n第一行是第 n 项 F(n)，必须用递归函数 fib 算出来；\n第二行是前 n 项之和 F(1) + F(2) + … + F(n)，在 main 里用循环调用 fib 累加得到。",
+    "input_format": "一行，一个整数 n（1 ≤ n ≤ 30）",
+    "output_format": "两行：\n第一行一个整数，是 F(n)\n第二行一个整数，是前 n 项之和",
+    "sample_input": "5",
+    "sample_output": "5\n12",
+    "test_cases": [
+      { "input": "1\n", "output": "1\n1" },
+      { "input": "2\n", "output": "1\n2" },
+      { "input": "5\n", "output": "5\n12" },
+      { "input": "30\n", "output": "832040\n2178308" }
+    ],
+    "hints": [
+      "递归的基准情形有两个：n 为 1 或 2 时都直接返回 1 —— 这正是定义给出的起点，要一次挡住两种情况。",
+      "递归情形照着定义写就行：return fib(n - 1) + fib(n - 2);",
+      "求和不要塞进递归函数里，在 main 里用循环把 fib(1) 到 fib(n) 挨个累加即可。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nlong long fib(int n);\n\nint main() {\n    int n;\n    cin >> n;\n\n    cout << fib(n) << endl;\n\n    // 求和放在 main 里循环做：递归函数只负责「求第 n 项」这一件事\n    long long sum = 0;\n    for (int i = 1; i <= n; i++) {\n        sum += fib(i);\n    }\n    cout << sum << endl;\n    return 0;\n}\n\nlong long fib(int n) {\n    // 基准情形：前两项都是 1，到这里就不用再往下拆。\n    // 必须用 n <= 2 一次挡住两种情况，只写 n == 1 的话\n    // n = 2 时会去调用 fib(0)、fib(-1)，参数越跑越小，永远碰不到出口\n    if (n <= 2) {\n        return 1;\n    }\n\n    // 递归情形：照定义写 —— 每一项等于前两项之和\n    return fib(n - 1) + fib(n - 2);\n}\n",
+    "tutorial": [
+      {
+        "title": "基准情形就藏在数列的定义里",
+        "body": "斐波那契的定义本身就是递归写法，翻译成代码几乎一字不差：定义说「前两项是 1」，代码就写 if (n <= 2) return 1;；定义说「从第 3 项起是前两项之和」，代码就写 return fib(n - 1) + fib(n - 2);。\n\n递归函数的基准情形通常就藏在对问题的定义里。写递归卡住的时候，先回去看定义：最小的那种情况，题目是不是已经明确告诉你答案了？\n\n这里有个很隐蔽的坑：如果基准情形只写 if (n == 1) return 1;，那么调用 fib(2) 时会走成 fib(1) + fib(0)，而 fib(0) 又去调 fib(-1)、fib(-2)……参数越跑越小，永远碰不到出口，程序崩溃。所以基准情形要覆盖所有终止情况，而不是只写其中一种。\n\n再跟着展开一遍，看清调用是怎么一层层铺开的：\n\nfib(5) = fib(4) + fib(3)\nfib(4) = fib(3) + fib(2)\nfib(3) = fib(2) + fib(1)\n\n注意 fib(3) 在上面出现了两次 —— 这就是下一个问题。",
+        "code": "long long fib(int n) {\n    if (n <= 2) {\n        return 1;                      // 定义给出的起点\n    }\n    return fib(n - 1) + fib(n - 2);    // 定义给出的递推关系\n}",
+        "output": "fib(5) 得到 5"
+      },
+      {
+        "title": "朴素递归为什么会慢：同一个子问题被算了无数遍",
+        "body": "上面那个递归函数算 fib(30) 要执行多少次函数调用？答案是大约 166 万次 —— 而答案本身只有 832040，一个六位数。\n\n原因就是同一个子问题被反复求解。展开调用树会看到：算 fib(5) 时 fib(3) 被算 1 次，算 fib(6) 时 fib(3) 被算 2 次，越往上重复得越厉害，算 fib(30) 时 fib(3) 要被算几十万次。调用次数随 n 呈指数增长，底数大约是 1.618（正是黄金分割比）。\n\n后果很直接：这个函数跑到 n = 45 左右就要等几十秒，n = 50 要等几分钟。这不是机器慢，是算法本身的代价。\n\n两种改法（后面的分类会细讲）：\n\n1. 记忆化：开一个数组把算过的结果存下来，第二次要用 fib(k) 时直接查表，复杂度立刻降到 O(n)。\n2. 递推：干脆写循环，从 F(1)、F(2) 往后一项项推，只用两个变量滚动保存前两项。\n\n用循环写同样能算出 F(30)，而且只要几十次加法 —— 递归写法优雅，但不加优化时可能慢得离谱，这是每个学递归的人都要过的一道坎。",
+        "code": "// 递推写法：同样算 F(30)，只用了不到 30 次加法\nlong long a = 1, b = 1;\nfor (int i = 3; i <= 30; i++) {\n    long long c = a + b;\n    a = b;\n    b = c;\n}\ncout << b << endl;   // F(30)",
+        "output": "832040"
+      }
+    ]
+  }
+]

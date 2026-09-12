@@ -1,0 +1,218 @@
+[
+  {
+    "id": 801,
+    "title": "通过指针把变量翻倍",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，声明一个指针 p 指向 n，然后通过 *p 把 n 的值变成原来的 2 倍，最后输出 n。",
+    "input_format": "一行，一个整数 n",
+    "output_format": "输出一个整数，即翻倍后的 n",
+    "sample_input": "5",
+    "sample_output": "10",
+    "test_cases": [
+      { "input": "5\n", "output": "10" },
+      { "input": "0\n", "output": "0" },
+      { "input": "-3\n", "output": "-6" },
+      { "input": "21\n", "output": "42" }
+    ],
+    "hints": [
+      "指针存的是「地址」：int* p = &n; 这一句里，&n 就是 n 的地址。",
+      "要改 n 的值，改的不是 p，而是 *p：写成 *p = *p * 2;",
+      "最后输出 n。不要输出 p 本身 —— p 里是内存地址，每次运行都不一样，没法判题。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // &n 取出 n 的地址，p 这个变量里存的就是这个地址\n    int* p = &n;\n\n    // *p 表示「p 指向的那个变量」，也就是 n 本身，\n    // 所以改 *p 就等于改 n\n    *p = *p * 2;\n\n    cout << n << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "指针就是一张写着门牌号的纸条",
+        "body": "变量在内存里有一间自己的「房子」：房子有门牌号（地址），里面住着值。\n\n`int n = 5;` 相当于盖了一间房，门牌号是 `&n`，房里住着 5。\n`int* p = &n;` 相当于拿了一张纸条，上面抄着 n 的门牌号 —— 这张纸条就是指针。\n\n所以：**指针本身也是一个变量，只不过它存的东西是地址，不是普通数字。** 指针也要占内存（64 位系统上是 8 字节）。\n\n`*p` 读作「p 指向的那间房」，也就是 n 本身。因此 `*p = 100;` 和 `n = 100;` 完全等价 —— 在门牌号对应的房子里换了个住户。",
+        "code": "int n = 5;\nint* p = &n;   // p 里存的是 n 的地址\n*p = 100;      // 顺着地址找到 n，把它改成 100\ncout << n << endl;",
+        "output": "100"
+      },
+      {
+        "title": "同一个 * 符号的两种身份，和野指针",
+        "body": "`&` 只在表达式里出现，意思是「取地址」：`&n` 得到 n 的地址。\n\n`*` 有两种身份，看它出现在哪儿：\n· 出现在**类型**里（`int* p;`）—— 表示「p 是一个指针」；\n· 出现在**表达式**里（`*p`）—— 表示「解引用，取出 p 指向的那个变量」。\n\n**易错点：野指针。** 只写 `int* p;` 而不给它赋值时，p 里装的是一个随机地址，它谁也没指向。这时写 `*p = 1;` 是在往一个不知道哪儿的地址里塞数据，程序可能直接崩溃，也可能悄悄改坏别的数据。\n\n规矩：**指针必须先指向一个真实存在的变量，才能解引用它。**\n\n另一个易错点：题目要的是通过指针读**写**值，不要 `cout << p` 去打印地址 —— 地址每次运行都不一样，判题没法比对。",
+        "code": "int* p;        // 危险：p 还没指向任何变量\n// *p = 1;     // 千万不要这么写：野指针，行为不可预测\nint n = 7;\np = &n;        // 先让它指向一个真实变量，之后再用 *p 才安全\ncout << *p << endl;",
+        "output": "7"
+      }
+    ]
+  },
+  {
+    "id": 802,
+    "title": "引用是别名，不是副本",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，按下面两步操作：\n第一步：声明一个引用 r 绑定到 n（int& r = n;），通过 r 把 n 变成原来的 3 倍；\n第二步：声明一个普通变量 copy，把 n 的值拷贝给它，然后把 copy 减 1。\n最后输出两行：n 和 copy。",
+    "input_format": "一行，一个整数 n",
+    "output_format": "两行，第一行是 n 的值，第二行是 copy 的值",
+    "sample_input": "4",
+    "sample_output": "12\n11",
+    "test_cases": [
+      { "input": "4\n", "output": "12\n11" },
+      { "input": "0\n", "output": "0\n-1" },
+      { "input": "-2\n", "output": "-6\n-7" },
+      { "input": "7\n", "output": "21\n20" }
+    ],
+    "hints": [
+      "引用必须在声明时就写清它是谁的别名：int& r = n;（这个 & 不是取地址）。",
+      "r = r * 3; 改的是 r 绑定的那个变量，也就是 n 本身。",
+      "普通变量 copy 是拷贝：对它做减法不会影响 n。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 引用必须在声明时绑定到某个变量，之后不能再改绑到别的变量\n    int& r = n;\n\n    // r 就是 n 的另一个名字，改 r 就是改 n\n    r = r * 3;\n\n    // 这里是拷贝：copy 是独立的一份，和 n 没有关系\n    int copy = n;\n    copy = copy - 1;\n\n    cout << n << endl;\n    cout << copy << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "引用是给变量起的小名",
+        "body": "打比方：变量 `n` 是一个人，引用 `r` 是他的小名（别名）。叫小名和叫大名，喊的都是同一个人 —— 所以对 r 做的事，全都落在 n 身上。\n\n`int& r = n;` 里的 `&` **不是取地址**，这里它表示「引用类型」，`int&` 读作「int 的引用」。它和 `&n` 里的取地址符号长得一样，但含义完全不同，靠位置区分。\n\n和指针比一比：\n· **指针**是一张写着门牌号的纸条 —— 它自己是一个变量，要写 `*p` 才能进到房子里；\n· **引用**只是一个别名 —— 用起来和普通变量一模一样，不写 `*`，也不用取地址。\n\n**易错点（引用最坑的一句）：**\n```\nint a = 1, b = 2;\nint& r = a;\nr = b;      // 不是让 r 改指 b！而是把 b 的值赋给 a\n```\n引用**不能改绑**：一旦绑定到 a，它一辈子都是 a 的别名。`r = b` 只是赋值，执行完 a 也变成 2 了。",
+        "code": "int a = 1, b = 2;\nint& r = a;\nr = b;   // 把 b 的值赋给 a，而不是让 r 改指 b\ncout << a << \" \" << b << endl;",
+        "output": "2 2"
+      },
+      {
+        "title": "拷贝和别名，一眼分清",
+        "body": "`int copy = n;` 是**拷贝**：给 copy 单独开一间房，把 n 房里的值抄一份进去。之后改 copy，n 一点不受影响。\n\n一句话总结：\n· `int copy = n;` —— 两个人，两份值（拷贝）；\n· `int& r = n;` —— 一个人，两个名字（别名）。\n\n**易错点：引用必须初始化。** `int& r;` 这种写法编译直接报错 —— 别名总得说清是谁的别名，没有「空引用」这种东西。指针可以什么都不指（虽然危险），引用不行。",
+        "code": "int n = 10;\nint& r = n;      // 别名：改 r 就是改 n\nint copy = n;    // 拷贝：改 copy 与 n 无关\nr = 99;\ncout << n << \" \" << copy << endl;",
+        "output": "99 10"
+      }
+    ]
+  },
+  {
+    "id": 803,
+    "title": "用指针交换两个数",
+    "difficulty": "medium",
+    "description": "读入两个整数 a 和 b。写一个函数 swapByPtr(int* x, int* y)，通过指针修改两个变量的值来完成交换；在 main 里调用它交换 a 和 b，然后输出交换后的 a、b（各占一行）。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "两行，第一行是交换后的 a，第二行是交换后的 b",
+    "sample_input": "3 8",
+    "sample_output": "8\n3",
+    "test_cases": [
+      { "input": "3 8\n", "output": "8\n3" },
+      { "input": "-1 5\n", "output": "5\n-1" },
+      { "input": "0 0\n", "output": "0\n0" },
+      { "input": "100 250\n", "output": "250\n100" }
+    ],
+    "hints": [
+      "函数要改调用者的变量，就必须先拿到它们的地址，所以参数写成指针。",
+      "在函数里用 *x 访问 x 指向的那个变量，先存到临时变量里再交换。",
+      "调用时传地址：swapByPtr(&a, &b);"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\n// 参数是指针：x、y 里存的是外面 a、b 的地址\nvoid swapByPtr(int* x, int* y) {\n    int t = *x;   // 把 x 指向的值先存起来\n    *x = *y;      // 把 y 指向的值写进 x 指向的那个变量\n    *y = t;\n}\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n\n    // 传的是地址而不是值：只传值的话，函数改的是自己的副本，外面看不到变化\n    swapByPtr(&a, &b);\n\n    cout << a << endl;\n    cout << b << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么普通函数改不动外面的变量",
+        "body": "C/C++ 的参数默认是**值传递**：函数拿到的是一份拷贝。\n\n打个比方：你把文件复印一份交给同事，他在复印件上涂改，你手上的原件不会有任何变化。同理，如果写成 `void bad(int x, int y)`，函数里把 x、y 换来换去，main 里的 a、b 还是原样 —— **程序不报错，就是没效果**，这是新手最常踩的坑。\n\n想改原件，就得把「门牌号」告诉函数 —— 也就是传地址。函数拿到地址后，用 `*x` 顺着地址找到那间房，改的就是原件了。",
+        "code": "void bad(int x, int y) { int t = x; x = y; y = t; }\n// main 里：int a = 3, b = 8; bad(a, b);\n// 结果 a、b 还是 3 和 8 —— 改的是副本",
+        "output": "交换失败，输出 3 和 8"
+      },
+      {
+        "title": "指针交换的三步，和两个易错点",
+        "body": "拿到地址之后，交换和平时没什么区别，只是每个变量名前都要加一个 `*`：\n\n```\nint t = *x;\n*x = *y;\n*y = t;\n```\n\n· 第一步先把 `*x` 的值（也就是外面的 a）备份到 t，否则第二句一执行 a 就被覆盖了；\n· 后两句顺着两个地址，把值互相写过去。\n\n**易错点一：** 忘了写 `&`。调用时必须是 `swapByPtr(&a, &b)`。写成 `swapByPtr(a, b)` 编译器会直接报错（int 不能转成 int*），这其实是好事 —— 它帮你拦下了错误。\n\n**易错点二：野指针。** 函数里用的指针必须是调用者传进来的真实地址。如果自己写个 `int* x;` 就直接 `*x = 1;`，那是往一个随机地址写数据，程序可能当场崩溃。指针「指向谁」永远是第一位的事。",
+        "code": "void swapByPtr(int* x, int* y) {\n    int t = *x;\n    *x = *y;\n    *y = t;\n}\nint a = 3, b = 8;\nswapByPtr(&a, &b);\ncout << a << \" \" << b << endl;",
+        "output": "8 3"
+      }
+    ]
+  },
+  {
+    "id": 804,
+    "title": "用引用交换两个数",
+    "difficulty": "medium",
+    "description": "读入两个整数 a 和 b。写一个函数 swapByRef(int& x, int& y)，用引用参数交换两个变量的值；在 main 里直接传变量名调用它（不要写 &），然后输出交换后的 a、b（各占一行）。",
+    "input_format": "一行，两个整数 a 和 b，用空格分隔",
+    "output_format": "两行，第一行是交换后的 a，第二行是交换后的 b",
+    "sample_input": "3 8",
+    "sample_output": "8\n3",
+    "test_cases": [
+      { "input": "3 8\n", "output": "8\n3" },
+      { "input": "-1 5\n", "output": "5\n-1" },
+      { "input": "0 0\n", "output": "0\n0" },
+      { "input": "42 -42\n", "output": "-42\n42" }
+    ],
+    "hints": [
+      "引用参数在函数里用起来和普通变量一样，不需要写 *。",
+      "函数写成 void swapByRef(int& x, int& y)，调用写成 swapByRef(a, b)。",
+      "函数里交换 x、y 就行 —— 因为 x、y 就是外面 a、b 的别名。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\n// 引用参数：x 是调用者那个变量的别名，不是拷贝\nvoid swapByRef(int& x, int& y) {\n    int t = x;\n    x = y;   // 改 x 就是改外面的那个变量\n    y = t;\n}\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n\n    // 引用参数直接传变量名，不用写 &，也不用解引用\n    swapByRef(a, b);\n\n    cout << a << endl;\n    cout << b << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "同一件事，指针版和引用版对照着看",
+        "body": "同样是交换两个数，两种写法摆在一起：\n\n· **指针版**：`void swapByPtr(int* x, int* y)`，调用 `swapByPtr(&a, &b)`，函数里到处写 `*x`；\n· **引用版**：`void swapByRef(int& x, int& y)`，调用 `swapByRef(a, b)`，函数里直接写 `x` 就行。\n\n引用版短在哪？因为引用天生就是别名，函数里的 x 和外面的 a 本来就是同一个人，不需要「顺着地址找过去」这一步，所以不用取地址也不用解引用。\n\n打比方：\n· 传指针 = 把朋友家的门牌号写在纸条上交给函数，函数得先按地址找过去；\n· 传引用 = 直接给函数一把朋友家的钥匙，函数进门就是本人。\n\n在 C 里没有引用，想让函数改外面的变量**只能**传指针；C++ 多了引用这条路，写起来更干净，也是 C++ 更推荐的写法。",
+        "code": "void swapByRef(int& x, int& y) {\n    int t = x;\n    x = y;\n    y = t;\n}\nint a = 3, b = 8;\nswapByRef(a, b);   // 注意：不要写 &\ncout << a << \" \" << b << endl;",
+        "output": "8 3"
+      },
+      {
+        "title": "引用的规矩，和那个致命的坑",
+        "body": "引用有两条硬规矩：\n1. **必须初始化**：`int& r;` 编译不过，别名总得说清是谁的别名；\n2. **不能改绑**：`int& r = a;` 之后，写 `r = b;` 只是把 b 的值赋给 a，不会让 r 改指 b。\n\n还有一条致命的坑：**绝对不要返回局部变量的引用。**\n\n函数里的局部变量住在一间临时搭的房子里，函数一返回，房子就拆了。如果你把这个已经拆掉的房间的「门牌号」（引用）交给调用者，调用者一用就是未知行为 —— 可能拿到垃圾值，可能程序崩溃，而且往往在这个函数里跑得好好的，换个编译器才炸。\n\n```\nint& bad() {\n    int x = 10;\n    return x;   // 危险！x 在函数返回时已经被销毁\n}\n```\n\n记住：**引用和指针一样，指向的东西必须比它自己活得久。**",
+        "code": "int& bad() {\n    int x = 10;\n    return x;   // x 一出函数就没了\n}\n// main 里用 int& r = bad(); 再读 r —— 结果是不可预测的垃圾值",
+        "output": "运行结果不确定（未定义行为），可能输出随机垃圾值"
+      }
+    ]
+  },
+  {
+    "id": 805,
+    "title": "用指针正序和倒序输出数组",
+    "difficulty": "medium",
+    "description": "读入一个整数 n，再读入 n 个整数。用一个指针 p 指向数组的第一个元素，输出两行：\n第一行：用 *(p + i) 的形式正序输出这 n 个数；\n第二行：倒序输出这 n 个数。\n每行相邻的两个数之间用一个空格分隔。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）；\n第二行 n 个整数，用空格分隔",
+    "output_format": "两行，第一行正序、第二行倒序；同一行的数之间用一个空格分隔",
+    "sample_input": "5\n1 2 3 4 5",
+    "sample_output": "1 2 3 4 5\n5 4 3 2 1",
+    "test_cases": [
+      { "input": "5\n1 2 3 4 5\n", "output": "1 2 3 4 5\n5 4 3 2 1" },
+      { "input": "1\n-7\n", "output": "-7\n-7" },
+      { "input": "4\n10 -20 30 -40\n", "output": "10 -20 30 -40\n-40 30 -20 10" },
+      { "input": "3\n0 0 0\n", "output": "0 0 0\n0 0 0" }
+    ],
+    "hints": [
+      "数组名本身就是第一个元素的地址，可以写 int* p = arr;（等价于 int* p = &arr[0];）。",
+      "*(p + i) 等价于 p[i]，也等价于 arr[i]：指针加 i 表示往后跳过 i 个元素。",
+      "倒序时第 i 个要输出的是 *(p + n - 1 - i)。空格只在两个数「之间」加，最后一个数后面不要多空格。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    int arr[100];\n    for (int i = 0; i < n; i++) {\n        cin >> arr[i];\n    }\n\n    // 数组名 arr 就是首元素的地址，所以可以直接用指针接住\n    int* p = arr;\n\n    // 正序：*(p + i) 与 p[i]、arr[i] 完全等价\n    for (int i = 0; i < n; i++) {\n        if (i > 0) cout << \" \";\n        cout << *(p + i);\n    }\n    cout << endl;\n\n    // 倒序：第 i 个要取的是倒数第 i+1 个元素，下标是 n-1-i\n    // 写成 n-i 就越界了，会读到数组外面的垃圾值\n    for (int i = 0; i < n; i++) {\n        if (i > 0) cout << \" \";\n        cout << *(p + n - 1 - i);\n    }\n    cout << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "数组名就是第一间房的门牌号",
+        "body": "打比方：数组是一排**紧挨着的房间**，每间房住一个数。`arr` 这个数组名，就是第一间房的门牌号 —— 所以 `arr` 和 `&arr[0]` 的值完全一样，可以写 `int* p = arr;`。\n\n指针的加法也不是普通数字加一，而是「往后走几个元素」：`p + i` 指向从首元素数起的第 i 个元素。所以下面三种写法完全等价：\n\n```\n*(p + i)  ==  p[i]  ==  arr[i]\n```\n\n理解了这一点，「数组下标」其实就是「指针加偏移再解引用」的语法糖。\n\n**易错点：下标从 0 开始。** 长度为 n 的数组，合法下标是 0 ~ n-1。倒序输出时如果写成 `*(p + n - i)`，第一轮就取到了 `arr[n]` —— 已经出了数组，读到的是隔壁的垃圾值。编译不报错、运行也不一定崩，但结果就是错的。",
+        "code": "int arr[3] = {10, 20, 30};\nint* p = arr;          // 等价于 int* p = &arr[0];\ncout << *(p + 2) << endl;   // 与 p[2]、arr[2] 一样",
+        "output": "30"
+      },
+      {
+        "title": "指针在函数参数里会「退化」，sizeof 会骗你",
+        "body": "数组作为参数传给函数时，数组名会**退化**成指针 —— 函数里拿到的只是一个地址，它不知道这个数组有多长。这就是为什么数组相关的函数总要多传一个长度 n。\n\n**易错点：** 在函数里写 `sizeof(arr) / sizeof(arr[0])` 求长度会得到错误答案。因为此时 `arr` 已经是指针了，`sizeof(arr)` 是 8（64 位系统上指针的大小），算出来永远是 2 这样的怪数。只有在**定义数组的那个作用域里**，这个式子才是真正的元素个数。",
+        "code": "int arr[5] = {1, 2, 3, 4, 5};\ncout << sizeof(arr) / sizeof(arr[0]) << endl;   // 在定义处：5",
+        "output": "5"
+      }
+    ]
+  },
+  {
+    "id": 806,
+    "title": "用指针和引用求总和、最值与平均值",
+    "difficulty": "hard",
+    "description": "读入一个整数 n，再读入 n 个整数。写一个函数 analyze(const int* p, int n, int& sum, int& mn, int& mx)：用指针遍历数组，通过引用参数把总和、最小值、最大值带回给调用者。在 main 里调用它，然后输出四行：总和、最小值、最大值、平均值（平均值保留 2 位小数）。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）；\n第二行 n 个整数，用空格分隔",
+    "output_format": "四行：第一行总和、第二行最小值、第三行最大值（都是整数），第四行平均值，保留 2 位小数",
+    "sample_input": "5\n1 2 3 4 5",
+    "sample_output": "15\n1\n5\n3.00",
+    "test_cases": [
+      { "input": "5\n1 2 3 4 5\n", "output": "15\n1\n5\n3.00" },
+      { "input": "1\n-7\n", "output": "-7\n-7\n-7\n-7.00" },
+      { "input": "4\n0 -3 9 -3\n", "output": "3\n-3\n9\n0.75" },
+      { "input": "2\n5 5\n", "output": "10\n5\n5\n5.00" }
+    ],
+    "hints": [
+      "函数要带回三个结果，而 return 只能带一个值回去 —— 用引用参数把结果写回调用者的变量里。",
+      "最小值 mn 一定要用数组的第一个元素初始化，不要写成 0，否则全是负数时结果就错了。",
+      "平均值是 sum / n，必须写成 sum * 1.0 / n，否则会做整数除法；输出用 <iomanip> 的 fixed 和 setprecision(2)。"
+    ],
+    "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\n// p 是数组首元素的地址；const 表示函数不会通过 p 修改数组里的元素\n// sum / mn / mx 是引用参数：函数里改它们，就是改调用者的变量\nvoid analyze(const int* p, int n, int& sum, int& mn, int& mx) {\n    sum = 0;\n\n    // 用第一个元素初始化最值。\n    // 如果初始化成 0，遇到全是负数的数组就会得到错误的「最大值 0」\n    mn = *(p + 0);\n    mx = *(p + 0);\n\n    // 用指针遍历：*(p + i) 等价于 p[i]\n    for (int i = 0; i < n; i++) {\n        int v = *(p + i);\n        sum += v;\n        if (v < mn) mn = v;\n        if (v > mx) mx = v;\n    }\n}\n\nint main() {\n    int n;\n    cin >> n;\n\n    int arr[100];\n    for (int i = 0; i < n; i++) {\n        cin >> arr[i];\n    }\n\n    int sum = 0, mn = 0, mx = 0;\n    // 数组名 arr 是首元素地址，正好对上参数 const int*\n    // 后三个参数传变量名即可，函数会直接写进它们里面\n    analyze(arr, n, sum, mn, mx);\n\n    cout << sum << endl;\n    cout << mn << endl;\n    cout << mx << endl;\n\n    // 一定要写 1.0：写成 sum / n 会做整数除法，3 / 4 得到 0\n    double avg = sum * 1.0 / n;\n    cout << fixed << setprecision(2) << avg << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "函数怎么一次带回三个结果",
+        "body": "`return` 像一只手，一次只能递出一样东西。想让函数同时告出「总和、最小值、最大值」三件事，就得换个办法。\n\n**指针/引用的办法是：把调用者变量的门牌号交给函数，让它自己把结果放进去。**\n\n打个比方：`return` 是函数把结果递给你；而引用参数是函数拿到你家的钥匙，直接进门把结果摆在你家桌上 —— 摆几件都行。\n\n对比一下两种「带出结果」的写法：\n· 指针版：`void analyze(const int* p, int n, int* sum, int* mn, int* mx)`，调用 `analyze(arr, n, &sum, &mn, &mx)`，函数里写 `*sum = ...`；\n· 引用版：`void analyze(const int* p, int n, int& sum, int& mn, int& mx)`，调用 `analyze(arr, n, sum, mn, mx)`，函数里直接写 `sum = ...`。\n\n引用版不用到处写 `&` 和 `*`，读起来更像普通赋值，所以 C++ 里做「输出参数」时更常用引用。\n\n参数里的 `const int* p` 还顺便说明了一件事：**这个函数只读数组，不会改它**。带上 const 是给读代码的人和编译器的一句承诺。",
+        "code": "void split(int x, int& q, int& r) {  // 一次带回商和余数\n    q = x / 10;\n    r = x % 10;\n}\nint q = 0, r = 0;\nsplit(47, q, r);\ncout << q << \" \" << r << endl;",
+        "output": "4 7"
+      },
+      {
+        "title": "最值初始化，和整数除法的老坑",
+        "body": "**易错点一：最值变量怎么初始化。**\n很多人顺手写 `mn = 0; mx = 0;`。如果数组是 `{-5, -9}`，比较时每个数都不比 0 小，于是最小值得出 0 —— 而 0 根本不在数组里。\n\n正确做法：**用数组的第一个元素作为起点**（`mn = mx = *(p + 0);`），然后从第 0 个开始比较。这样无论正数负数都不会错。\n\n**易错点二：整数除法。** `sum / n` 两边都是整数时，小数部分直接丢掉：`3 / 4` 得到 `0`，平均值就变成了 0。只要表达式里出现一个浮点数，整个运算才会按小数走 —— 所以写 `sum * 1.0 / n`。\n\n**易错点三：返回局部变量的引用。** 这个函数把结果写进调用者传进来的引用里，是安全的；但如果函数返回的是自己内部局部变量的引用，函数一结束那个变量就没了，调用者拿到的是「已经拆掉的房间的门牌号」，一用就是未定义行为。指针也一样：**永远不要返回指向局部变量的指针。**",
+        "code": "int arr[3] = {-5, -9, -2};\n\n// 错误示范：最大值从 0 起手\nint mx = 0;\nfor (int i = 0; i < 3; i++)\n    if (arr[i] > mx) mx = arr[i];\ncout << mx << endl;   // 输出 0 —— 可这个数组里根本没有 0\n\n// 正确做法：用数组的第一个元素起手，再依次比较\nint m = arr[0];\nfor (int i = 0; i < 3; i++)\n    if (arr[i] > m) m = arr[i];\ncout << m << endl;",
+        "output": "0\n-2"
+      }
+    ]
+  }
+]

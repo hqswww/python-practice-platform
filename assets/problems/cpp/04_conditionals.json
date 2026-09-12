@@ -1,0 +1,248 @@
+[
+  {
+    "id": 401,
+    "title": "判断奇偶",
+    "difficulty": "easy",
+    "description": "读入一个整数 n，判断它是偶数还是奇数。\n\n偶数输出 even，奇数输出 odd。",
+    "input_format": "一行，一个整数 n（可能是负数，也可能是 0）",
+    "output_format": "输出一行：even 表示偶数，odd 表示奇数",
+    "sample_input": "7",
+    "sample_output": "odd",
+    "test_cases": [
+      { "input": "4\n", "output": "even" },
+      { "input": "7\n", "output": "odd" },
+      { "input": "0\n", "output": "even" },
+      { "input": "-3\n", "output": "odd" }
+    ],
+    "hints": [
+      "「能不能被 2 整除」用取余运算 n % 2 来判断。",
+      "关系运算的结果本身就是一个 bool 值，可以存进变量：bool isEven = (n % 2 == 0);",
+      "判断奇数不要写 n % 2 == 1 —— 想想 -3 % 2 在 C++ 里等于几。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 关系运算 == 的结果本身就是 bool，可以直接存下来\n    bool isEven = (n % 2 == 0);\n\n    // 为什么不能用 n % 2 == 1？因为 C++ 的取余结果跟着被除数走符号：\n    // -3 % 2 得到的是 -1 而不是 1，负数奇数会被误判成偶数。\n    // 所以判断奇数要用 != 0。\n    cout << (isEven ? \"even\" : \"odd\") << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "bool 变量：把条件的结果存起来",
+        "body": "C++ 有一个真正的布尔类型 `bool`，取值只有 `true` 和 `false`。\n\n关系运算（`==`、`!=`、`>`、`<`）的结果就是 `bool`，所以可以存进变量：\n\n```\nbool isEven = (n % 2 == 0);\nif (isEven) { ... }\n```\n\n把条件抽成有名字的变量有两个好处：一是 `if (isEven)` 比 `if (n % 2 == 0)` 更像人话，二是条件变长以后不用写成一团。\n\n**新手最容易踩的坑**：`=` 是赋值，`==` 才是判断。「如果 n 等于 0」要写 `n == 0`；写成 `n = 0` 是把 0 存进 n，表达式的结果是 0，转成 `bool` 就是 `false`，于是这个分支**永远走不到**。C++ 编译器通常会给出警告，但代码照样能编译通过——看到警告别当没看见。",
+        "code": "int n = 7;\nbool isEven = (n % 2 == 0);\ncout << isEven << endl;   // bool 输出成 0/1",
+        "output": "0"
+      },
+      {
+        "title": "负数取余：为什么不能写 n % 2 == 1",
+        "body": "数学上「奇数」是「除以 2 余 1」，但 C++ 的 `%` 是**带符号**的：余数的符号跟着被除数走。\n\n所以 `-3 % 2` 等于 `-1`，不是 `1`。如果写成 `n % 2 == 1`，输入 `-3` 就会被判成偶数；改成 `n % 2 == -1` 呢？那正数奇数又错了。\n\n正确做法只有一个：判断「**不等于 0**」——`n % 2 != 0` 对正负奇数都成立。本题的第 4 个用例 `-3` 就是专门抓这个错的。\n\n顺带记住这个结论：在 C++ 里判断整除，永远写 `a % b == 0`；不要假设余数一定是非负的。",
+        "code": "cout << (7 % 2) << \" \" << (-7 % 2) << endl;",
+        "output": "1 -1"
+      },
+      {
+        "title": "三元运算符 ?: 的括号不能省",
+        "body": "`条件 ? 成立时的值 : 不成立时的值` 叫条件运算符（三元运算符），它本身是一个**表达式**，可以直接塞进 `cout`。\n\n但注意 `<<` 的优先级比 `?:` 高。写成\n\n```\ncout << isEven ? \"even\" : \"odd\" << endl;   // 错误示范\n```\n\n编译器会先算 `cout << isEven`，再拿它的结果去当条件，直接编译报错。所以三元表达式在 `cout` 里**必须加括号**：`cout << (isEven ? \"even\" : \"odd\") << endl;`\n\n记不住优先级没关系，记住一条经验：只要表达式里混了不同类型的运算符，先加括号。",
+        "code": "bool ok = true;\ncout << (ok ? \"yes\" : \"no\") << endl;",
+        "output": "yes"
+      }
+    ]
+  },
+  {
+    "id": 402,
+    "title": "成绩分档",
+    "difficulty": "easy",
+    "description": "读入一个 0 到 100 之间的整数成绩，按下面的规则输出等级：\n\n90 分及以上为 A，80 到 89 分为 B，70 到 79 分为 C，60 到 69 分为 D，60 分以下为 E。",
+    "input_format": "一行，一个整数 score（0 ≤ score ≤ 100）",
+    "output_format": "输出一个大写字母：A、B、C、D 或 E",
+    "sample_input": "95",
+    "sample_output": "A",
+    "test_cases": [
+      { "input": "90\n", "output": "A" },
+      { "input": "89\n", "output": "B" },
+      { "input": "60\n", "output": "D" },
+      { "input": "59\n", "output": "E" }
+    ],
+    "hints": [
+      "五个等级一个 if / else 装不下，需要把多个判断串成一条链。",
+      "在 if 后面接着写 else if：if (score >= 90) ... else if (score >= 80) ...",
+      "从高分往低分写，每个 else if 只要写下界就够了，不用再写上界。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int score;\n    cin >> score;\n\n    // 从高分往低分写是关键：\n    // 走到 else if 时，「比它更高的档」已经被前面的分支排除了，\n    // 所以每个分支只写一个下界就够了。\n    // 反过来从低往高写（先判 score >= 60），90 分也会落进第一个分支。\n    if (score >= 90) {\n        cout << \"A\" << endl;\n    } else if (score >= 80) {\n        cout << \"B\" << endl;\n    } else if (score >= 70) {\n        cout << \"C\" << endl;\n    } else if (score >= 60) {\n        cout << \"D\" << endl;\n    } else {\n        cout << \"E\" << endl;\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "else if 链：为什么必须从高往低写",
+        "body": "`else if` 不是新语法，它只是「`else` 后面跟了另一条 `if`」的缩写。它的执行规则是：**从上往下依次检查，第一个成立的分支执行完就整条链结束。**\n\n因为有这个「只进一个门」的性质，每个分支只要写下界：走到 `else if (score >= 80)` 时，说明 `score >= 90` 已经不成立了，分数必然小于 90。\n\n如果顺序反了：\n\n```\nif (score >= 60)        cout << \"D\";\nelse if (score >= 90)   cout << \"A\";   // 永远轮不到\n```\n\n95 分先满足 `score >= 60`，直接输出 D 走人。**程序不报错，结果全错**——这是 else if 最经典的坑。\n\n如果实在想写成「一个区间一个判断」，那就要写全上下界：`score >= 80 && score <= 89`。能用顺序解决的，就别用两个条件。",
+        "code": "int score = 75;\nif (score >= 90)      cout << \"A\" << endl;\nelse if (score >= 80) cout << \"B\" << endl;\nelse if (score >= 70) cout << \"C\" << endl;   // 75 落这里\nelse                  cout << \"E\" << endl;",
+        "output": "C"
+      },
+      {
+        "title": "边界值：> 和 >= 只差一分",
+        "body": "分档题的对错几乎全在**分界点上**。规定「90 分及以上为 A」，那 90 必须是 A、89 必须是 B。\n\n把 `>=` 写成 `>`，90 就会掉到 B 档；把 `>= 80` 写成 `> 80`，80 就会掉到 C 档。这类错误用「95 分」这种用例是测不出来的，必须专门拿分界那一对数字去试。\n\n养成习惯：写完任何一个带比较的分支，立刻问自己一句「正好等于边界时会走哪条？」。本题的用例就是 90/89 和 60/59 这两对分界。",
+        "code": "// 90 走 A，89 走 B —— 只差 1，但必须分得清\ncout << (90 >= 90 ? \"A\" : \"B\") << endl;   // A",
+        "output": "A"
+      }
+    ]
+  },
+  {
+    "id": 403,
+    "title": "判断闰年",
+    "difficulty": "medium",
+    "description": "读入一个年份，判断它是不是闰年。\n\n规则：能被 4 整除但不能被 100 整除的年份是闰年；能被 400 整除的年份也是闰年。\n\n是闰年输出 Yes，不是则输出 No。",
+    "input_format": "一行，一个整数 year（年份，保证为正数）",
+    "output_format": "输出一行：Yes 表示闰年，No 表示平年",
+    "sample_input": "2024",
+    "sample_output": "Yes",
+    "test_cases": [
+      { "input": "2024\n", "output": "Yes" },
+      { "input": "2023\n", "output": "No" },
+      { "input": "1900\n", "output": "No" },
+      { "input": "2000\n", "output": "Yes" }
+    ],
+    "hints": [
+      "「能被 x 整除」写成 year % x == 0。",
+      "条件分成两半：一半管普通闰年，一半管整百年，中间用 || 连起来。",
+      "完整条件：year % 4 == 0 && year % 100 != 0 || year % 400 == 0，建议自己再加一层括号看清分组。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int year;\n    cin >> year;\n\n    // 口诀：四年一闰，百年不闰，四百年再闰。\n    // 整个条件 =（能被 4 整除 且 不能被 100 整除）或（能被 400 整除）\n    // && 的优先级比 || 高，不加括号其实也是这个意思，\n    // 但括号照写不误：让读代码的人一眼看出哪两个条件是一组。\n    bool leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);\n\n    // leap 本身就是 bool，三元运算符直接拿它当条件\n    cout << (leap ? \"Yes\" : \"No\") << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "三个条件一个都不能少",
+        "body": "闰年的规则看着简单，其实是三段拼接：\n\n1. `year % 4 == 0` —— 能被 4 整除，绝大多数闰年都属于这种（2024）。\n2. `year % 100 != 0` —— 但整百年不算闰年（1900 不是）。\n3. `year % 400 == 0` —— 整百年里能被 400 整除的又算闰年（2000 是）。\n\n只写第一条，1900 会被错判成闰年；漏掉第三条，2000 会被错判成平年。\n\n本题的四个用例就是围着这三种情况设计的：2024 走第一条，2023 谁都不满足，1900 被第二条排除，2000 靠第三条救回来。写完之后逐个对着用例念一遍条件，比反复检查分号有用得多。",
+        "code": "if (year % 4 != 0)            cout << \"No\";    // 2023\nelse if (year % 100 != 0)     cout << \"Yes\";   // 2024\nelse if (year % 400 == 0)     cout << \"Yes\";   // 2000\nelse                          cout << \"No\";    // 1900",
+        "output": "输入 2000 输出 Yes，输入 1900 输出 No"
+      },
+      {
+        "title": "&& 的优先级和短路",
+        "body": "C++ 里 `&&`（逻辑与）的优先级**高于** `||`（逻辑或）。所以\n\n```\nyear % 4 == 0 && year % 100 != 0 || year % 400 == 0\n```\n\n会被理解成 `(year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)`，恰好是我们要的意思。\n\n但别靠背优先级过日子——多写一对括号，读代码的人（包括三个月后的你自己）能少想好几秒。原则是「先分组，再组合」。\n\n另一个特性是**短路求值**：`A && B` 里如果 A 是假，B 根本不会被执行；`A || B` 里如果 A 是真，B 也不会执行。闰年这段代码里两边都只是取余和比较，看不出差别，但这个特性在别处很救命。",
+        "code": "int n = 0;\n// 短路：n != 0 是假，右边根本不会算 —— 这里挡住了一次除以 0\nif (n != 0 && 100 / n > 5) {\n    cout << \"成立\" << endl;\n} else {\n    cout << \"被短路挡住了\" << endl;\n}",
+        "output": "被短路挡住了"
+      },
+      {
+        "title": "写错 = 和 == 会怎样",
+        "body": "`=` 是赋值，`==` 才是相等判断。把 `==` 敲成 `=` 是新手最高频的笔误。\n\n在 C 里 `if (n = 0)` 完全合法：先把 0 赋给 n，表达式的值是 0，当条件用就是假——代码能编译、能运行，只是永远走 else。C++ 在这方面稍微友好一点：**赋值表达式不能直接用在需要 bool 的地方时会有类型问题**，但 `int` 转 `bool` 是允许的，所以 `if (n = 0)` 在 C++ 里依然合法（只是绝大多数编译器会警告）。\n\n真正危险的是把比较写进别的地方，比如 `if (year % 4 = 0)` —— 这条在 C++ 里会**编译报错**，因为 `year % 4` 是个临时值，不能被赋值。报错反而是好事。\n\n所以：编译器的警告一条都别放过。加上 `-Wall` 编译，这类笔误基本跑不掉。",
+        "code": "int flag = 1;\nif (flag == 1) cout << \"相等\" << endl;\n// if (flag = 0) 也能编译 —— 但它把 flag 改成 0，条件永远为假\ncout << flag << endl;",
+        "output": "相等\n1"
+      }
+    ]
+  },
+  {
+    "id": 404,
+    "title": "三个数中的最大值",
+    "difficulty": "easy",
+    "description": "读入三个整数 a、b、c，输出其中最大的一个。\n\n请用条件运算符 ?: 完成。",
+    "input_format": "一行，三个整数 a、b、c，用空格分隔",
+    "output_format": "输出一个整数，即三个数中的最大值",
+    "sample_input": "3 7 5",
+    "sample_output": "7",
+    "test_cases": [
+      { "input": "3 7 5\n", "output": "7" },
+      { "input": "10 2 8\n", "output": "10" },
+      { "input": "2 5 9\n", "output": "9" },
+      { "input": "-1 -5 -3\n", "output": "-1" }
+    ],
+    "hints": [
+      "先让两个数比出「暂时的最大值」，再让这个值去和第三个数比。",
+      "三元运算符的格式是 条件 ? 成立时的值 : 不成立时的值。",
+      "int mx = (a > b) ? a : b; 然后 mx = (mx > c) ? mx : c;"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b, c;\n    cin >> a >> b >> c;\n\n    // 打擂台：先让前两个数比出暂时的冠军，再让它接受第三个数的挑战。\n    // 两次比较就能覆盖全部 6 种大小排列。\n    int mx = (a > b) ? a : b;\n    mx = (mx > c) ? mx : c;\n\n    // 注意别写成 int mx = 0; 再逐个比较 ——\n    // 三个数全是负数时，0 会变成假的「最大值」。\n    cout << mx << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "三元运算符怎么读",
+        "body": "`条件 ? A : B` 读作「条件成立就取 A，否则取 B」。\n\n它和 `if / else` 的区别是：**`if` 是语句，`?:` 是表达式**。表达式有值，所以可以直接参与赋值、比较、输出：\n\n```\nint mx = (a > b) ? a : b;\n```\n\n用 `if` 写同样的事情要 5 行：\n\n```\nint mx;\nif (a > b) mx = a;\nelse mx = b;\n```\n\n所以「在两个值里挑一个」这种场景，`?:` 更紧凑。但如果两个分支各自要做好几件事，`?:` 会变得难读，那时就该老老实实用 `if`。",
+        "code": "int a = 3, b = 8;\nint big = (a > b) ? a : b;\ncout << big << endl;",
+        "output": "8"
+      },
+      {
+        "title": "别想着一次把所有情况写全",
+        "body": "有些同学会这样写：\n\n```\nif (a > b && b > c)      cout << a;   // a 最大\nelse if (b > a && a > c) cout << b;   // 错！b 最大不要求 a > c\n```\n\n三个数的大小排列一共 **6 种**（abc、acb、bac、bca、cab、cba），一条 `if` 只能覆盖其中一种，写全要列一大堆。那样写既容易漏，又容易把条件写错。\n\n正确的思路是**打擂台**：先从前两个数里选出冠军，再让冠军和第三个数比一次。两个数比较只有「大于」和「不大于」两种情况，所以三元运算符正好够用，两次比较覆盖全部 6 种排列。\n\n这个思路可以继续推下去：四个数就先算前三个的最大值，再和第四个比——比较次数永远是 n - 1 次，而不是 n! 种情况。",
+        "code": "int a = 2, b = 5, c = 9;\nint mx = (a > b) ? a : b;    // 2 和 5 比 → 5\nmx = (mx > c) ? mx : c;      // 5 和 9 比 → 9\ncout << mx << endl;",
+        "output": "9"
+      },
+      {
+        "title": "标准库其实有 max，但本题要你手写",
+        "body": "C++ 的 `<algorithm>` 里有现成的 `max(a, b)`（还可以 `max({a, b, c})` 一次比三个），一行就能解决本题。\n\n但手写一遍「打擂台」是有意义的：它让你真正理解比较是怎么一步步做出来的，而不是把逻辑交给库函数。等这类逻辑你闭着眼都能写对，再去用 `max` 才是「省事」而不是「跳过学习」。\n\n另外注意 `mx = (mx > c) ? mx : c;` 里的右边也可以直接写成 `max(mx, c)`，两者完全等价——`?:` 就是 `max` 的展开形式。",
+        "code": "#include <algorithm>\nint a = 4, b = 9, c = 6;\ncout << max({a, b, c}) << endl;   // 同样输出 9",
+        "output": "9"
+      }
+    ]
+  },
+  {
+    "id": 405,
+    "title": "这一个月有多少天",
+    "difficulty": "medium",
+    "description": "读入一个年份和一个月份，输出这个月有多少天。\n\n2 月要按闰年规则算：闰年 29 天，平年 28 天。闰年的判断规则是「能被 4 整除但不能被 100 整除，或者能被 400 整除」。",
+    "input_format": "一行，两个整数 year 和 month，用空格分隔（保证 1 ≤ month ≤ 12）",
+    "output_format": "输出一个整数，表示该年该月的天数（28 / 29 / 30 / 31 中的一种）",
+    "sample_input": "2024 2",
+    "sample_output": "29",
+    "test_cases": [
+      { "input": "2024 2\n", "output": "29" },
+      { "input": "2023 2\n", "output": "28" },
+      { "input": "2024 4\n", "output": "30" },
+      { "input": "2023 12\n", "output": "31" }
+    ],
+    "hints": [
+      "月份只有 12 种取值，适合用 switch 按月份分派。",
+      "多个 case 可以共用同一段代码：把 case 1: case 3: case 5: ... 排在一起，最后只写一次 days = 31; break;",
+      "2 月的天数要用判断闰年的条件二选一，前面 403 题的条件可以直接搬过来。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int year, month;\n    cin >> year >> month;\n\n    int days = 0;\n    switch (month) {\n        // 大月：1、3、5、7、8、10、12 全都是 31 天。\n        // 这里「故意」不写 break —— 几个 case 叠在一起共用下面这段代码，\n        // 是 switch 穿透的正确用法（记得写注释说明是故意的）。\n        case 1: case 3: case 5: case 7:\n        case 8: case 10: case 12:\n            days = 31;\n            break;\n        // 小月\n        case 4: case 6: case 9: case 11:\n            days = 30;\n            break;\n        case 2:\n            // 2 月是唯一随年份变化的月份，闰年条件不能省括号\n            days = ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) ? 29 : 28;\n            break;\n        default:\n            days = 0;   // 题目保证 month 在 1~12，这里只是兜底\n    }\n\n    cout << days << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "switch 的规则：case 只是跳转标签",
+        "body": "`switch` 的执行方式和 `if` 完全不同。`case 4:` **不是**「如果 month 等于 4 就执行这块」的意思，它只是一个**跳转标签**：程序从匹配的那个标签开始往下执行，直到遇见 `break` 或者 switch 结束。\n\n所以忘了写 `break`，执行会「穿透」到下一个 case 的代码里：\n\n```\ncase 4:\n    days = 30;      // 漏了 break\ncase 2:\n    days = 28;      // 4 月也会执行到这里，days 被改成 28\n```\n\n这种错误极其隐蔽：代码能编译、能运行，只有部分输入的结果是错的。写 switch 时，**每写完一个分支立刻补上 break**，是个很值钱的肌肉记忆。\n\n另外两个语法要点：`case` 后面的值必须是**编译期常量**（可以是 `1`、`'a'`，不能是变量，也不能写 `case 1 ... 12:` 这种范围——那是编译器的非标准扩展）；`default` 处理没被任何 case 接住的情况。",
+        "code": "int m = 4;\nswitch (m) {\n    case 4:\n        cout << \"30 天\" << endl;   // 故意漏 break 演示穿透\n    case 2:\n        cout << \"28 天\" << endl;\n}",
+        "output": "30 天\n28 天"
+      },
+      {
+        "title": "故意漏写 break：让多个 case 共用一段代码",
+        "body": "穿透不总是 bug——它也是「几个值走同一套逻辑」的紧凑写法。本题里 31 天的月份有 7 个，如果每个都写一遍 `days = 31; break;`，代码会又长又吵。\n\n标准写法是把这些 case 标签摞在一起，只在最后留一个 `break`：\n\n```\ncase 1: case 3: case 5: case 7:\ncase 8: case 10: case 12:\n    days = 31;\n    break;\n```\n\n读法是：月份是 1、3、5、7、8、10、12 中的任何一个，都会跳到 `days = 31;` 这一行。\n\n关键是**加一行注释说清这是故意的**。同样一段代码，没有注释读者会以为你忘了 break，有注释才知道这是有意为之。",
+        "code": "int m = 8;\nswitch (m) {\n    case 1: case 3: case 5: case 7:\n    case 8: case 10: case 12:\n        cout << 31 << endl;\n        break;\n    default:\n        cout << \"其它\" << endl;\n}",
+        "output": "31"
+      },
+      {
+        "title": "什么时候用 switch，什么时候用 if",
+        "body": "判断标准很简单：**按「具体取值」分派用 switch，按「范围或组合条件」判断用 if。**\n\n· 月份是 1~12 里的某个具体值 → `switch` 清楚，一眼能看出每个值的归属。\n· 成绩 90 分以上、60 到 79 分之间 → 这是范围，`switch` 写不出来，只能用 `if / else if`。\n· 条件是 `a > b && c != 0` 这种组合 → 也是 `if`。\n\n两种写法能互相替代的情况（比如本题也可以写成 `if (month == 1 || month == 3 || ...)`），选更短、更好读的那个。本题用 switch 能省下 7 次 `month ==` 的重复。\n\n还有一点：别忘了 `switch` 里也可以写 `if`（比如 case 2 里判断闰年），它们是普通语句，放在哪儿都行。",
+        "code": "// 范围判断只能用 if：分数落在哪个区间\nint score = 85;\nif (score >= 90)      cout << \"A\" << endl;\nelse if (score >= 80) cout << \"B\" << endl;",
+        "output": "B"
+      }
+    ]
+  },
+  {
+    "id": 406,
+    "title": "三角形的判定",
+    "difficulty": "medium",
+    "description": "读入三条边的长度（整数），判断它们能不能构成一个三角形。\n\n能构成输出 Yes，并在第二行输出类型；不能构成只输出 No。\n\n构成条件：任意两边之和都大于第三边。类型说明：三边全相等是 equilateral（等边），只有两边相等是 isosceles（等腰），三边互不相等是 scalene（不等边）。",
+    "input_format": "一行，三个整数 a、b、c，用空格分隔",
+    "output_format": "不能构成三角形时输出一行 No；能构成时输出两行：第一行 Yes，第二行是 equilateral / isosceles / scalene 之一",
+    "sample_input": "3 4 5",
+    "sample_output": "Yes\nscalene",
+    "test_cases": [
+      { "input": "3 4 5\n", "output": "Yes\nscalene" },
+      { "input": "5 5 5\n", "output": "Yes\nequilateral" },
+      { "input": "5 5 8\n", "output": "Yes\nisosceles" },
+      { "input": "1 2 3\n", "output": "No" }
+    ],
+    "hints": [
+      "先判断能不能构成三角形，这个结论成立之后再判断类型。",
+      "三条边要两两求和都比第三条大，用 && 把三个条件连起来。",
+      "判断等腰要比较三对组合：a == b || b == c || a == c。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b, c;\n    cin >> a >> b >> c;\n\n    // 先把「能不能构成」这个结论算出来存进 bool，下面读起来清爽很多。\n    // 三条边要两两之和都大于第三边；注意是 > 不是 >=，\n    // 1、2、3 这种「压扁成一条直线」的不算三角形。\n    bool triangle = (a + b > c) && (a + c > b) && (b + c > a);\n\n    if (!triangle) {\n        cout << \"No\" << endl;\n    } else {\n        cout << \"Yes\" << endl;\n\n        // 先判等边：5 5 5 同样满足「有两边相等」，\n        // 顺序反了就会被误判成 isosceles。\n        if (a == b && b == c) {\n            cout << \"equilateral\" << endl;\n        } else if (a == b || b == c || a == c) {\n            // 任意一对相等就算等腰，只写 a == b 会漏掉 5 8 5 这种输入\n            cout << \"isosceles\" << endl;\n        } else {\n            cout << \"scalene\" << endl;\n        }\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "三个条件一个都不能少",
+        "body": "「任意两边之和大于第三边」翻译成代码，是把三对组合都写出来：\n\n```\na + b > c       a + c > b       b + c > a\n```\n\n用 `&&` 连起来，三个同时成立才算三角形。\n\n只写一个条件行不行？有时候碰巧行——但那是运气。以 `1 2 3` 为例：`a + b > c` 是 `3 > 3`，不成立，所以这次能判对。可如果输入是 `a=10, c=1, b=2` 这类顺序，漏掉 `a + c > b` 就会把明显不合法的边长判成三角形。**三个条件合起来才是充要条件，删掉任何一个都不严谨。**\n\n另一个高频错误是把 `>` 写成 `>=`。`1 2 3` 的三条边首尾相接正好压成一条直线，面积是 0，不是三角形，所以必须是严格大于。用例 `1 2 3` 就是专门抓 `>=` 这个错的。",
+        "code": "bool triangle = (a + b > c) && (a + c > b) && (b + c > a);\ncout << (triangle ? \"能构成\" : \"不能构成\") << endl;",
+        "output": "输入 3 4 5 输出「能构成」，输入 1 2 3 输出「不能构成」"
+      },
+      {
+        "title": "嵌套 if：先判大前提，再判细节",
+        "body": "这道题有两个层次的问题：「是不是三角形」和「是哪一种三角形」。第二问只有在第一问成立时才有意义，所以要用**嵌套**：\n\n```\nif (!triangle) {\n    cout << \"No\" << endl;\n} else {\n    // 这里已经确定是三角形了，再判类型\n    ...\n}\n```\n\n`!` 是逻辑非，`!triangle` 读作「不是三角形」。\n\n如果不嵌套，把类型判断和三角形判断平铺成一条 else if 链，就会出现「边长不合法却照样输出 isosceles」的情况。**嵌套的意义就是把前提锁死**：外层条件不成立，内层代码根本不会被执行。\n\n写嵌套的时候注意缩进——每层往里缩 4 个空格，代码的层次结构一眼可见。缩进乱掉的嵌套代码是最难读的。",
+        "code": "bool triangle = true;\nif (!triangle) {\n    cout << \"No\" << endl;\n} else {\n    cout << \"Yes\" << endl;   // 只有确定是三角形才走到这里\n}",
+        "output": "Yes"
+      },
+      {
+        "title": "等腰要比较三对，等边要先判",
+        "body": "等腰的意思是「**至少**有两边相等」。三条边两两组合一共三对，所以条件要写全：\n\n```\na == b || b == c || a == c\n```\n\n只写 `a == b` 的话，输入 `5 8 5`（a 和 c 相等）就会被判成 scalene。凡是「至少一对满足」的题，都要想清楚一共有几对。\n\n还有一个顺序问题：5 5 5 满足 `a == b && b == c`，同时也满足 `a == b || b == c || a == c`。等边是等腰的特例，所以**必须先判等边**，否则永远不会输出 equilateral。\n\n这个「特殊→一般」的判断顺序在分档题里反复出现（成绩分档先判 90 分档、闰年先判 400 年），养成习惯：**最严格、最特殊的条件写最前面。**",
+        "code": "int a = 5, b = 8, c = 5;\nif (a == b || b == c || a == c) cout << \"isosceles\" << endl;\nelse cout << \"scalene\" << endl;",
+        "output": "isosceles"
+      }
+    ]
+  }
+]

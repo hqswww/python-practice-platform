@@ -1,0 +1,237 @@
+[
+  {
+    "id": 1201,
+    "title": "数据统计：最大 / 最小 / 平均值",
+    "difficulty": "easy",
+    "description": "读入 n 个整数，求出其中的最大值、最小值，以及它们的平均值。\n\n平均值保留 2 位小数。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）。\n第二行 n 个整数，用空格分隔，每个整数的绝对值不超过 10000。",
+    "output_format": "三行：\n第一行最大值\n第二行最小值\n第三行平均值，保留 2 位小数",
+    "sample_input": "5\n3 1 4 1 5",
+    "sample_output": "5\n1\n2.80",
+    "test_cases": [
+      { "input": "5\n3 1 4 1 5\n", "output": "5\n1\n2.80" },
+      { "input": "1\n7\n", "output": "7\n7\n7.00" },
+      { "input": "4\n-5 -2 -9 -1\n", "output": "-1\n-9\n-4.25" },
+      { "input": "3\n0 0 0\n", "output": "0\n0\n0.00" }
+    ],
+    "hints": [
+      "最大值、最小值的初值要取数据里的第一个数，不要取 0。",
+      "用一个变量把所有的数累加起来求和，再除以 n。",
+      "求平均时把和写成 sum * 1.0 / n，输出用 cout << fixed << setprecision(2)。"
+    ],
+    "solution": "#include <iostream>\n#include <iomanip>\n#include <vector>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    vector<int> a(n);\n    for (int i = 0; i < n; ++i) {\n        cin >> a[i];\n    }\n\n    // 初值取第一个元素，而不是 0：\n    // 如果数据全是负数，从 0 开始找最大值会永远得到 0\n    int mx = a[0];\n    int mn = a[0];\n    long long sum = 0;\n\n    for (int i = 0; i < n; ++i) {\n        if (a[i] > mx) mx = a[i];\n        if (a[i] < mn) mn = a[i];\n        sum += a[i];\n    }\n\n    // sum / n 是整数除法，小数直接被丢掉；乘 1.0 把运算拉进浮点数世界\n    double avg = sum * 1.0 / n;\n\n    cout << mx << endl;\n    cout << mn << endl;\n    cout << fixed << setprecision(2) << avg << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "最大值的初值为什么不能写 0",
+        "body": "很多人的第一版是这样写的：`int mx = 0;`，然后遍历比较。数据里有正数时它碰巧是对的，但**数据全是负数时它永远输出 0**——因为没有一个数大于 0，mx 就一直没被更新过。\n\n正确的做法是把初值设成数据里的第一个元素 `a[0]`，再从第二个元素开始比较。这样无论数据是正、是负还是全 0，答案都对。\n\n最小值同理：`int mn = a[0];`，写成 0 会在数据全为正数时出错。\n\n这类「程序能跑、结果不对」的 bug 最浪费时间，因为编译器不会有任何提示。",
+        "code": "int mx = a[0], mn = a[0];\nfor (int i = 1; i < n; ++i) {\n    if (a[i] > mx) mx = a[i];\n    if (a[i] < mn) mn = a[i];\n}",
+        "output": "输入 3 1 4 1 5 时 mx = 5，mn = 1"
+      },
+      {
+        "title": "平均值为什么总被算成整数",
+        "body": "`sum / n` 里 sum 和 n 都是整数，C++ 会做**整数除法**，小数部分直接丢掉：`7 / 2` 得到 `3`，不是 `3.5`。\n\n只要表达式里出现一个浮点数，整个运算就按浮点规则走。所以写 `sum * 1.0 / n`，或者写 `(double)sum / n`。注意是**先乘再除**，写成 `sum / n * 1.0` 就晚了——整数除法已经发生过了。\n\n求和变量用 `long long` 更稳妥：100 个接近 int 上限的数相加就可能溢出。输出时用 `<iomanip>` 的 `fixed << setprecision(2)` 控制保留 2 位小数。",
+        "code": "long long sum = 0;\n// ... 累加 ...\ndouble avg = sum * 1.0 / n;\ncout << fixed << setprecision(2) << avg << endl;",
+        "output": "输入 3 1 4 1 5 时输出 2.80"
+      }
+    ]
+  },
+  {
+    "id": 1202,
+    "title": "区间内的素数",
+    "difficulty": "medium",
+    "description": "读入两个整数 a 和 b（a ≤ b），找出 [a, b] 区间内的所有素数。\n\n先输出素数的个数，再按从小到大的顺序输出这些素数。",
+    "input_format": "一行，两个整数 a 和 b（1 ≤ a ≤ b ≤ 10000），用空格分隔。",
+    "output_format": "第一行：区间内素数的个数 k。\n如果 k 大于 0，第二行输出这 k 个素数，按从小到大用空格分隔。\n如果 k 等于 0，只输出第一行，不要输出第二行。",
+    "sample_input": "10 20",
+    "sample_output": "4\n11 13 17 19",
+    "test_cases": [
+      { "input": "10 20\n", "output": "4\n11 13 17 19" },
+      { "input": "1 10\n", "output": "4\n2 3 5 7" },
+      { "input": "8 10\n", "output": "0" },
+      { "input": "2 2\n", "output": "1\n2" }
+    ],
+    "hints": [
+      "先写一个函数专门判断「一个数是不是素数」，主函数里只负责遍历区间调用它。",
+      "判断 n 是不是素数：n 小于 2 直接不是；否则试除到根号 n 就够了，不用试到 n-1。",
+      "1 不是素数，2 是最小的素数，也是唯一的偶素数——这两点都要在函数里照顾到。"
+    ],
+    "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\n// 判断 n 是不是素数\nbool isPrime(int n) {\n    if (n < 2) return false;        // 0、1 和负数都不是素数\n    if (n == 2) return true;        // 2 是唯一的偶素数，要单独放行\n    if (n % 2 == 0) return false;   // 其余偶数一定有因子 2\n\n    // 只需试除到根号 n：若 n = p * q 且 p <= q，则 p 一定不超过根号 n。\n    // 写成 i * i <= n 而不是 i <= sqrt(n)，既不用引 <cmath>，也没有浮点误差\n    for (int i = 3; i * i <= n; i += 2) {\n        if (n % i == 0) return false;\n    }\n    return true;\n}\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n\n    // 不确定有几个素数，用 vector 边找边追加，它会自己增长\n    vector<int> primes;\n    for (int x = a; x <= b; ++x) {\n        if (isPrime(x)) primes.push_back(x);\n    }\n\n    cout << primes.size() << endl;\n\n    // 一个素数都没有时，题目要求只输出第一行\n    if (!primes.empty()) {\n        for (size_t i = 0; i < primes.size(); ++i) {\n            if (i > 0) cout << \" \";   // 用「前面再加空格」的办法避免行尾多出空格\n            cout << primes[i];\n        }\n        cout << endl;\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "把「判断一个数是不是素数」抽成函数",
+        "body": "主函数要做的事只有两件：遍历区间、把素数收起来。至于「怎么判断素数」，交给一个独立函数。\n\n这样做的好处：判断逻辑只写一遍；读代码的人一眼就能看出主函数在干什么；以后要改判断规则（比如加缓存、换筛法），也只改一个地方。\n\n返回值类型用 `bool`。C++ 有真正的布尔类型，可以直接 `return true;` / `return false;`，不用像 C 那样拿 int 的 1 和 0 凑合。\n\n`return` 一执行函数就结束了，所以在循环里一旦找到因子就可以立刻 return false，不用设标志位再 break。",
+        "code": "bool isPrime(int n) {\n    if (n < 2) return false;\n    for (int i = 2; i * i <= n; ++i) {\n        if (n % i == 0) return false;\n    }\n    return true;\n}",
+        "output": "isPrime(17) 返回 true，isPrime(1) 返回 false"
+      },
+      {
+        "title": "为什么试除到「根号 n」就够了",
+        "body": "假设 n 不是素数，那它可以写成 `n = p × q`，其中 p 和 q 都大于 1。p 和 q 里必然有一个不超过 √n（否则两个都大于 √n，乘积就超过 n 了）。\n\n所以只要在 2 到 √n 之间都找不到因子，n 就一定是素数——再往上试纯属白费力气。\n\n循环条件写成 `i * i <= n` 而不是 `i <= sqrt(n)`：一来不用引 `<cmath>`，二来避开了浮点数的精度问题（sqrt 对很大的数可能算出 2.9999999 而不是 3）。\n\n跳过偶数后循环可以从 3 开始每次加 2，效率翻倍。",
+        "code": "if (n < 2) return false;\nif (n == 2) return true;\nif (n % 2 == 0) return false;\nfor (int i = 3; i * i <= n; i += 2) {\n    if (n % i == 0) return false;\n}\nreturn true;",
+        "output": "isPrime(2) = true，isPrime(9) = false"
+      },
+      {
+        "title": "收集结果：vector 和「一个素数都没有」的情况",
+        "body": "事先不知道会找到几个素数，所以用 `vector<int> primes;` 边找边 `push_back`，它的大小会自己增长——这正是 vector 比固定长度数组好用的地方。\n\n输出时用小技巧处理空格：先输出第一个数，之后每个数都先输出一个空格再输出数，这样行尾就不会多出空格。\n\n区间里一个素数都没有时（比如 8 到 10），题目要求只输出第一行 `0`。用 `if (!primes.empty())` 把第二行整块包起来最简单，`empty()` 判断「是否为空」比 `size() != 0` 更直观。",
+        "code": "vector<int> primes;\nfor (int x = a; x <= b; ++x) {\n    if (isPrime(x)) primes.push_back(x);\n}\ncout << primes.size() << endl;\nif (!primes.empty()) {\n    for (size_t i = 0; i < primes.size(); ++i) {\n        if (i > 0) cout << \" \";\n        cout << primes[i];\n    }\n    cout << endl;\n}",
+        "output": "输入 8 10 时只输出一行 0"
+      }
+    ]
+  },
+  {
+    "id": 1203,
+    "title": "字符串分类统计",
+    "difficulty": "medium",
+    "description": "读入一行字符串（可能含空格），统计其中各类字符的个数：英文字母、数字、空格、其它字符。",
+    "input_format": "一行字符串，长度不超过 100，只包含 ASCII 可见字符和空格。",
+    "output_format": "四行，每行一个整数：\n第一行：英文字母（a-z、A-Z）的个数\n第二行：数字（0-9）的个数\n第三行：空格的个数\n第四行：其它字符的个数",
+    "sample_input": "Hello World 123!",
+    "sample_output": "10\n3\n2\n1",
+    "test_cases": [
+      { "input": "Hello World 123!\n", "output": "10\n3\n2\n1" },
+      { "input": "abc\n", "output": "3\n0\n0\n0" },
+      { "input": "12345\n", "output": "0\n5\n0\n0" },
+      { "input": "a b!\n", "output": "2\n0\n1\n1" }
+    ],
+    "hints": [
+      "cin >> s 遇到空格就停下，这题必须用 getline(cin, s) 整行读入。",
+      "用 <cctype> 里的 isalpha、isdigit、isspace 分类判断，比自己写范围比较更省事。",
+      "遍历字符串可以用范围 for：for (char c : s)。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\n#include <cctype>\nusing namespace std;\n\nint main() {\n    string s;\n    // cin >> s 会在空白字符处停下，空格就读不到了；\n    // getline 一直读到换行，整行（含空格）都能拿到\n    getline(cin, s);\n\n    int letters = 0, digits = 0, spaces = 0, others = 0;\n\n    // 范围 for：依次取出每个字符。这里只需要读，不需要改，所以用值拷贝 char c 就够\n    for (char c : s) {\n        // <cctype> 的函数要求参数是 unsigned char。\n        // 若 char 是有符号的，值大于 127 的字符会变成负数，直接传进去是未定义行为\n        unsigned char u = static_cast<unsigned char>(c);\n\n        if (isalpha(u)) {\n            ++letters;\n        } else if (isdigit(u)) {\n            ++digits;\n        } else if (isspace(u)) {\n            ++spaces;\n        } else {\n            ++others;\n        }\n    }\n\n    cout << letters << endl;\n    cout << digits << endl;\n    cout << spaces << endl;\n    cout << others << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "cin >> 读不了带空格的整行",
+        "body": "`cin >> s` 在遇到第一个空白字符（空格、Tab、换行）时就停下，所以输入 `Hello World` 只会读进 `Hello`。\n\n要读整行得用 `getline(cin, s)`：它一直读到换行为止，空格原样保留在字符串里，读到的内容也不包含那个换行符。\n\n**易错点**：如果前面用 `cin >> n` 读过数字，输入缓冲区里还留着一个换行符，紧接着调用 `getline` 会立刻读到空串。这时要先 `cin.ignore()` 把那个换行吃掉。本题没有前导输入，所以不必处理，但这个坑迟早会遇到。",
+        "code": "string s;\ngetline(cin, s);\ncout << s.size() << endl;",
+        "output": "输入 Hello World 123! 时输出 16"
+      },
+      {
+        "title": "字符分类用 <cctype>，别自己写范围判断",
+        "body": "`<cctype>` 提供了 `isalpha`（字母）、`isdigit`（数字）、`isspace`（空白：空格、Tab、换行）、`isalnum`（字母或数字）等函数。\n\n手写 `c >= 'a' && c <= 'z'` 很容易漏掉大写字母，或者写成 `c >= 'a' || c <= 'z'`（这个条件恒为真，谁都满足）。直接用标准库函数不容易错。\n\n**一个隐蔽的坑**：这些函数的参数类型其实是 `unsigned char`。如果 char 是有符号的，直接传一个值大于 127 的字符会被解释成负数，属于未定义行为。稳妥写法是先转换：`isalpha(static_cast<unsigned char>(c))`。\n\n本题输入全是 ASCII 可见字符，但养成习惯没坏处。",
+        "code": "for (char c : s) {\n    unsigned char u = static_cast<unsigned char>(c);\n    if (isalpha(u)) ++letters;\n    else if (isdigit(u)) ++digits;\n    else if (isspace(u)) ++spaces;\n    else ++others;\n}",
+        "output": "输入 Hello World 123! 得到 10 / 3 / 2 / 1"
+      }
+    ]
+  },
+  {
+    "id": 1204,
+    "title": "用 map 统计单词出现次数",
+    "difficulty": "medium",
+    "description": "读入 n 个单词，统计每个单词出现了多少次，并把结果按单词字典序从小到大输出。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）。\n第二行 n 个单词，单词之间用空格分隔。每个单词只含小写英文字母，长度不超过 20。",
+    "output_format": "共若干行，按单词字典序从小到大，每行输出「单词 出现次数」，中间用一个空格分隔。",
+    "sample_input": "6\napple banana apple cherry banana apple",
+    "sample_output": "apple 3\nbanana 2\ncherry 1",
+    "test_cases": [
+      { "input": "6\napple banana apple cherry banana apple\n", "output": "apple 3\nbanana 2\ncherry 1" },
+      { "input": "1\nhello\n", "output": "hello 1" },
+      { "input": "4\nb a b a\n", "output": "a 2\nb 2" },
+      { "input": "3\nzoo zoo abc\n", "output": "abc 1\nzoo 2" }
+    ],
+    "hints": [
+      "用 map<string, int> 存「单词 → 次数」；map 会自动按 key 排序，不用再 sort 一次。",
+      "计数只要一句 cnt[w]++，键不存在时 map 会自动插入一项、值初始化为 0。",
+      "遍历用范围 for：for (const auto& kv : cnt)，kv.first 是单词，kv.second 是次数。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\n#include <map>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // key = 单词，value = 出现次数。\n    // map 内部是一棵按 key 排好序的平衡树，所以遍历出来天然就是字典序\n    map<string, int> cnt;\n\n    for (int i = 0; i < n; ++i) {\n        string w;\n        cin >> w;   // cin >> 会自动跳过空格和换行，正好一个词一个词地读\n        // 如果 w 是第一次出现，operator[] 会自动插入一项并把值初始化为 0，再自增成 1\n        cnt[w]++;\n    }\n\n    // const auto& 用引用绑定，避免每个元素都拷贝一份字符串\n    for (const auto& kv : cnt) {\n        cout << kv.first << \" \" << kv.second << endl;\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "map 是什么：一张会自动排序的表",
+        "body": "`map<string, int>` 存的是「键 → 值」配对：键是单词（string），值是次数（int）。\n\n它和数组最像的一点是用下标访问：`cnt[\"apple\"]`。区别在于数组下标必须是整数，而 map 的下标可以是任何能比较大小的类型，这里就是字符串。\n\n**最方便的地方**：如果 `\"apple\"` 这个键还不存在，`cnt[\"apple\"]` 会**自动插入**一项，值默认初始化为 0。所以统计次数只要一句 `cnt[w]++;`，不用先判断键在不在。\n\n反过来这也是个坑：只想「查一下有没有」时千万别用 `cnt[w]`——那会平白插入一堆没用的键，还可能改变程序行为。查存在性要用 `cnt.count(w)`（返回 0 或 1）或 `cnt.find(w)`。",
+        "code": "map<string, int> cnt;\ncnt[\"apple\"]++;   // 键不存在 → 自动插入，值为 0 → 自增到 1\ncnt[\"apple\"]++;   // 变成 2\ncout << cnt[\"apple\"] << endl;",
+        "output": "2"
+      },
+      {
+        "title": "为什么遍历 map 出来就是字典序",
+        "body": "map 内部是一棵按 key 排好序的平衡二叉树，元素在插入时就放到了该在的位置。所以遍历 map 拿到的顺序永远是 key 从小到大的顺序——这题不需要再写一次 `sort`。\n\n（如果只在意速度、不在乎顺序，可以用 `unordered_map`。但那样遍历顺序不可预测，要输出字典序还得自己排序，本题反而更麻烦。）\n\n遍历用范围 for：`for (const auto& kv : cnt)`。`kv.first` 是键，`kv.second` 是值。\n\n`const auto&` 的意思是「让编译器推断类型，并用常量引用绑定」。map 里每个元素的类型是 `pair<const string, int>`，写成引用就避免每次循环都拷贝一份字符串。",
+        "code": "for (const auto& kv : cnt) {\n    cout << kv.first << \" \" << kv.second << endl;\n}",
+        "output": "apple 3\nbanana 2\ncherry 1"
+      }
+    ]
+  },
+  {
+    "id": 1205,
+    "title": "用类封装一个简易计算器",
+    "difficulty": "medium",
+    "description": "设计一个计算器类，用成员函数实现加、减、乘、除四种运算。\n\n程序读入 q 条计算请求，每条请求包含两个整数和一个运算符，输出每条请求的结果。",
+    "input_format": "第一行一个整数 q（1 ≤ q ≤ 100）。\n接下来 q 行，每行形如：a op b，其中 a、b 是整数（绝对值不超过 1000000），op 是 +、-、*、/ 四个符号之一，三部分之间用空格分隔。",
+    "output_format": "共 q 行，每行一个结果。\n除法是整数除法，结果向零取整。\n如果遇到除以 0（即 b 为 0），该行输出 error。",
+    "sample_input": "3\n3 + 5\n10 - 4\n6 * 7",
+    "sample_output": "8\n6\n42",
+    "test_cases": [
+      { "input": "3\n3 + 5\n10 - 4\n6 * 7\n", "output": "8\n6\n42" },
+      { "input": "2\n7 / 2\n8 / 0\n", "output": "3\nerror" },
+      { "input": "1\n1000000 * 1000000\n", "output": "1000000000000" },
+      { "input": "3\n-7 / 2\n-3 - -4\n0 * 5\n", "output": "-3\n1\n0" }
+    ],
+    "hints": [
+      "把四种运算写成类的成员函数：add、sub、mul，除法单独做成一个返回 bool 的 div。",
+      "乘法结果可能超出 int 的范围（1000000 × 1000000 = 10^12），成员函数统一用 long long。",
+      "除法失败时结果没法用返回值带出来，可以「返回值报告成功与否 + 引用参数输出结果」。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nclass Calculator {\npublic:\n    // 成员函数后面的 const 表示「这个函数不修改对象的状态」。\n    // 纯计算的函数都该加上，编译器还会帮你检查有没有误改成员\n    long long add(long long a, long long b) const { return a + b; }\n    long long sub(long long a, long long b) const { return a - b; }\n    long long mul(long long a, long long b) const { return a * b; }\n\n    // 除法有「除数为 0」这种失败情况：返回值用 bool 报告成功与否，\n    // 真正的结果通过引用参数 result 带回去（引用是变量的别名，改它等于改外面的变量）\n    bool div(long long a, long long b, long long& result) const {\n        if (b == 0) return false;   // 整数除以 0 会让程序直接崩溃，必须先拦下来\n        result = a / b;             // C++ 整数除法向零取整，-7 / 2 得到 -3\n        return true;\n    }\n};\n\nint main() {\n    int q;\n    cin >> q;\n\n    Calculator calc;   // 类里没写构造函数时，编译器会自动生成一个\n\n    for (int i = 0; i < q; ++i) {\n        long long a, b;\n        char op;\n        cin >> a >> op >> b;   // cin 会自动跳过数字和运算符之间的空格\n\n        long long r = 0;\n        bool ok = true;\n\n        switch (op) {\n            case '+': r = calc.add(a, b); break;\n            case '-': r = calc.sub(a, b); break;\n            case '*': r = calc.mul(a, b); break;\n            case '/': ok = calc.div(a, b, r); break;\n            default:  ok = false; break;   // 题目保证不会出现其它符号\n        }\n\n        if (ok) {\n            cout << r << endl;\n        } else {\n            cout << \"error\" << endl;\n        }\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么把这些运算放进一个类",
+        "body": "把加、减、乘、除写成四个成员函数，它们就有了共同的归属：Calculator。调用时写 `calc.add(a, b)`，一看就知道是「计算器在做加法」。\n\n对比一下散落的全局函数 `add(a, b)`：项目里函数一多，名字容易撞车，也看不出它属于哪个模块。类把相关的操作打包在一起，外部只要拿到一个对象就能用——这就是**封装**最基本的含义。\n\n成员函数后面写 `const`（如 `long long add(...) const`）表示「这个函数不会修改对象的状态」。纯计算的函数都该加上，编译器还能帮你检查有没有越界修改。\n\n类里一个构造函数都不写时，编译器会自动生成一个什么都不做的默认构造函数，所以 `Calculator calc;` 能直接编译通过。",
+        "code": "class Calculator {\npublic:\n    long long add(long long a, long long b) const { return a + b; }\n    long long sub(long long a, long long b) const { return a - b; }\n    long long mul(long long a, long long b) const { return a * b; }\n};",
+        "output": "Calculator calc; 之后 calc.add(3, 5) 得到 8"
+      },
+      {
+        "title": "除法怎么把「失败」告诉调用者",
+        "body": "除以 0 是运行时错误，程序会直接崩溃，所以必须在做除法之前拦住它。但函数只能有一个返回值，怎么既返回结果、又返回「有没有成功」？\n\n常见做法是：返回值用 `bool` 表示成功与否，真正的结果通过**引用参数**带出去。\n\n```\nbool div(long long a, long long b, long long& result) const {\n    if (b == 0) return false;\n    result = a / b;\n    return true;\n}\n```\n\n`long long& result` 里的 `&` 表示引用——它是外面那个变量的别名，函数里改 `result` 就等于改调用方的变量。调用时直接传变量名，不用写取地址符，比 C 的指针写法 `long long* result` 干净得多，也不容易忘写 `&`。\n\n调用方这样用：先准备一个变量装结果，再看返回值决定输出什么。",
+        "code": "long long r = 0;\nif (calc.div(7, 2, r)) cout << r << endl;        // 输出 3\nif (!calc.div(8, 0, r)) cout << \"error\" << endl; // 输出 error",
+        "output": "3\nerror"
+      },
+      {
+        "title": "整数除法的取整方向和溢出风险",
+        "body": "题目要求「结果向零取整」，也就是 `-7 / 2` 得到 `-3`（把小数部分丢掉），而不是数学上向下取整的 `-4`。C++ 的整数除法本来就是向零取整，所以直接写 `a / b` 就符合要求，不用额外处理。\n\n另一半是溢出：`1000000 × 1000000 = 10^12`，而 int 大约只能装到 2.1 × 10^9。用 int 算乘法会得到垃圾值，**而且不会有任何报错**。所以成员函数的参数和返回值统一用 `long long`。\n\n另外除法要放在 `div` 里单独处理，因为它是唯一可能失败的运算——把「可能失败」的操作集中在一个地方，比散在 main 里到处 if 更好维护。",
+        "code": "cout << -7 / 2 << endl;                 // -3，向零取整\nlong long big = 1000000LL * 1000000;    // 用 long long 才装得下 10^12\ncout << big << endl;",
+        "output": "-3\n1000000000000"
+      }
+    ]
+  },
+  {
+    "id": 1206,
+    "title": "成绩排序与并列名次",
+    "difficulty": "hard",
+    "description": "读入 n 名学生的姓名和分数，按分数从高到低排名并输出。\n\n名次规则：分数相同的学生名次也相同；出现并列后，下一档名次等于「排在它前面的人数加 1」（也就是 1、2、2、4 这种排法）。\n分数也相同时，按姓名的字典序从小到大输出。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）。\n接下来 n 行，每行一个姓名和一个整数分数，用空格分隔。姓名只含小写英文字母、长度不超过 20 且互不相同；分数在 0 到 100 之间。",
+    "output_format": "共 n 行，每行输出「名次 姓名 分数」，三部分之间用一个空格分隔，按上面的规则排好序。",
+    "sample_input": "5\nalice 90\nbob 85\ncarol 90\ndave 70\neve 85",
+    "sample_output": "1 alice 90\n1 carol 90\n3 bob 85\n3 eve 85\n5 dave 70",
+    "test_cases": [
+      { "input": "5\nalice 90\nbob 85\ncarol 90\ndave 70\neve 85\n", "output": "1 alice 90\n1 carol 90\n3 bob 85\n3 eve 85\n5 dave 70" },
+      { "input": "1\nzoe 100\n", "output": "1 zoe 100" },
+      { "input": "3\nb 60\na 60\nc 60\n", "output": "1 a 60\n1 b 60\n1 c 60" },
+      { "input": "4\nx 100\ny 100\nz 99\nw 0\n", "output": "1 x 100\n1 y 100\n3 z 99\n4 w 0" }
+    ],
+    "hints": [
+      "先用 struct 把「姓名 + 分数」捆成一个类型，再用 vector 装下所有学生。",
+      "排序用 <algorithm> 的 sort，第三个参数是自定义比较函数：分数高的排前面，分数相同则姓名小的排前面。",
+      "名次不要试图在排序时顺带算出来。排好序之后再扫一遍：第 i 个人（下标从 0 数）若与上一个人分数相同就沿用上一个名次，否则名次就是 i + 1。",
+      "比较函数必须满足严格弱序——两个元素相等时要返回 false，也就是不能写成 >=。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nstruct Student {\n    string name;\n    int score;\n};\n\n// 自定义比较函数：返回 true 表示 a 应该排在 b 前面\nbool cmp(const Student& a, const Student& b) {\n    if (a.score != b.score) return a.score > b.score;  // 分数高的在前\n    return a.name < b.name;                            // 分数相同，姓名字典序小的在前\n    // 注意两个元素「相等」时这里会返回 false，这正是 sort 要求的严格弱序；\n    // 若把 > 写成 >=，sort 的内部逻辑会混乱，运行时可能崩溃或结果错乱\n}\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 一个人就是一个 Student，姓名和分数绑在一起，排序时不会被拆散\n    vector<Student> st(n);\n    for (int i = 0; i < n; ++i) {\n        cin >> st[i].name >> st[i].score;\n    }\n\n    // sort 需要 <algorithm>；第三个参数决定「谁排在前面」\n    sort(st.begin(), st.end(), cmp);\n\n    int rank = 1;   // 当前名次\n    for (int i = 0; i < n; ++i) {\n        // 与上一名分数不同 → 名次是「排在前面的人数 + 1」，而 i 正好就是前面的人数\n        // 分数相同 → 名次不变，形成并列（1、2、2、4 的排法）\n        if (i > 0 && st[i].score != st[i - 1].score) {\n            rank = i + 1;\n        }\n        cout << rank << \" \" << st[i].name << \" \" << st[i].score << endl;\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "把一条记录捆成一个类型",
+        "body": "要存姓名和分数。初学者常写成两个并行的数组：`names[i]` 和 `scores[i]`，靠相同的下标把它们对应起来。\n\n这样写的问题是：排序时两个数组必须同步交换，一不小心就把姓名和分数错位配对了，而且程序不会有**任何报错**——你只会看到「张三的分数配上了李四的名字」。\n\n用 `struct` 把姓名和分数捆成一个 `Student`，一个人就是一个整体，交换时一起交换，永远不会错位。\n\n访问成员用点号：`st[i].name`、`st[i].score`。结构体默认的访问权限是 public，这里不需要像类那样另写 `public:`。",
+        "code": "struct Student {\n    string name;\n    int score;\n};\n\nvector<Student> st(n);\nfor (int i = 0; i < n; ++i) {\n    cin >> st[i].name >> st[i].score;\n}",
+        "output": "每个 st[i] 同时带着姓名和分数"
+      },
+      {
+        "title": "sort 的第三个参数：告诉它谁该排前面",
+        "body": "`sort(st.begin(), st.end())` 默认按从小到大的顺序排。但 Student 里有两个字段，编译器不知道该拿哪个来比，直接排会编译不过——所以要自己写一个比较函数作为第三个参数。\n\n比较函数的含义是：「a 应该排在 b 前面吗？」返回 true 就表示 a 在前。本题两条规则按优先级写：先比分数（高的在前），分数相同再比姓名（字典序小的在前）。\n\n**必须注意**：比较函数要满足「严格弱序」，两个元素相等时必须返回 false。写成 `a.score >= b.score` 会让 sort 的内部逻辑混乱，运行时可能直接崩溃，也可能排出一个莫名其妙的顺序。\n\n参数用 `const Student&`（常引用）而不是 `Student`：排序要比较大约 n log n 次，每次拷贝一份字符串代价不小；加 `const` 是为了表明这个函数不会修改传进来的学生。",
+        "code": "bool cmp(const Student& a, const Student& b) {\n    if (a.score != b.score) return a.score > b.score;\n    return a.name < b.name;\n}\n\nsort(st.begin(), st.end(), cmp);",
+        "output": "分数从高到低排列"
+      },
+      {
+        "title": "并列名次：排完序再扫一遍",
+        "body": "名次不要试图在排序过程中顺带算出来，因为「同分并列」依赖的是**相邻比较**，而排序过程中元素的相对位置一直在变。\n\n正确做法是排好序之后单独扫一遍：\n\n· 第 0 个人名次当然是 1；\n· 第 i 个人（i 大于 0）如果分数和上一个人相同，就沿用上一个人的名次，这就是并列；\n· 分数不同时，名次是「排在它前面的人数加 1」，而下标 i 恰好等于前面的人数，所以名次就是 `i + 1`。\n\n这样得到的就是 1、2、2、4 式的竞赛排名：两个人并列第 1，紧接着的人就是第 3。\n\n换个需求也一样处理：如果要的是「并列之后名次连续」（1、2、2、3），只需把 `rank = i + 1` 改成 `rank = rank + 1`。理解规则的差别比背代码重要得多。",
+        "code": "int rank = 1;\nfor (int i = 0; i < n; ++i) {\n    if (i > 0 && st[i].score != st[i - 1].score) {\n        rank = i + 1;   // 前面有 i 个人，名次就是 i + 1\n    }\n    cout << rank << \" \" << st[i].name << \" \" << st[i].score << endl;\n}",
+        "output": "1 alice 90\n1 carol 90\n3 bob 85\n3 eve 85\n5 dave 70"
+      }
+    ]
+  }
+]

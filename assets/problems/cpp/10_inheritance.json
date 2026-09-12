@@ -1,0 +1,222 @@
+[
+  {
+    "id": 1001,
+    "title": "继承入门：派生类复用基类成员",
+    "difficulty": "easy",
+    "description": "定义一个基类 Person，它有 protected 成员 name，以及成员函数 whoAmI()，输出一行 Person: <名字>。\n再定义派生类 Student，用 class Student : public Person 的方式继承它，并新增成员函数 study()，输出一行 Student: <名字> is studying。\n读入一个名字，创建 Student 对象，先调用 whoAmI()，再调用 study()。",
+    "input_format": "一行，一个不含空格的字符串 name（英文字母）",
+    "output_format": "两行：\n第一行 Person: name\n第二行 Student: name is studying",
+    "sample_input": "Tom",
+    "sample_output": "Person: Tom\nStudent: Tom is studying",
+    "test_cases": [
+      { "input": "Tom\n", "output": "Person: Tom\nStudent: Tom is studying" },
+      { "input": "Alice\n", "output": "Person: Alice\nStudent: Alice is studying" },
+      { "input": "Bo\n", "output": "Person: Bo\nStudent: Bo is studying" }
+    ],
+    "hints": [
+      "派生类的写法是在类名后面加冒号和继承方式：class Student : public Person。",
+      "基类里用 protected 修饰的成员，派生类的成员函数可以直接使用，private 的就不行。",
+      "Student 的构造函数要把名字交给基类：Student(const string& n) : Person(n) {}。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\n// 基类：把「所有学生都有的东西」放在这里，派生类不用重复写一遍\nclass Person {\nprotected:\n    // protected 的意思是：类外面碰不到，但派生类里可以直接当自己的成员用。\n    // 如果写成 private，下面 Student::study 里的 name 会编译报错。\n    string name;\n\npublic:\n    Person(const string& n) : name(n) {}\n\n    void whoAmI() {\n        cout << \"Person: \" << name << endl;\n    }\n};\n\n// 冒号后面的 public 是「继承方式」，读作「Student 是一种 Person」。\n// 最容易漏的就是这个 public：漏掉默认是 private 继承，\n// 基类的公有成员在 main 里就调不到了（报错信息通常很难看懂）。\nclass Student : public Person {\npublic:\n    // 派生类自己没办法直接初始化基类的 name，\n    // 必须用初始化列表把参数转交给基类构造函数\n    Student(const string& n) : Person(n) {}\n\n    void study() {\n        // name 是基类的 protected 成员，派生类里直接用就行\n        cout << \"Student: \" << name << \" is studying\" << endl;\n    }\n};\n\nint main() {\n    string n;\n    cin >> n;\n\n    Student s(n);\n    s.whoAmI();   // 基类写好的成员函数，派生类对象可以直接调用\n    s.study();    // 派生类自己新增的成员函数\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "继承解决的是「代码抄第二遍」的问题",
+        "body": "不用继承的话，Person 和 Student 都得写一份 name 成员、一份输出名字的函数，改一处就要记得改两处，迟早漏一个。\n\n继承让派生类白拿基类的成员：写 `class Student : public Person`，Student 就自动拥有了 Person 的全部成员（能访问的那些），再往上加自己独有的东西。\n\n冒号后面的 `public` 千万别漏。它是继承方式，决定了基类的公有成员在派生类外面还能不能访问；不写的话默认是 `private` 继承，`main` 里调用 `s.whoAmI()` 会直接编译失败。",
+        "code": "class Person {\nprotected:\n    string name;\npublic:\n    Person(const string& n) : name(n) {}\n    void whoAmI() { cout << \"Person: \" << name << endl; }\n};\n\nclass Student : public Person {\npublic:\n    Student(const string& n) : Person(n) {}\n    void study() { cout << \"Student: \" << name << \" is studying\" << endl; }\n};",
+        "output": "输入 Tom 时输出：\nPerson: Tom\nStudent: Tom is studying"
+      },
+      {
+        "title": "protected 是专门留给派生类的可见性",
+        "body": "C++ 有三种访问权限，初学者最容易只记住 public 和 private：\n\n· `public` —— 谁都能访问\n· `private` —— 只有本类的成员函数能访问，**派生类也不行**\n· `protected` —— 类外面不能访问，但派生类里可以\n\n所以基类里那些「想留给子类用、又不想暴露给外面」的成员，要写 `protected`。这题如果把 `name` 写成 `private`，`Student::study()` 里访问 `name` 就会报 “is private within this context”，而 `whoAmI()` 却照常工作——很多人误以为「继承没生效」，其实只是权限没给对。",
+        "code": "class Person {\nprivate:\n    string name;   // 改成 private 后，派生类里就访问不到了\nprotected:\n    int age;\n};",
+        "output": "派生类里用 name 会编译报错：'name' is a private member of 'Person'"
+      }
+    ]
+  },
+  {
+    "id": 1002,
+    "title": "构造函数链：派生类先构造基类",
+    "difficulty": "medium",
+    "description": "定义一个基类 Person，它的构造函数接收 name，并输出一行 Base ctor: name。\n定义派生类 Student 继承 Person，它的构造函数接收 name 和 age，输出一行 Derived ctor: age，另外提供成员函数 info() 输出一行 Student name is age。\n读入名字和年龄，创建 Student 对象并调用 info()，观察三行输出的先后顺序。",
+    "input_format": "一行，一个字符串 name 和一个整数 age，用空格分隔",
+    "output_format": "三行：\n第一行 Base ctor: name\n第二行 Derived ctor: age\n第三行 Student name is age",
+    "sample_input": "Tom 18",
+    "sample_output": "Base ctor: Tom\nDerived ctor: 18\nStudent Tom is 18",
+    "test_cases": [
+      { "input": "Tom 18\n", "output": "Base ctor: Tom\nDerived ctor: 18\nStudent Tom is 18" },
+      { "input": "Alice 20\n", "output": "Base ctor: Alice\nDerived ctor: 20\nStudent Alice is 20" },
+      { "input": "Bo 0\n", "output": "Base ctor: Bo\nDerived ctor: 0\nStudent Bo is 0" }
+    ],
+    "hints": [
+      "派生类构造函数用初始化列表调用基类构造函数，写在冒号和函数体之间。",
+      "写法是 Student(const string& n, int a) : Person(n), age(a) { ... }，多个初始化项之间用逗号分隔。",
+      "如果基类只有 Person(string) 这种带参数的构造函数，派生类不写 Person(n) 就编译不过。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nclass Person {\nprotected:\n    string name;\n\npublic:\n    // 这个构造函数没有默认值，也就是说 Person 没有「默认构造函数」。\n    // 派生类必须显式调用它，编译器不会替你猜名字。\n    Person(const string& n) : name(n) {\n        // 基类子对象先构造，所以这行一定最先打印\n        cout << \"Base ctor: \" << name << endl;\n    }\n};\n\nclass Student : public Person {\n    int age;\n\npublic:\n    // 初始化列表的真实顺序：先基类 Person(n)，再自己的成员 age(a)，\n    // 最后才进入函数体。这个顺序由语言规定，和你写的先后无关。\n    Student(const string& n, int a) : Person(n), age(a) {\n        cout << \"Derived ctor: \" << age << endl;\n    }\n\n    void info() {\n        // name 来自基类，age 来自自己，派生类里都能直接读\n        cout << \"Student \" << name << \" is \" << age << endl;\n    }\n};\n\nint main() {\n    string n;\n    int a;\n    cin >> n >> a;\n\n    Student s(n, a);\n    s.info();\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "派生类对象里藏着一个基类子对象",
+        "body": "写 `Student s(\"Tom\", 18);` 的时候，内存里先有一块 Person 的部分，再有一块 Student 自己新增的部分。构造顺序是固定的：\n\n1. 基类 Person 的构造函数\n2. Student 自己的成员（这里是 age）\n3. Student 构造函数的函数体\n\n所以输出里 `Base ctor:` 永远排在 `Derived ctor:` 前面。这不是编译器随便定的，而是语言保证的：派生类构造函数的函数体开始执行时，基类那部分必须已经就绪，否则函数体里访问基类成员就会读到垃圾值。",
+        "code": "class Person {\npublic:\n    Person(const string& n) : name(n) { cout << \"Base ctor: \" << name << endl; }\nprotected:\n    string name;\n};\n\nclass Student : public Person {\npublic:\n    Student(const string& n, int a) : Person(n), age(a) {\n        cout << \"Derived ctor: \" << age << endl;\n    }\nprivate:\n    int age;\n};",
+        "output": "Base ctor: Tom\nDerived ctor: 18"
+      },
+      {
+        "title": "为什么必须在初始化列表里交参数",
+        "body": "给基类传参这件事只能在初始化列表做，不能写进函数体。原因是时间顺序：函数体开始执行之前，基类子对象就已经构造完了，那时候再写 `name = n;` 已经晚了。\n\n如果基类只有 `Person(string)`（没有默认构造函数），派生类又没在初始化列表里写 `Person(n)`，编译会直接失败，报 “no matching constructor for initialization of 'Person'”——这句话看起来吓人，其实意思就是「我不会替你造基类，你得自己说清楚怎么造」。\n\n顺便记住：初始化列表里的顺序不影响实际构造顺序，实际顺序永远是「基类 → 成员（按声明顺序）→ 函数体」。",
+        "code": "Student(const string& n, int a) : Person(n), age(a) {   // 正确：在这里交给基类\n    // name = n;   // 错误写法：函数体里已经没有机会构造基类了\n}",
+        "output": "初始化列表里不写 Person(n) 时编译报错：no matching constructor for initialization of 'Person'"
+      }
+    ]
+  },
+  {
+    "id": 1003,
+    "title": "同名同参的函数覆盖（不加 virtual 的版本）",
+    "difficulty": "medium",
+    "description": "定义基类 Base，成员函数 show() 输出一行 Base::show。\n定义派生类 Derived 继承 Base，用完全相同的签名 void show() 重新实现它，输出一行 Derived::show name。\n读入一个名字，程序依次做三件事，并按顺序输出三行：\n1. 用 Derived 对象直接调用 show()\n2. 用 Base* 指针指向同一个 Derived 对象，再调用 show()\n3. 用一个 Base 对象调用 show()",
+    "input_format": "一行，一个不含空格的字符串 name（英文字母）",
+    "output_format": "三行：\n第一行 Derived::show name\n第二行 Base::show\n第三行 Base::show",
+    "sample_input": "Tom",
+    "sample_output": "Derived::show Tom\nBase::show\nBase::show",
+    "test_cases": [
+      { "input": "Tom\n", "output": "Derived::show Tom\nBase::show\nBase::show" },
+      { "input": "Alice\n", "output": "Derived::show Alice\nBase::show\nBase::show" },
+      { "input": "Z\n", "output": "Derived::show Z\nBase::show\nBase::show" }
+    ],
+    "hints": [
+      "派生类里写一个和基类名字、参数列表都一样的函数，就叫覆盖（同名同参）。",
+      "Derived d; d.show(); 调用的一定是 Derived 的版本，编译器看的是变量本身的类型。",
+      "Base* p = &d; p->show(); 这里编译器只看 p 的类型 Base，所以调用的是 Base::show —— 这叫静态绑定。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nclass Base {\npublic:\n    // 注意：这里没有 virtual。\n    // 于是「调用哪一个 show」在编译期就被定死了，只看你用哪种类型去调。\n    void show() {\n        cout << \"Base::show\" << endl;\n    }\n};\n\nclass Derived : public Base {\n    string name;\n\npublic:\n    Derived(const string& n) : name(n) {}\n\n    // 名字、参数、返回值都和基类一模一样，这叫覆盖。\n    // 但覆盖只影响「用派生类类型去调」的情况，管不了基类指针。\n    void show() {\n        cout << \"Derived::show \" << name << endl;\n    }\n};\n\nint main() {\n    string n;\n    cin >> n;\n\n    Derived d(n);\n\n    // 1）变量本身的类型是 Derived，找到的就是 Derived::show\n    d.show();\n\n    // 2）p 的静态类型是 Base*。它确实指向一个 Derived 对象，\n    //    但没有 virtual 时编译器根本不看这一点，照样调用 Base::show。\n    Base* p = &d;\n    p->show();\n\n    // 3）货真价实的 Base 对象，当然是 Base::show\n    Base b;\n    b.show();\n\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "覆盖只是「挡住」，不是「替换」",
+        "body": "派生类定义了同签名的 `show()`，它把基类的 `show()` 遮住了。用派生类对象调用时，名字查找先从 `Derived` 里找，找到就不再往上找基类，所以走的是派生类版本。\n\n基类那份实现并没有消失，它还在。你可以用 `d.Base::show();` 显式指定调用基类版本——语法上就是在函数名前加 `类名::`。\n\n所以「派生类覆盖了基类函数」这句话的准确含义是：用派生类类型调用时优先选派生类的版本。换成基类类型去调，被挡住的那个版本就又冒出来了。",
+        "code": "Derived d(\"Tom\");\nd.show();          // Derived::show Tom\nd.Base::show();    // 显式指定，绕开派生类的版本",
+        "output": "Derived::show Tom\nBase::show"
+      },
+      {
+        "title": "为什么 p->show() 不听对象的话",
+        "body": "这是初学者最容易卡住的一步：`p` 明明指向一个派生类对象，为什么调用基类版本？\n\n因为**不加 virtual 时，调用哪个函数在编译期就决定了**（静态绑定）。编译器手里只有 `p` 的类型 `Base*`，它去 `Base` 里找 `show`，找到了就把调用固定连到那个地址上。对象真实是谁，编译期根本不知道，运行期也不查。\n\n想让程序在运行时按对象的真实类型去选版本，必须在基类把函数声明成 `virtual`。那样 `p->show()` 就会输出 `Derived::show ...` —— 这就是下一题要做的多态。\n\n另外提醒：这里的 `p` 是**指针**才有这个现象，`Base b = d;`（把派生类对象赋给基类变量）更糟，派生类多出来的部分会被直接切掉，这叫对象切片。",
+        "code": "Derived d(\"Tom\");\nBase* p = &d;\np->show();      // 没有 virtual → 输出 Base::show",
+        "output": "Base::show"
+      }
+    ]
+  },
+  {
+    "id": 1004,
+    "title": "虚函数与多态：一个指针，不同叫声",
+    "difficulty": "medium",
+    "description": "定义一个基类 Animal，它有虚函数 speak()，输出一行 Some sound。\n定义三个派生类 Dog、Cat、Cow 继承 Animal，各自用同名同参的 speak() 覆盖：Dog 输出 Woof、Cat 输出 Meow、Cow 输出 Moo。\n读入整数 n，再读入 n 个单词。对每个单词，让一个 Animal* 指针指向对应的对象并调用 speak()，输出一行。\n不是 dog / cat / cow 的单词，就让指针指向一个普通的 Animal 对象。",
+    "input_format": "第一行一个整数 n；接下来 n 行，每行一个单词（dog、cat、cow 或其它单词）",
+    "output_format": "n 行，每行一个单词：dog 输出 Woof、cat 输出 Meow、cow 输出 Moo，其它输出 Some sound",
+    "sample_input": "3\ndog\ncat\nbird",
+    "sample_output": "Woof\nMeow\nSome sound",
+    "test_cases": [
+      { "input": "3\ndog\ncat\nbird\n", "output": "Woof\nMeow\nSome sound" },
+      { "input": "1\ncow\n", "output": "Moo" },
+      { "input": "4\ncat\ncat\ndog\ncow\n", "output": "Meow\nMeow\nWoof\nMoo" },
+      { "input": "2\nbird\nfish\n", "output": "Some sound\nSome sound" }
+    ],
+    "hints": [
+      "在基类的 speak() 前面加 virtual，派生类的同名同参函数就会在运行时被选中。",
+      "把 p 声明成 Animal* 类型，让它分别指向 Dog、Cat、Cow 对象，然后统一写 p->speak();。",
+      "对象要先建好再取地址：Dog dog; Animal* p = &dog;，不要用 new 也能演示多态。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nclass Animal {\npublic:\n    // virtual 是这题的全部关键：它告诉编译器\n    //「别在编译期把调用定死，运行期看对象真实类型再选」。\n    virtual void speak() {\n        cout << \"Some sound\" << endl;\n    }\n};\n\nclass Dog : public Animal {\npublic:\n    // 基类里是虚函数，派生类里同名同参的函数自动也是虚函数，\n    // 可以省略 virtual，但写上更清楚（下一题还会介绍 override）。\n    void speak() {\n        cout << \"Woof\" << endl;\n    }\n};\n\nclass Cat : public Animal {\npublic:\n    void speak() {\n        cout << \"Meow\" << endl;\n    }\n};\n\nclass Cow : public Animal {\npublic:\n    void speak() {\n        cout << \"Moo\" << endl;\n    }\n};\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 先把可能用到的对象都建好，下面只用「指针指向谁」来区分行为\n    Dog dog;\n    Cat cat;\n    Cow cow;\n    Animal unknown;   // 不认识的单词就指向它\n\n    for (int i = 0; i < n; i++) {\n        string kind;\n        cin >> kind;\n\n        // p 的类型永远是 Animal*，它自己不知道指向的是什么。\n        // 默认指向基类对象，保证任何输入都有对象可指。\n        Animal* p = &unknown;\n        if (kind == \"dog\") {\n            p = &dog;\n        } else if (kind == \"cat\") {\n            p = &cat;\n        } else if (kind == \"cow\") {\n            p = &cow;\n        }\n\n        // 同样是这一行代码，输出却随对象的真实类型变化 —— 这就是多态。\n        // 把 virtual 去掉，它会永远输出 Some sound。\n        p->speak();\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "virtual 把「编译期定死」改成「运行期再选」",
+        "body": "上一题里 `p->show()` 被编译器固定连到基类版本，因为 `p` 的类型是 `Base*`。加上 `virtual` 之后，编译器换了个做法：\n\n每个含虚函数的类都有一张「虚函数表」，记录自己每个虚函数的地址；每个对象里多存一个指针指向这张表。调用 `p->speak()` 时，程序运行到这一行才去对象里查表，看这块内存真实是哪个类的对象，再跳到那个类的 `speak`。\n\n所以同一行 `p->speak();` 在循环里能输出 Woof、Meow、Moo —— 决定权从编译期挪到了运行期。代价是每个对象多一个指针的空间、调用时多一次间接跳转，通常可以忽略。",
+        "code": "class Animal {\npublic:\n    virtual void speak() { cout << \"Some sound\" << endl; }\n};\n\nAnimal* p = &dog;\np->speak();   // 运行时查表 → Woof",
+        "output": "Woof"
+      },
+      {
+        "title": "多态必须通过指针或引用，不能靠赋值",
+        "body": "多态能生效的前提是：你操作的是「指向对象的指针或引用」，对象本身没被改动。\n\n如果写成 `Animal a = dog;`，a 是一块只有基类大小的内存，派生类多出来的部分会被丢掉，这叫**对象切片**（slicing）。a 从此就是一个纯粹的 Animal，`a.speak()` 只会输出 Some sound，多态彻底失效。\n\n所以：想用多态，就写 `Animal* p = &dog;` 或 `Animal& r = dog;`，不要写 `Animal a = dog;`。\n\n还有一点容易忽略：`virtual` 必须写在基类里。只在派生类写 virtual、基类不写，`p->speak()` 依然走基类版本。",
+        "code": "Dog dog;\nAnimal* p = &dog;   // 正确：指针\nAnimal& r = dog;    // 正确：引用\n// Animal a = dog;  // 错误：对象切片，多态失效",
+        "output": "p->speak() 输出 Woof；r.speak() 也输出 Woof"
+      }
+    ]
+  },
+  {
+    "id": 1005,
+    "title": "override 关键字：写错的覆盖当场报错",
+    "difficulty": "medium",
+    "description": "定义一个基类 Shape，它有虚函数 area() const，返回 0。\n定义派生类 Rect 继承 Shape，用宽 w 和高 h（都是 int）初始化，并用 override 覆盖 area() const，返回 w * h。\n读入宽和高，创建一个 Rect 对象，通过 Shape* 指针调用 area()，输出面积。",
+    "input_format": "一行，两个非负整数 w 和 h，用空格分隔",
+    "output_format": "输出一个整数，表示 w * h",
+    "sample_input": "3 4",
+    "sample_output": "12",
+    "test_cases": [
+      { "input": "3 4\n", "output": "12" },
+      { "input": "1 1\n", "output": "1" },
+      { "input": "0 5\n", "output": "0" },
+      { "input": "12 10\n", "output": "120" }
+    ],
+    "hints": [
+      "覆盖基类的虚函数时，在函数声明后面加上 override（C++11 起支持）。",
+      "override 要求签名完全一致：基类写的是 area() const，派生类也必须写 const。",
+      "用 Shape* p = &r; 接住派生类对象再调 p->area()，才能同时用上多态和 override。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nclass Shape {\npublic:\n    // 虚函数：派生类可以覆盖它，用基类指针调用时会走到派生类的版本。\n    // 注意签名里的 const —— 它是签名的一部分，派生类必须一致。\n    virtual int area() const {\n        return 0;\n    }\n\n    // 只要有虚函数，就顺手把析构函数也写成 virtual。\n    // 这题没有 new/delete，但这是必须养成的习惯（下一题会看到原因）。\n    virtual ~Shape() {}\n};\n\nclass Rect : public Shape {\n    int w, h;\n\npublic:\n    Rect(int width, int height) : w(width), h(height) {}\n\n    // override 让编译器帮你检查一致性：\n    // 如果基类里没有一个 int area() const 能被覆盖，这一行直接编译失败。\n    // 比如漏掉 const，报错内容大致是\n    //   'area' marked 'override' but does not override any member functions\n    int area() const override {\n        return w * h;\n    }\n};\n\nint main() {\n    int w, h;\n    cin >> w >> h;\n\n    Rect r(w, h);\n\n    // 用基类指针调用虚函数 → 实际执行的是 Rect::area\n    Shape* p = &r;\n    cout << p->area() << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "漏一个 const，覆盖就变成了「隐藏」",
+        "body": "这是覆盖里最阴险的坑。基类声明 `virtual int area() const`，派生类手一抖写成 `int area()`（没有 const）。两边的参数表其实不同，所以**这不是覆盖，而是隐藏**。\n\n后果：`Shape* p = &r; p->area()` 会调用基类版本，返回 0，程序不报任何错，只是结果不对。新手会盯着半天，怀疑多态坏了，其实是签名差了个 const。\n\n加上 `override` 之后，编译器会替你守住这条线：只要没有一个签名完全匹配的基类虚函数可以覆盖，就直接编译报错。报错发生在写代码的时候，而不是交作业之后。",
+        "code": "class Rect : public Shape {\npublic:\n    // 漏了 const → 不是覆盖\n    int area() override { return w * h; }   // 编译失败\n};",
+        "output": "error: 'area' marked 'override' but does not override any member functions"
+      },
+      {
+        "title": "override 和 virtual 分别管什么",
+        "body": "两个关键字容易混，其实分工很清楚：\n\n· `virtual` 写在**基类**里，决定「这个函数能不能被多态调用」。少了它，多态根本不成立。\n· `override` 写在**派生类**里，只做一件事——检查这里确实在覆盖基类的虚函数。它不改变行为，纯粹是给编译器看的声明。\n\n派生类里不写 `virtual` 也仍然是虚函数（基类是虚的就够了），但 `override` 建议永远写上：它把你「打算覆盖」的意图写进代码，写错了编译器立刻拦下来。\n\n还有：`override` 和 `final` 都是 C++11 引入的，编译参数 `-std=c++17` 完全支持。",
+        "code": "class Shape {\npublic:\n    virtual int area() const { return 0; }   // virtual 写在基类\n};\n\nclass Rect : public Shape {\npublic:\n    int area() const override { return w * h; }   // override 写在派生类\n};",
+        "output": "编译通过；Shape* p = &r; p->area() 得到 w * h"
+      }
+    ]
+  },
+  {
+    "id": 1006,
+    "title": "抽象类与纯虚函数：多形状面积计算",
+    "difficulty": "hard",
+    "description": "定义一个抽象基类 Shape，里面有纯虚函数 area() const（返回 double）和纯虚函数 name() const（返回 string），再加一个虚析构函数。\n定义派生类 Rect（用宽 w、高 h 初始化，面积是 w * h，名称是 rect）和 Circle（用半径 r 初始化，面积是 3.14159 * r * r，名称是 circle）。\n读入整数 n，再读入 n 行描述，每行是 rect w h 或 circle r。为每一行创建一个图形对象，放进 Shape* 数组，最后按输入顺序输出每个图形的面积，保留 2 位小数。\n每行格式：<名称> area = <面积>",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 10）\n接下来 n 行，每行是 rect w h（w、h 为非负整数）或 circle r（r 为非负整数）",
+    "output_format": "n 行，每行形如 <名称> area = <面积>；rect 的名称是 rect，circle 的名称是 circle，面积保留 2 位小数",
+    "sample_input": "3\nrect 3 4\ncircle 2\nrect 1 1",
+    "sample_output": "rect area = 12.00\ncircle area = 12.57\nrect area = 1.00",
+    "test_cases": [
+      {
+        "input": "3\nrect 3 4\ncircle 2\nrect 1 1\n",
+        "output": "rect area = 12.00\ncircle area = 12.57\nrect area = 1.00"
+      },
+      { "input": "1\ncircle 0\n", "output": "circle area = 0.00" },
+      { "input": "2\ncircle 1\nrect 0 100\n", "output": "circle area = 3.14\nrect area = 0.00" },
+      {
+        "input": "3\nrect 5 5\ncircle 3\nrect 2 7\n",
+        "output": "rect area = 25.00\ncircle area = 28.27\nrect area = 14.00"
+      }
+    ],
+    "hints": [
+      "纯虚函数的写法是在声明后面加 = 0，比如 virtual double area() const = 0;，它表示基类不提供实现。",
+      "只要类里有一个纯虚函数，这个类就是抽象类，不能创建对象；派生类必须实现全部纯虚函数，否则它自己也是抽象类。",
+      "把对象的地址存进 Shape* 数组，遍历时用 shapes[i]->area()（所有图形共用同一个数组、同一行调用代码）。",
+      "输出小数用 <iomanip> 里的 fixed 和 setprecision(2)；记得 new 出来的对象最后要 delete。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\n#include <iomanip>\nusing namespace std;\n\n// 抽象基类：只要有一个纯虚函数，这个类就不能创建对象。\n// 它的作用是规定一份契约：凡是「图形」，都必须能算面积、都必须有名字。\nclass Shape {\npublic:\n    // = 0 表示纯虚函数：基类给不出合理实现（「图形的面积」本身无从谈起），\n    // 谁派生谁负责实现。\n    virtual double area() const = 0;\n    virtual string name() const = 0;\n\n    // 用基类指针 delete 派生类对象时，析构函数必须是虚的，\n    // 否则只调用基类析构，派生类自己的部分不会释放（未定义行为）。\n    virtual ~Shape() {}\n};\n\nclass Rect : public Shape {\n    double w, h;\n\npublic:\n    Rect(double width, double height) : w(width), h(height) {}\n\n    // 纯虚函数必须全部实现，漏一个 Rect 就还是抽象类，new Rect(...) 会编译失败\n    double area() const override { return w * h; }\n    string name() const override { return \"rect\"; }\n};\n\nclass Circle : public Shape {\n    double r;\n\npublic:\n    Circle(double radius) : r(radius) {}\n\n    // 注意 3.14159 是浮点数，整个表达式按小数运算，不会发生整数除法\n    double area() const override { return 3.14159 * r * r; }\n    string name() const override { return \"circle\"; }\n};\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 数组里存的是「指向基类的指针」：\n    // 它们可以指向任何派生类对象，多态就靠这一点成立\n    Shape* shapes[10];\n\n    for (int i = 0; i < n; i++) {\n        string kind;\n        cin >> kind;   // cin 会自动跳过换行和空格，逐行读很省心\n\n        if (kind == \"rect\") {\n            double w, h;\n            cin >> w >> h;\n            shapes[i] = new Rect(w, h);\n        } else {\n            double r;\n            cin >> r;\n            shapes[i] = new Circle(r);\n        }\n    }\n\n    // fixed + setprecision(2)：保留 2 位小数，设置一次后面一直有效\n    cout << fixed << setprecision(2);\n    for (int i = 0; i < n; i++) {\n        // 同一行代码，对不同的真实对象走进不同的实现\n        cout << shapes[i]->name() << \" area = \" << shapes[i]->area() << endl;\n    }\n\n    // 每个 new 都要有对应的 delete。\n    // 因为析构函数是虚的，这里会先跑派生类析构再跑基类析构。\n    for (int i = 0; i < n; i++) {\n        delete shapes[i];\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "抽象类是「契约」，不是「没写完的类」",
+        "body": "`= 0` 的意思不是「稍后再写」，而是「基类拒绝提供实现」。因为「一个图形的面积是多少」这个问题，对「图形」这个概念本身没有答案，只有具体到矩形、圆才有。\n\n于是基类只留下名字和签名，把实现义务交给派生类：**谁派生谁实现**。这份契约带来两个直接好处：\n\n1. 抽象类不能创建对象，`Shape s;` 直接编译报错——从语法上杜绝了「造出一个不知道怎么算面积的图形」。\n2. 上层代码可以只面向 `Shape*` 写。上面 `main` 里的循环完全不知道有哪些图形，以后再加个 `Triangle`，这个循环一行都不用改。\n\n判断一个类能不能实例化很简单：有纯虚函数就不能。",
+        "code": "class Shape {\npublic:\n    virtual double area() const = 0;   // 纯虚函数\n    virtual ~Shape() {}\n};\n\n// Shape s;   // 编译报错：cannot declare variable 's' to be of abstract type 'Shape'",
+        "output": "error: cannot declare variable 's' to be of abstract type 'Shape'"
+      },
+      {
+        "title": "两个最常踩的坑：漏实现、忘 virtual 析构",
+        "body": "**坑一：派生类漏实现纯虚函数。** 派生类必须实现**全部**纯虚函数。只实现了 `area()` 却忘了 `name()`，`Rect` 自己就仍然是抽象类，`new Rect(w, h)` 会报 “cannot allocate an object of abstract type 'Rect'”。这个报错看着莫名其妙，实际原因就在基类的纯虚函数清单里。\n\n**坑二：析构函数不写 virtual。** 用 `Shape*` 去 `delete` 一个 `Circle` 对象时，如果 `~Shape()` 不是虚函数，程序只会调用 `Shape` 的析构，`Circle` 自己的部分被跳过。这题刚好是浮点成员看不出问题，换成持有动态内存的类就是真真正正的内存泄漏，属于未定义行为。\n\n结论：**类里只要有虚函数，析构函数就写成 virtual**；`new` 出来的对象，每一处都要有对应的 `delete`。",
+        "code": "class Shape {\npublic:\n    virtual double area() const = 0;\n    virtual string name() const = 0;\n    virtual ~Shape() {}          // 虚析构：delete 基类指针时才安全\n};",
+        "output": "Shape* p = new Circle(2);\ndelete p;   // 析构函数是虚的 → Circle 和 Shape 的析构都会执行"
+      }
+    ]
+  }
+]

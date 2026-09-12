@@ -1,0 +1,241 @@
+[
+  {
+    "id": 1101,
+    "title": "模板版较大值",
+    "difficulty": "easy",
+    "description": "读入两行数据：第一行是两个整数，第二行是两个小数。\n\n分别输出每行中较大的那个数。",
+    "input_format": "第一行，两个整数 a 和 b，用空格分隔\n第二行，两个小数 x 和 y，用空格分隔",
+    "output_format": "两行。第一行是 a 和 b 中的较大值（整数形式）；第二行是 x 和 y 中的较大值，保留 2 位小数",
+    "sample_input": "3 8\n2.5 1.5",
+    "sample_output": "8\n2.50",
+    "test_cases": [
+      { "input": "3 8\n2.5 1.5\n", "output": "8\n2.50" },
+      { "input": "-5 -2\n-1.5 -3.25\n", "output": "-2\n-1.50" },
+      { "input": "7 7\n0.0 0.0\n", "output": "7\n0.00" }
+    ],
+    "hints": [
+      "整数比大小和小数比大小，逻辑一模一样，只是类型不同——这正是函数模板要解决的问题。",
+      "模板写法：template <typename T> 写在一个函数前面，函数里的 T 就是「待定的类型」。",
+      "T maxOf(T a, T b) { return a > b ? a : b; } 写一次，传 int 就用 int 版，传 double 就用 double 版。",
+      "小数保留 2 位要用 #include <iomanip> 里的 fixed 和 setprecision(2)，注意它设置后一直有效。"
+    ],
+    "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\n// 函数模板：T 是「占位类型」，调用时由编译器根据实参自动推断。\n// 写一次，int 版本和 double 版本都由编译器替你生成。\ntemplate <typename T>\nT maxOf(T a, T b) {\n    return a > b ? a : b;\n}\n\nint main() {\n    int a, b;\n    double x, y;\n    cin >> a >> b;\n    cin >> x >> y;\n\n    // 同一个 maxOf 用了两次，实参类型不同 → 编译器生成两个不同的函数\n    cout << maxOf(a, b) << endl;\n\n    // fixed + setprecision(2) 一旦设置就持续生效，\n    // 所以放在整数输出之后，否则整数也会被写成 \"8.00\"\n    cout << fixed << setprecision(2) << maxOf(x, y) << endl;\n    return 0;\n}",
+    "tutorial": [
+      {
+        "title": "同一个函数，怎么写才能给 int 和 double 都用",
+        "body": "在 C 里，要给 int 和 double 分别写一个求较大值的函数，函数体一字不差，只有类型不同——这就是重复代码的源头：以后逻辑一改就得改两处，漏改一处就出 bug。\n\nC++ 的模板把「类型」也变成参数。`template <typename T>` 声明了一个占位类型 T，函数体里照常写 T。调用 `maxOf(3, 8)` 时，编译器看到实参是 int，就生成一份 T=int 的版本；调用 `maxOf(2.5, 1.5)` 时生成 T=double 的版本。这个过程叫**实例化**，发生在编译期——运行时没有额外的函数调用开销，和你手写两份函数一样快。",
+        "code": "template <typename T>\nT maxOf(T a, T b) {\n    return a > b ? a : b;\n}\n\ncout << maxOf(3, 8) << endl;         // T 推断为 int\ncout << maxOf(2.5, 1.5) << endl;     // T 推断为 double",
+        "output": "8\n2.5"
+      },
+      {
+        "title": "模板的坑：两个实参的类型必须能推断成同一个 T",
+        "body": "`maxOf(3, 2.5)` 会**编译报错**：一个 int 一个 double，编译器不知道该把 T 定成哪个，它不会替你偷偷做类型转换。\n\n两种解法：把两个实参写成同一类型；或者用尖括号**显式指定** T。\n\n另一件要记住的事：模板函数必须让编译器看到函数体才能实例化，所以模板通常直接写在用它的那个文件里（放在 .cpp 里、而不是只在头文件里声明）。",
+        "code": "maxOf(3, 2.5);              // 编译错误：T 无法推断\nmaxOf<double>(3, 2.5);      // 正确：显式指定 T 为 double，3 会被转成 3.0\nmaxOf(3.0, 2.5);            // 正确：两个实参都是 double",
+        "output": "2.5"
+      }
+    ]
+  },
+  {
+    "id": 1102,
+    "title": "求总和与最大值",
+    "difficulty": "medium",
+    "description": "读入 n 个整数，输出它们的总和与最大值。",
+    "input_format": "第一行，一个整数 n（1 ≤ n ≤ 1000）\n第二行，n 个整数，用空格分隔",
+    "output_format": "两行。第一行是这 n 个数的总和，第二行是其中的最大值",
+    "sample_input": "5\n3 1 4 1 5",
+    "sample_output": "14\n5",
+    "test_cases": [
+      { "input": "5\n3 1 4 1 5\n", "output": "14\n5" },
+      { "input": "1\n-7\n", "output": "-7\n-7" },
+      { "input": "4\n2 2 2 2\n", "output": "8\n2" },
+      { "input": "3\n-5 -2 -9\n", "output": "-16\n-2" }
+    ],
+    "hints": [
+      "n 是运行时才知道的，用长度可以随时变化的容器来存这些数比较合适。",
+      "std::vector 就是「可变的数组」：v.push_back(x) 往末尾追加一个元素，v.size() 问它现在有几个。",
+      "遍历有两种写法：下标 for (int i = 0; i < (int)v.size(); i++) 用 v[i]；范围 for 写 for (int x : v) 直接拿元素。",
+      "求最大值时，把初值设成第一个元素，不要设成 0——如果所有数都是负数，设 0 会得到错误答案。"
+    ],
+    "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    vector<int> v;              // 一开始是空的，容量随 push_back 自动增长\n    for (int i = 0; i < n; i++) {\n        int x;\n        cin >> x;\n        v.push_back(x);         // 追加到末尾，等价于 C 里的 a[len++] = x\n    }\n\n    // 关键：mx 用第一个元素初始化。\n    // 如果写 int mx = 0，当所有数都是负数时答案会错成 0。\n    int sum = 0;\n    int mx = v[0];\n    for (int x : v) {           // 范围 for：依次取出每个元素，不用管下标\n        sum += x;\n        if (x > mx) mx = x;\n    }\n\n    cout << sum << endl;\n    cout << mx << endl;\n    return 0;\n}",
+    "tutorial": [
+      {
+        "title": "为什么用 vector，而不是先开一个 int a[1000]",
+        "body": "C 的数组有两个限制：长度必须是**编译期常量**，而且数组名自己不记得有多长。于是常见做法是「开大一点」，比如 `int a[1000]`：题目给 3 个数就浪费 997 个格子，给 1001 个数就直接越界。\n\n`vector` 把「数据」和「长度」绑在一起：\n\n· `v.push_back(x)` 往末尾追加，满了自动扩容，不用你管\n· `v.size()` 随时能问出当前有几个元素\n\n代价是比裸数组稍微慢一点点，做练习完全感觉不到。**先用 vector，别一上来就手写扩容逻辑**，那是把精力花在了与题目无关的地方。",
+        "code": "#include <vector>\nvector<int> v;                  // 空的，0 个元素\nv.push_back(3);\nv.push_back(1);\ncout << v.size() << endl;       // 2\ncout << v[0] << \" \" << v[1] << endl;   // 下标照样能用，一样从 0 开始",
+        "output": "2\n3 1"
+      },
+      {
+        "title": "两种遍历写法，以及 size() 的一个坑",
+        "body": "**下标遍历**和 C 一样：`for (int i = 0; i < (int)v.size(); i++)`。\n\n**范围 for** 是 C++ 特有的，写法更短，把每个元素依次交给你：`for (int x : v)`。注意这里的 `x` 是**拷贝**——在循环里改 `x` 不会影响 `v`。真想改元素要用引用：`for (int& x : v) { x *= 2; }`。\n\n坑在 `v.size()` 的返回类型上：它是**无符号整数**（size_t）。写 `for (int i = 0; i < v.size(); i++)` 时，编译器会把 int 转成无符号数比较，会给出警告；用 `(int)v.size()` 强转一下最省心。",
+        "code": "vector<int> v = {1, 2, 3};\n\nfor (int x : v) { x = 0; }        // 改的是拷贝，v 没变\nfor (int& x : v) { x = 0; }       // 引用，这次真的改了 v\nfor (int x : v) cout << x << \" \";",
+        "output": "0 0 0"
+      }
+    ]
+  },
+  {
+    "id": 1103,
+    "title": "从小到大排序",
+    "difficulty": "medium",
+    "description": "读入 n 个整数，把它们从小到大排好序后输出。",
+    "input_format": "第一行，一个整数 n（1 ≤ n ≤ 1000）\n第二行，n 个整数，用空格分隔",
+    "output_format": "一行，n 个整数按从小到大排列，相邻两个数之间用一个空格分隔",
+    "sample_input": "5\n3 1 4 1 5",
+    "sample_output": "1 1 3 4 5",
+    "test_cases": [
+      { "input": "5\n3 1 4 1 5\n", "output": "1 1 3 4 5" },
+      { "input": "1\n42\n", "output": "42" },
+      { "input": "4\n5 5 5 5\n", "output": "5 5 5 5" },
+      { "input": "5\n-1 -5 0 -3 2\n", "output": "-5 -3 -1 0 2" }
+    ],
+    "hints": [
+      "不用手写冒泡排序，标准库里已经有排好序的函数了。",
+      "它叫 std::sort，在 <algorithm> 里，用「起始位置」和「结束位置」告诉它要排哪一段。",
+      "容器用 begin() 和 end() 给出这一段的两个端点：sort(v.begin(), v.end())。",
+      "输出时空格分隔：先把 v[0] 打印出来，后面的数每个都在前面补一个空格，行尾就不会多出空格。"
+    ],
+    "solution": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    vector<int> v;\n    for (int i = 0; i < n; i++) {\n        int x;\n        cin >> x;\n        v.push_back(x);\n    }\n\n    // begin() 指向第一个元素，end() 指向「最后一个元素的下一个位置」。\n    // sort 排的是 [begin, end) 这个左闭右开区间。\n    sort(v.begin(), v.end());\n\n    // 空格分隔的稳妥写法：第一个数单独输出，后面的数前面补一个空格，\n    // 这样行尾不会多出一个空格。\n    cout << v[0];\n    for (size_t i = 1; i < v.size(); i++) {\n        cout << \" \" << v[i];\n    }\n    cout << endl;\n    return 0;\n}",
+    "tutorial": [
+      {
+        "title": "迭代器：容器和算法之间的接头",
+        "body": "STL 的算法（sort、reverse、find……）**不认识 vector，也不认识数组**。它们只认一种东西：**迭代器**——一个能「指向容器里某个位置、并且能往后走」的对象。\n\n算法统一接收两个迭代器，表示一段**左闭右开**的区间 `[begin, end)`：`begin()` 指向第一个元素，`end()` 指向**最后一个元素的下一个位置**（不是最后一个元素！）。所以 `end() - begin()` 正好等于元素个数，而空容器里 `begin() == end()`，区间为空——这套约定让「空」也能被自然地表示出来。\n\n正因为接口是迭代器，同一个 `sort` 也能排 C 的裸数组：`sort(a, a + n)`。",
+        "code": "vector<int> v = {3, 1, 4, 1, 5};\nsort(v.begin(), v.end());       // 升序\nfor (int x : v) cout << x << \" \";\n\nint a[3] = {3, 1, 2};\nsort(a, a + 3);                 // 数组也能用同一个 sort",
+        "output": "1 1 3 4 5"
+      },
+      {
+        "title": "自己写冒泡 vs 直接用 sort",
+        "body": "冒泡排序要写两层循环，还容易出现「内层写 `j < n` 而不是 `j < n - 1 - i`」这类越界或漏比的老问题；`sort` 只要一行，而且内部用的是快速排序/内省排序，平均 O(n log n)，比冒泡的 O(n²) 快得多——n = 1000 时大约快几十倍，n 大起来差距更夸张。\n\n练习阶段写一遍冒泡是有价值的（理解排序在干什么），但**做题时应该直接用 sort**：把时间留给题目真正想考的东西。",
+        "code": "// 手写冒泡：容易写错边界\nfor (int i = 0; i < n - 1; i++)\n    for (int j = 0; j < n - 1 - i; j++)\n        if (a[j] > a[j + 1]) swap(a[j], a[j + 1]);\n\n// 用标准库：一行\nsort(v.begin(), v.end());",
+        "output": "两种写法结果相同：1 1 3 4 5"
+      },
+      {
+        "title": "想从大到小排怎么办",
+        "body": "`sort` 默认用 `<` 比较，所以是升序。要降序有两种写法：传第三个参数给一个「比较规则」。\n\n`greater<int>()` 是标准库现成的「大于」规则（在 `<functional>` 里，多数实现随 `<algorithm>` 一起带进来）。自己写排序规则在后面 1106 题会详细讲。",
+        "code": "sort(v.begin(), v.end(), greater<int>());   // 降序",
+        "output": "输入 3 1 4 1 5 时输出 5 4 3 1 1"
+      }
+    ]
+  },
+  {
+    "id": 1104,
+    "title": "字符串的排序与反转",
+    "difficulty": "medium",
+    "description": "读入一个只含小写字母、不含空格的字符串 s，输出两行：\n第一行：把 s 里的所有字符按字典序从小到大重新排列后的字符串\n第二行：把 s 整体倒过来后的字符串",
+    "input_format": "一行，一个只含小写字母的字符串 s（长度不超过 100）",
+    "output_format": "两行。第一行是字符升序排列后的字符串，第二行是反转后的字符串",
+    "sample_input": "banana",
+    "sample_output": "aaabnn\nananab",
+    "test_cases": [
+      { "input": "banana\n", "output": "aaabnn\nananab" },
+      { "input": "hello\n", "output": "ehllo\nolleh" },
+      { "input": "a\n", "output": "a\na" },
+      { "input": "aaaa\n", "output": "aaaa\naaaa" }
+    ],
+    "hints": [
+      "C++ 的字符串用 std::string（在 <string> 里），它内部就是一段字符，比 char[] 省心得多。",
+      "std::string 也提供 begin() / end()，所以 STL 的算法能直接用在它身上。",
+      "排序字符用 sort(s.begin(), s.end())，反转用 reverse(s.begin(), s.end())，两个都在 <algorithm> 里。",
+      "sort 和 reverse 都是**就地修改**原字符串，所以第二行要用没被动过的原始内容——先把 s 复制一份再动手。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    string s;\n    cin >> s;                   // cin >> 遇到空白就停，读不含空格的字符串正合适\n\n    string t = s;               // 备份一份：sort 和 reverse 都是就地修改原串\n\n    sort(s.begin(), s.end());   // 字符按 ASCII 升序，小写字母即字典序\n    cout << s << endl;\n\n    reverse(t.begin(), t.end());\n    cout << t << endl;\n    return 0;\n}",
+    "tutorial": [
+      {
+        "title": "std::string 也是一个容器",
+        "body": "C 里字符串是 `char s[100]`：你得自己保证不越界、自己留出 `'\\0'` 的位置、还得用 `strcpy` 而不是 `=` 来赋值（用 `=` 赋的是指针，不是内容，改了原数组另一份也跟着变）。\n\nC++ 的 `std::string` 自己记着长度、自己管理内存，`=` 就是**深拷贝**一份新内容：\n\n```\nstring a = \"cat\";\nstring b = a;      // b 是独立的一份\nb[0] = 'b';        // 只改 b，a 还是 cat\n```\n\n更重要的是，它同样提供 `begin()` / `end()`，所以 `sort`、`reverse`、`find` 这些算法**不用改写就能直接用在字符串上**——这就是迭代器这套统一接口的价值：算法写一次，对所有容器都成立。",
+        "code": "#include <string>\n#include <algorithm>\nstring s = \"banana\";\nsort(s.begin(), s.end());\ncout << s << endl;",
+        "output": "aaabnn"
+      },
+      {
+        "title": "反转还有别的写法，以及为什么不用手写",
+        "body": "手写反转最容易踩的坑是下标类型：`s.size()` 是**无符号数**，写 `for (int i = s.size() - 1; i >= 0; i--)` 看着没问题，但空串时 `0 - 1` 会回绕成一个巨大的正数，直接越界崩溃。\n\n`reverse` 内部就是「首尾对调、向中间收拢」，两行循环的活它替你干了，而且不会踩上面那个坑。\n\n顺带记住读字符串的分工：`cin >> s` 读到**空白就停**（本题字符串不含空格，正合适）；要读带空格的一整行得用 `getline(cin, s)`。",
+        "code": "string s = \"hello\";\n\n// 手写：注意先转成 int，否则空串时 size() - 1 会回绕成极大值\nfor (int i = (int)s.size() - 1; i >= 0; i--) cout << s[i];\ncout << endl;\n\n// 用算法：一行\nreverse(s.begin(), s.end());\ncout << s << endl;",
+        "output": "olleh\nolleh"
+      }
+    ]
+  },
+  {
+    "id": 1105,
+    "title": "统计每个数字出现的次数",
+    "difficulty": "medium",
+    "description": "读入 n 个整数（可能有重复），统计每个不同的数字各出现了多少次，按数字从小到大的顺序输出。",
+    "input_format": "第一行，一个整数 n（1 ≤ n ≤ 1000）\n第二行，n 个整数，用空格分隔",
+    "output_format": "若干行，每行两个整数：一个数字和它出现的次数，中间用一个空格分隔；按数字从小到大排列",
+    "sample_input": "6\n3 1 2 3 3 1",
+    "sample_output": "1 2\n2 1\n3 3",
+    "test_cases": [
+      { "input": "6\n3 1 2 3 3 1\n", "output": "1 2\n2 1\n3 3" },
+      { "input": "1\n-5\n", "output": "-5 1" },
+      { "input": "4\n7 7 7 7\n", "output": "7 4" },
+      { "input": "8\n-3 0 100 -3 0 -3 100 100\n", "output": "-3 3\n0 2\n100 3" }
+    ],
+    "hints": [
+      "要建立「数字 → 出现次数」的对应关系，用 std::map 正合适。",
+      "map 像一个下标可以是任意整数的数组：mp[x] 就是数字 x 当前的计数。",
+      "读到一个数就计数加一：cin >> x; cnt[x]++;。键不存在时 map 会自动新建一项，值默认是 0，所以第一次读到的数也会变成 1。",
+      "遍历 map 用 for (auto& p : cnt)，p.first 是数字，p.second 是次数；map 内部按 key 排好序，直接输出就是从小到大。"
+    ],
+    "solution": "#include <iostream>\n#include <map>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    map<int, int> cnt;          // 键是数字，值是出现次数\n    for (int i = 0; i < n; i++) {\n        int x;\n        cin >> x;\n        // operator[] 的副作用：键不存在时先插入一个 0，再自增。\n        // 所以这一行同时完成「没见过的数字就新建」和「计数加一」。\n        cnt[x]++;\n    }\n\n    // map 内部按 key 排好序，遍历顺序就是数字从小到大，不用再 sort。\n    // auto& 里的 & 很重要：不加就每轮拷贝一份键值对。\n    for (auto& p : cnt) {\n        cout << p.first << \" \" << p.second << endl;\n    }\n    return 0;\n}",
+    "tutorial": [
+      {
+        "title": "map：下标可以「不连续」的数组",
+        "body": "普通数组的下标只能是 `0 .. n-1` 的连续整数：想统计「读入的数各出现几次」，数字可能是负数（下标直接非法），也可能是 -1000000 到 1000000（开不下这么大的数组）。\n\n`map<K, V>` 存的是**键值对**：键可以是任意能比较大小的类型（int、string 都行），用多少键就长多少，不浪费空间。\n\n`cnt[x]++` 这一行同时做了两件事，这是它最方便的地方：\n\n· 如果 `x` 这个键**还不存在**，先插入一项，值默认初始化成 `0`\n· 然后把这个值加一\n\n要是用 C 手写，就得先遍历查找有没有这个数、没有就新建一项——那是十几行代码。",
+        "code": "#include <map>\nmap<int, int> cnt;\ncnt[3]++;\ncnt[3]++;\ncnt[-5]++;\ncout << cnt[3] << \" \" << cnt[-5] << endl;\ncout << cnt.size() << endl;      // 有 2 个不同的键",
+        "output": "2 1\n2"
+      },
+      {
+        "title": "map 天生有序；只要「去重」的话用 set",
+        "body": "`map` 内部是一棵平衡搜索树，**遍历顺序永远是键从小到大**，所以本题输出时不用再 `sort` 一次。这也是它和 `unordered_map`（哈希表，遍历顺序随机，但查找更快）的区别：需要按顺序输出时选 `map`。\n\n如果只需要「这个数出现过没有」，不需要次数，用 `set` 更贴切：`set` 就是只有键、没有值的 `map`，插入重复元素会被自动忽略，遍历出来天然是**去重 + 升序**。\n\n选容器就看一句话：**要额外记住一个值用 map，只记「在不在」用 set。**",
+        "code": "#include <set>\nset<int> s;\ns.insert(3);\ns.insert(1);\ns.insert(3);            // 重复的插不进去，set 里还是 2 个元素\ncout << s.size() << endl;\nfor (int x : s) cout << x << \" \";   // 遍历即去重升序",
+        "output": "2\n1 3"
+      },
+      {
+        "title": "auto 和 pair：遍历 map 时拿到的到底是什么",
+        "body": "map 里每一项的类型是 `pair<const int, int>`——一个「键 + 值」的打包，用 `.first` 取键、`.second` 取值。\n\n把这一长串类型名写全很啰嗦，所以用 `auto`：让编译器**按初始化它的东西自动推断类型**。`auto` 不是「无类型」，类型在编译期就定死了，只是不用你抄。\n\n`auto& p` 里的 `&` 别丢：不加就每轮**拷贝**一份键值对，键是 int 时不痛不痒，等键变成 string 就白白多拷贝一堆字符。",
+        "code": "map<string, int> age;\nage[\"tom\"] = 18;\n\nfor (auto& p : age) {                  // p 的类型是 pair<const string,int>&\n    cout << p.first << \" \" << p.second << endl;\n}",
+        "output": "tom 18"
+      }
+    ]
+  },
+  {
+    "id": 1106,
+    "title": "按分数排名",
+    "difficulty": "hard",
+    "description": "读入 n 个学生的姓名和分数，按下面的规则排名后依次输出：\n\n1. 分数高的排在前面\n2. 分数相同时，姓名按字典序（小的在前）排列",
+    "input_format": "第一行，一个整数 n（1 ≤ n ≤ 100）\n接下来 n 行，每行一个姓名（不含空格，只含小写字母）和一个整数分数，用空格分隔",
+    "output_format": "n 行，每行一个姓名和一个分数，中间用一个空格分隔，按题目要求的顺序排列",
+    "sample_input": "3\ntom 90\namy 95\nbob 90",
+    "sample_output": "amy 95\nbob 90\ntom 90",
+    "test_cases": [
+      { "input": "3\ntom 90\namy 95\nbob 90\n", "output": "amy 95\nbob 90\ntom 90" },
+      { "input": "1\njack 60\n", "output": "jack 60" },
+      { "input": "4\nd 100\nc 100\nb 100\na 100\n", "output": "a 100\nb 100\nc 100\nd 100" },
+      { "input": "3\nx -5\ny 0\nz -5\n", "output": "y 0\nx -5\nz -5" }
+    ],
+    "hints": [
+      "一个人有姓名和分数两个属性，而且必须绑定在一起移动，否则排序后姓名和分数会错位。",
+      "std::pair<std::string, int> 能把两个值打包成一个整体，成员叫 first（姓名）和 second（分数），放进 vector 里就能整体排序。",
+      "默认的 sort 会先比 first 再比 second，跟题目要的顺序不一致，所以要自己写一个比较函数传给 sort 的第三个参数。",
+      "比较函数签名是 bool cmp(const pair<string,int>& a, const pair<string,int>& b)，返回 true 表示 a 要排在 b 前面：分数不同就 return a.second > b.second;，分数相同就 return a.first < b.first;"
+    ],
+    "solution": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\n// 自定义比较函数：返回 true 表示 a 应该排在 b 前面。\n// 参数用 const 引用，避免每比较一次就拷贝一份字符串。\nbool cmp(const pair<string, int>& a, const pair<string, int>& b) {\n    if (a.second != b.second) {\n        return a.second > b.second;     // 分数高的排前面\n    }\n    return a.first < b.first;           // 分数相同，姓名小的排前面\n}\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 一个人 = 一个 pair，整条记录一起搬，排序时姓名不会和分数走散\n    vector<pair<string, int> > v;\n    for (int i = 0; i < n; i++) {\n        string name;\n        int score;\n        cin >> name >> score;\n        v.push_back(make_pair(name, score));\n    }\n\n    sort(v.begin(), v.end(), cmp);      // 把比较规则交给 cmp\n\n    for (auto& p : v) {\n        cout << p.first << \" \" << p.second << endl;\n    }\n    return 0;\n}",
+    "tutorial": [
+      {
+        "title": "pair：把两个值捆成一个整体",
+        "body": "不能开两个平行数组（一个存姓名、一个存分数）然后只排分数那个——分数一交换，姓名和分数就对不上了，你还得手工同步交换两份数组，早晚出错。\n\n`pair<A, B>` 就是「一个 A 和一个 B 的打包」，两样东西永远一起搬。成员名固定是 `first` 和 `second`，`make_pair(a, b)` 用来造一个。\n\npair 自己也能用 `<` 比较，规则是**先比 first，first 相等再比 second**。本题要的是「先比分数」，正好相反，所以必须自己给 sort 一个比较规则——这也解释了为什么不能直接 `sort(v.begin(), v.end())`。",
+        "code": "#include <vector>\n#include <string>\npair<string, int> p = make_pair(\"tom\", 90);\ncout << p.first << \" \" << p.second << endl;   // 键、值用 .first / .second\n\nvector<pair<string, int> > v;\nv.push_back(make_pair(\"tom\", 90));",
+        "output": "tom 90"
+      },
+      {
+        "title": "自定义比较函数：sort 的第三个参数",
+        "body": "传进 sort 的比较函数要回答一个问题：**「a 是不是应该排在 b 前面？」** 返回 `true` 就表示该排前面。所以分数高的排前面写作 `a.second > b.second`，用的是「大于」而不是「小于」。\n\n最容易踩的坑是写成 `<=`。sort 要求比较规则满足**严格弱序**：a 和 b 相等时必须返回 `false`。如果相等也返回 `true`，sort 内部的划分会陷入自相矛盾，可能**越界读写导致程序崩溃**（Apple 的 clang 在调试模式下甚至直接断言失败）。\n\n记住模板：**先写相等的情况返回 false，再写确定顺序的条件。**",
+        "code": "// 错误示范：相等时也返回 true\nbool bad(const pair<string,int>& a, const pair<string,int>& b) {\n    return a.second <= b.second;      // sort 可能崩溃\n}\n\n// 正确：相等的情况由后面的条件兜住，返回 false\nbool cmp(const pair<string,int>& a, const pair<string,int>& b) {\n    if (a.second != b.second) return a.second > b.second;\n    return a.first < b.first;\n}",
+        "output": "用 bad 排序有崩溃风险，用 cmp 排序结果正确"
+      },
+      {
+        "title": "范围 for 里的引用与 const",
+        "body": "遍历 `vector<pair<string,int>>` 时，`for (auto p : v)` 每一轮都会**拷贝**一个 pair（里面还有一个 string，等于每次拷一份字符串）。\n\n正确写法是加引用 `auto&`：不拷贝，直接引用容器里的那一项。如果循环里只读不写，再加上 `const` 更严谨：`for (const auto& p : v)`——既避免拷贝，也把「我不会改它」写进了代码，万一手滑写了赋值语句编译器会直接报错。\n\n这和函数参数里用 `const pair<string,int>&` 是同一个理由：**只读的大对象，都用 const 引用传。**",
+        "code": "for (auto p : v)          { }   // 每轮拷贝一份 pair（含 string）\nfor (auto& p : v)         { }   // 引用，不拷贝，可修改\nfor (const auto& p : v)   { }   // 引用 + 只读，最推荐",
+        "output": ""
+      }
+    ]
+  }
+]

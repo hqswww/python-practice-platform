@@ -1,0 +1,253 @@
+[
+  {
+    "id": 701,
+    "title": "数组的读入与逆序输出",
+    "difficulty": "easy",
+    "description": "读入 n 个整数存进数组，再把这 n 个数按相反的顺序输出。\n\n例如输入 1 2 3 4 5，就要输出 5 4 3 2 1。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）\n第二行 n 个整数，用空格分隔",
+    "output_format": "一行，逆序输出这 n 个整数，数之间用一个空格分隔",
+    "sample_input": "5\n1 2 3 4 5",
+    "sample_output": "5 4 3 2 1",
+    "test_cases": [
+      { "input": "5\n1 2 3 4 5\n", "output": "5 4 3 2 1" },
+      { "input": "1\n7\n", "output": "7" },
+      { "input": "4\n-3 0 -5 2\n", "output": "2 -5 0 -3" },
+      { "input": "3\n9 9 9\n", "output": "9 9 9" }
+    ],
+    "hints": [
+      "先用一个循环把 n 个数读进数组，再用另一个循环从最后一个往前输出。",
+      "数组声明成 int a[105]; —— n 最多 100，多开几个格子就不会越界；合法下标是 0 到 n-1。",
+      "倒着遍历写 for (int i = n - 1; i >= 0; i--)，注意别写成 i > 0，那样会漏掉 a[0]。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // 数组要开得比题目上限大一点：n 最多 100，开 105 就够用。\n    // 合法下标只有 0 ~ n-1，写成 a[n] 就是越界。\n    int a[105];\n\n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n    }\n\n    // 倒着走：从 a[n-1] 一直输出到 a[0]。\n    // i 用 int（不要用 unsigned），条件必须写 i >= 0，\n    // 写成 i > 0 会漏掉第一个数。\n    for (int i = n - 1; i >= 0; i--) {\n        if (i != n - 1) {\n            cout << \" \";   // 只在两个数之间加空格，行首不加\n        }\n        cout << a[i];\n    }\n    cout << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "数组的下标从 0 开始，不是从 1",
+        "body": "`int a[105];` 的意思不是「下标可以到 105」，而是**申请了 105 个格子**，格子编号（下标）是 `0` 到 `104`。\n\n读入 n 个数只用到 `a[0]` 到 `a[n-1]`。写成 `a[n]` 就是越界：它正好是最后一个格子的下一个位置。越界访问编译器不会拦你，程序也常常不会立刻崩，但读到的是别的变量甚至一堆垃圾数据 —— **能跑但答案是错的**，这种错最难查。\n\n开数组时留点余量是常见做法（本题 n ≤ 100 就开 105）：宁可多几个空着，也不要越界。",
+        "code": "int a[105];   // 合法下标 0 ~ 104\n\ncin >> n;\nfor (int i = 0; i < n; i++) {\n    cin >> a[i];\n}\ncout << a[0] << \" \" << a[n - 1] << endl;",
+        "output": "输入 4 和 10 20 30 40 时输出：10 40"
+      },
+      {
+        "title": "倒着走：循环边界最容易错",
+        "body": "从后往前只要把循环反过来：`for (int i = n - 1; i >= 0; i--)`。\n\n两个常见错误：\n\n· 条件写成 `i > 0` —— 循环在 `i == 0` 时就停了，最后一个 `a[0]` 永远不会被输出，答案少一个数。\n· 把 `i` 声明成 `unsigned` 或 `size_t` —— 无符号数减到 0 之后再减会变成一个极大的正数，循环停不下来，一路越界。倒序遍历就用 `int`。",
+        "code": "for (int i = n - 1; i >= 0; i--) {\n    cout << a[i];\n    cout << (i > 0 ? \" \" : \"\\n\");\n}",
+        "output": "输入 3 和 1 2 3 时输出：3 2 1"
+      },
+      {
+        "title": "C++ 加空格：没有格式串帮你兜底",
+        "body": "C 里写 `printf(\"%d \", a[i])`，每个数后面都跟着一个空格，最后一个也不例外。C++ 的 `cout << a[i] << \" \";` 同样会在行尾多出一个空格。\n\n判题时行尾空白会被忽略，所以这样也能判对；但更规范的写法是**只在两个数之间**加空格：`if (i != n - 1) cout << \" \";`。\n\n养成这个习惯，输出复制到别的地方用时才不会带上莫名其妙的空格。",
+        "code": "for (int i = 0; i < n; i++) {\n    if (i > 0) {\n        cout << \" \";   // 第一个数前面不加空格\n    }\n    cout << a[i];\n}\ncout << endl;",
+        "output": "输入 3 和 7 8 9 时输出：7 8 9"
+      }
+    ]
+  },
+  {
+    "id": 702,
+    "title": "数组求和与平均值",
+    "difficulty": "easy",
+    "description": "读入 n 个整数，输出它们的总和与平均值。\n\n平均值保留 2 位小数。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）\n第二行 n 个整数，用空格分隔（可能包含负数）",
+    "output_format": "共两行：\n第一行：一个整数，表示这 n 个数的总和\n第二行：这 n 个数的平均值，保留 2 位小数",
+    "sample_input": "5\n1 2 3 4 5",
+    "sample_output": "15\n3.00",
+    "test_cases": [
+      { "input": "5\n1 2 3 4 5\n", "output": "15\n3.00" },
+      { "input": "1\n7\n", "output": "7\n7.00" },
+      { "input": "4\n-2 2 -5 5\n", "output": "0\n0.00" },
+      { "input": "3\n1 1 2\n", "output": "4\n1.33" }
+    ],
+    "hints": [
+      "先把所有数累加到一个变量里，再用总和除以 n 得到平均值。",
+      "求和变量的初值必须是 0；题目里 n 个数可以一次读一个，读一个就加一次。",
+      "平均值别被整数除法吃掉小数：写 sum * 1.0 / n；保留 2 位小数用 <iomanip> 里的 fixed << setprecision(2)。"
+    ],
+    "solution": "#include <iostream>\n#include <iomanip>\n#include <vector>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // C++ 里更常用 vector：长度跟着 n 走，不用像数组那样先猜一个上限。\n    vector<int> a;\n    for (int i = 0; i < n; i++) {\n        int x;\n        cin >> x;\n        a.push_back(x);   // 塞到末尾，a.size() 自动加一\n    }\n\n    int sum = 0;          // 求和的初值必须是 0，不能是随机值\n    // 范围 for：把 a 里的每个元素依次取出来叫 x\n    for (int x : a) {\n        sum += x;\n    }\n\n    // 关键：sum 和 n 都是 int，sum / n 会做整数除法把小数丢掉。\n    // 乘 1.0（或者写 (double)sum）才会按小数算。\n    double avg = sum * 1.0 / n;\n\n    cout << sum << endl;\n    cout << fixed << setprecision(2) << avg << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "为什么 C++ 里更常用 vector",
+        "body": "C 风格数组的长度必须是**写死的常数**：`int a[105];` 一旦题目把 n 的上限从 100 改成 100000，就得回头改代码，还容易漏改。\n\n`vector` 是标准库提供的「可变长数组」：默认是空的，用 `push_back(x)` 往末尾追加一个元素，`size()` 随时告诉你现在有几个。长度不用提前猜。\n\n也可以直接按 n 开好：`vector<int> a(n);`，这时 a 里已经有 n 个 0，下标同样只能用到 `a[n-1]`。\n\n**注意**：vector 越界访问和数组一样是未定义行为，`a[a.size()]` 并不安全。",
+        "code": "#include <vector>\nusing namespace std;\n\nvector<int> a;\na.push_back(10);\na.push_back(20);\ncout << a.size() << \" \" << a[0] << endl;",
+        "output": "2 10"
+      },
+      {
+        "title": "范围 for：不用下标也能从头走到尾",
+        "body": "`for (int x : a)` 读作「把 a 里每个元素依次取出来，叫它 x」。一次循环拿一个，自动从头走到尾。\n\n它比 `for (int i = 0; i < a.size(); i++)` 少写很多，也不会写错边界（不用去想去 `<` 还是 `<=`）。求和这种「把所有元素过一遍」的活最适合它。\n\n**注意** `int x` 拿到的是**副本**：在循环里改 x 不会改到 a。真要修改元素得写 `for (int& x : a)`（引用，第 08 分类会讲）。",
+        "code": "vector<int> a = {3, 5, 7};\nint sum = 0;\nfor (int x : a) {\n    sum += x;\n}\ncout << sum << endl;",
+        "output": "15"
+      },
+      {
+        "title": "平均值为什么老是输出整数",
+        "body": "`sum` 和 `n` 都是 `int`，`sum / n` 就是整数除法：`15 / 2` 得到 `7`，小数部分被**直接丢掉**（不是四舍五入）。\n\n只要表达式里出现一个浮点数，整个计算就按小数走：`sum * 1.0 / n` 或者 `(double)sum / n`。\n\n另外 `cout << fixed << setprecision(2)` 一设就**一直生效**，后面所有浮点输出都按 2 位小数来；6 号题（摄氏转华氏）里也是这个套路。",
+        "code": "int sum = 15, n = 2;\ncout << sum / n << endl;\ncout << sum * 1.0 / n << endl;",
+        "output": "7\n7.5"
+      }
+    ]
+  },
+  {
+    "id": 703,
+    "title": "最大值、最小值及其位置",
+    "difficulty": "medium",
+    "description": "读入 n 个整数，找出其中的最大值和最小值，并输出它们**第一次**出现的位置。\n\n位置从 1 开始编号：输入的第 1 个数位置是 1，第 2 个数位置是 2，以此类推。",
+    "input_format": "第一行一个整数 n（1 ≤ n ≤ 100）\n第二行 n 个整数，用空格分隔（可能包含负数）",
+    "output_format": "共四行，依次为：\n第一行：最大值\n第二行：最大值第一次出现的位置\n第三行：最小值\n第四行：最小值第一次出现的位置",
+    "sample_input": "5\n3 1 4 1 5",
+    "sample_output": "5\n5\n1\n2",
+    "test_cases": [
+      { "input": "5\n3 1 4 1 5\n", "output": "5\n5\n1\n2" },
+      { "input": "1\n-8\n", "output": "-8\n1\n-8\n1" },
+      { "input": "4\n-5 -5 -5 -5\n", "output": "-5\n1\n-5\n1" },
+      { "input": "3\n0 7 -2\n", "output": "7\n2\n-2\n3" }
+    ],
+    "hints": [
+      "用两个变量分别记着当前的最大值和最小值，从第二个数开始逐个比较、随时更新。",
+      "最大值的初值千万不要写 0 —— 数据全是负数时答案就错了。拿第一个元素当初值最稳。",
+      "要求「第一次出现」的位置，比较时用严格大于（a[i] > maxVal），这样后面遇到同样大的数不会覆盖位置。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    int a[105];\n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n    }\n\n    // 初值来自数据本身（第一个元素），不要凭空写 0：\n    // 如果所有数都是负数，maxVal = 0 会让最大值变成一个没出现过的 0。\n    int maxVal = a[0], maxPos = 1;\n    int minVal = a[0], minPos = 1;\n\n    // 从第 2 个元素（下标 1）开始比\n    for (int i = 1; i < n; i++) {\n        // 严格大于才更新 —— 同一个最大值出现多次时，保留的是第一次的位置\n        if (a[i] > maxVal) {\n            maxVal = a[i];\n            maxPos = i + 1;   // 下标从 0 开始，位置从 1 开始，所以要 +1\n        }\n        if (a[i] < minVal) {\n            minVal = a[i];\n            minPos = i + 1;\n        }\n    }\n\n    cout << maxVal << endl;\n    cout << maxPos << endl;\n    cout << minVal << endl;\n    cout << minPos << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "最值的初值必须来自数据本身",
+        "body": "很多人顺手写 `int maxVal = 0;`。如果数据是 `-5 -2 -9`，一轮比较下来没有任何数比 0 大，于是输出的最大值是 `0` —— 一个根本没出现过的数，答案错了，程序还不报错。\n\n正确做法是拿**第一个元素**当擂主（`int maxVal = a[0];`），然后从第二个元素开始挑战它。\n\n这也是一条更普遍的思路：初值不要凭空给，要从数据里来。",
+        "code": "int a[3] = {-5, -2, -9};\n\nint bad = 0;                     // 错误示范：初值凭空写 0\nfor (int i = 0; i < 3; i++) {\n    if (a[i] > bad) bad = a[i];\n}\n\nint good = a[0];                 // 正确：拿第一个数当擂主\nfor (int i = 1; i < 3; i++) {\n    if (a[i] > good) good = a[i];\n}\n\ncout << bad << \" \" << good << endl;",
+        "output": "0 -2"
+      },
+      {
+        "title": "记录「第一次出现」的位置，要用严格大于",
+        "body": "更新最值的时候顺手把位置记下来：`if (a[i] > maxVal) { maxVal = a[i]; maxPos = i + 1; }`。\n\n为什么是 `>` 而不是 `>=`？因为题目要的是**第一次**出现的位置：后面再遇到同样大的数时，用 `>` 就不会再更新位置，留下来的正是第一次那个。写成 `>=` 记录到的会是最后一次。\n\n还有两个「从几开始」千万别混：**下标从 0 开始**，**位置从 1 开始**，所以存进位置变量时要写 `i + 1`。",
+        "code": "int a[5] = {3, 1, 4, 1, 5};\nint maxVal = a[0], maxPos = 1;\nfor (int i = 1; i < 5; i++) {\n    if (a[i] > maxVal) {\n        maxVal = a[i];\n        maxPos = i + 1;\n    }\n}\ncout << maxVal << \" \" << maxPos << endl;",
+        "output": "5 5"
+      },
+      {
+        "title": "一轮循环同时求最大值和最小值",
+        "body": "数据已经在数组里了，最大值和最小值可以在**同一轮**循环里各自比较、互不影响，没必要为了求最小值再扫一遍数组。\n\n另外一个容易忽略的点：`int maxVal;` 这样只声明不赋初值，maxVal 里是内存里的随机值（局部变量不会自动变成 0）。C++ 里养成「声明的时候就给初值」的习惯，能省掉一大类玄学 bug。",
+        "code": "int a[4] = {-1, 5, -7, 3};\nint maxVal = a[0], minVal = a[0];\nfor (int i = 1; i < 4; i++) {\n    if (a[i] > maxVal) maxVal = a[i];\n    if (a[i] < minVal) minVal = a[i];\n}\ncout << maxVal << \" \" << minVal << endl;",
+        "output": "5 -7"
+      }
+    ]
+  },
+  {
+    "id": 704,
+    "title": "std::string 入门：长度、首尾字符与拼接",
+    "difficulty": "easy",
+    "description": "读入一个**不含空格**的英文单词（只含大小写英文字母，长度 1 到 100），依次输出：\n\n· 它的长度\n· 第一个字符和最后一个字符\n· 把它接上它自己（重复两遍）",
+    "input_format": "一行，一个不含空格的英文单词（只含大小写英文字母）",
+    "output_format": "共三行：\n第一行：这个单词的长度\n第二行：第一个字符和最后一个字符，中间用一个空格分隔\n第三行：把这个单词重复两遍（例如 hello 输出 hellohello）",
+    "sample_input": "hello",
+    "sample_output": "5\nh o\nhellohello",
+    "test_cases": [
+      { "input": "hello\n", "output": "5\nh o\nhellohello" },
+      { "input": "a\n", "output": "1\na a\naa" },
+      { "input": "Code\n", "output": "4\nC e\nCodeCode" }
+    ],
+    "hints": [
+      "cin >> s 就能把一个单词读进 string，不用提前告诉它有多长。",
+      "长度用 s.length()（写成 s.size() 也一样）。",
+      "下标和数组一样从 0 开始：s[0] 是第一个字符，最后一个字符是 s[s.length() - 1]；两个字符串相加就直接拼接。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    // cin >> s 读的是「一个单词」：跳过开头的空白，遇到空格或换行就停。\n    // 所以题目说单词不含空格 —— 要读一整句话得用 getline（下一题会讲）。\n    string s;\n    cin >> s;\n\n    cout << s.length() << endl;\n\n    // 下标和数组一样从 0 开始，最后一个字符是 s[s.length() - 1]。\n    // 别写成 s[s.length()] —— 那是长度，正好越界。\n    cout << s[0] << \" \" << s[s.length() - 1] << endl;\n\n    // string 可以直接用 + 拼接，结果是新字符串，原来的 s 不变\n    string t = s + s;\n    cout << t << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "string 比 char[] 省心在哪",
+        "body": "C 里存字符串只能靠 `char s[100];`：长度得提前猜、还要留一个位置给结尾的 `'\\0'`、不能用 `=` 直接赋值、也不能用 `+` 拼接。\n\nC++ 的 `string` 把这些都包好了：长度自己管，赋值、拼接、比较都能直接写。它是 `<string>` 头文件里的一个**类**，不是一个字符数组 —— 这是 C++ 和 C 在字符串上最大的区别。\n\n`cout << s` 会直接把整个字符串打出来，不会像字符数组那样因为丢了 `'\\0'` 而打印出一串乱码。",
+        "code": "#include <string>\nusing namespace std;\n\nstring a = \"Hello\";\nstring b = \"C++\";\nstring c = a + \", \" + b + \"!\";\ncout << c << endl;\ncout << c.length() << endl;",
+        "output": "Hello, C++!\n10"
+      },
+      {
+        "title": "cin >> s 只读一个词",
+        "body": "`cin >> s` 会先**跳过开头的空白**（空格、换行、Tab），然后一直读到下一个空白为止。所以输入 `hello world` 时，s 只拿到 `hello`，剩下的 `world` 还留在输入流里等下一次读。\n\n这既方便（不用管数据怎么排空格）也坑人（想读一整句话就不行了，要读整行得用 `getline`）。\n\n另外注意：`cin >> s` **不会**把那个分隔用的空格或换行读走，正是这一点让它和 `getline` 混用时特别容易出错。",
+        "code": "string s;\ncin >> s;\ncout << \"[\" << s << \"]\" << endl;",
+        "output": "输入 hello world 时输出：[hello]"
+      },
+      {
+        "title": "下标访问：从 0 开始，最后一个是 length() - 1",
+        "body": "`s[i]` 拿到的是第 i 个字符（类型是 `char`），下标从 0 开始，所以最后一个字符是 `s[s.length() - 1]`。\n\n最常见的错法是把「长度」当成下标：`s[s.length()]` 是字符串末尾之后的位置，已经越界了。\n\n还有个类型上的细节：`length()` 返回的是无符号的 `size_t`，和 `int` 混着比较时编译器可能警告。写循环时习惯写成 `for (int i = 0; i < (int)s.length(); i++)`，或者干脆用范围 for：`for (char ch : s)`。",
+        "code": "string s = \"Code\";\ncout << s[0] << \" \" << s[s.length() - 1] << endl;\n\nfor (char ch : s) {\n    cout << ch << \"-\";\n}",
+        "output": "C e\nC-o-d-e-"
+      }
+    ]
+  },
+  {
+    "id": 705,
+    "title": "getline 读入整行并统计",
+    "difficulty": "medium",
+    "description": "读入**一整行**英文文本（只含大小写英文字母和空格，可能以空格开头），依次输出：\n\n· 这一行有多少个字符\n· 其中有多少个空格\n· 把这一行里的每个空格都换成减号 `-` 之后的样子",
+    "input_format": "一行文本，只由大小写英文字母和空格组成（总长度不超过 100，可能以空格开头）\n\n注意：这是**一整行**，不是「一个单词」。",
+    "output_format": "共三行：\n第一行：字符总数（空格也算进去；行尾的换行符不算）\n第二行：空格的个数\n第三行：把这一行里每个空格都换成 '-' 之后的文本（没有空格就原样输出）",
+    "sample_input": "hello world",
+    "sample_output": "11\n1\nhello-world",
+    "test_cases": [
+      { "input": "hello world\n", "output": "11\n1\nhello-world" },
+      { "input": "abc\n", "output": "3\n0\nabc" },
+      { "input": "  hi\n", "output": "4\n2\n--hi" },
+      { "input": "a b c\n", "output": "5\n2\na-b-c" }
+    ],
+    "hints": [
+      "读整行要用 getline(cin, line)。用 cin >> s 的话遇到空格就停了，只能读到第一个词。",
+      "遍历这一行用下标：for (int i = 0; i < (int)line.length(); i++)，line[i] 就是第 i 个字符。",
+      "新字符串先写成 string out; 然后用 out += ch; 一个字符一个字符地拼出来。"
+    ],
+    "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    // getline 读「一整行」：一直读到换行符为止，空格不再算结束。\n    // 它会跳过开头的空白吗？不会 —— 行首的空格会原样读进来（和 cin >> 不一样）。\n    // 结尾的 '\\n' 被丢掉，不会进 line。\n    string line;\n    getline(cin, line);\n\n    cout << line.length() << endl;\n\n    int spaces = 0;\n    string out;   // 空字符串，后面一个字符一个字符往里加\n\n    // length() 返回的是无符号类型，转成 int 再比较，省得编译器警告\n    for (int i = 0; i < (int)line.length(); i++) {\n        if (line[i] == ' ') {\n            spaces++;\n            out += '-';        // string 支持 += 追加\n        } else {\n            out += line[i];\n        }\n    }\n\n    cout << spaces << endl;\n    cout << out << endl;\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "getline 和 cin >> 的分工",
+        "body": "两个工具读的东西完全不一样：\n\n· `cin >> s`：先跳过开头的空白，然后读到下一个空白就停 —— 适合读**单词或数字**。\n· `getline(cin, line)`：从当前位置一直读到换行符，中间的空格照单全收 —— 适合读**一整行**。\n\n所以读「带空格的句子」只能用 `getline`。反过来，`getline` 不会帮你跳过行首的空格：输入是 `  hi` 时，line 里就是 `  hi`（两个空格 + hi，长度 4）。\n\n`getline` 会把结尾的换行符读掉但**不放进** line，所以 `line.length()` 不包含它。",
+        "code": "string a, line;\ncin >> a;              // 只读到第一个词\ngetline(cin, line);    // 接着读到本行剩下的部分\n\ncout << \"a = [\" << a << \"]\" << endl;\ncout << \"line = [\" << line << \"]\" << endl;",
+        "output": "输入 hello world 时输出：\na = [hello]\nline = [ world]"
+      },
+      {
+        "title": "cin >> 和 getline 混用会读到空行（经典坑）",
+        "body": "先读一个数、再读一整行，很容易写成这样：\n\n```\nint n;\ncin >> n;\nstring s;\ngetline(cin, s);     // 以为读到了一整行，其实 s 是空的\n```\n\n原因是 `cin >> n` **只把数字取走，换行符还留在输入流里**。接着 `getline` 一上来就看见那个换行符，立刻认为「这一行结束了」，于是 s 变成空串，真正的文本要等下一次 `getline` 才读到。\n\n两种改法：\n\n· 在中间补一次 `getline(cin, s);` 专门吃掉那个残留的换行（读到的空串直接丢掉），然后再 `getline` 读真正的内容。\n· 或者从头到尾都用 `getline` 读，再用 `stoi` 之类自己把数字解析出来。\n\n判断有没有踩这个坑很简单：打印 `s.length()` 看看是不是 0。",
+        "code": "int n;\ncin >> n;\nstring s;\ngetline(cin, s);       // 第一次：吃掉 n 后面残留的换行符（s 变成空串）\ngetline(cin, s);       // 第二次：这才是真正的那一行\n\ncout << \"n = \" << n << \", s = [\" << s << \"]\" << endl;",
+        "output": "输入 3 换行 hello world 时输出：n = 3, s = [hello world]"
+      },
+      {
+        "title": "拼字符串为什么不用数组",
+        "body": "C 里要「把空格换成减号」，得再开一个 `char out[100];`，还要自己维护一个下标 `k`、最后手动补上 `'\\0'`，一不小心就写越界。\n\nC++ 的 `string` 默认是**空字符串**，用 `+=` 往后追加字符就行，长度自己长，不用管结尾符，也不用担心开小了。\n\n这类「边遍历边构造结果」的写法非常常用：`out` 一开始是空的，每处理完一个字符就 `out += ...` 追加进去。",
+        "code": "string out;          // 空字符串\nout += 'a';         // 追加一个字符\nout += \"bc\";        // 也可以追加一整个字符串\ncout << out << \" \" << out.length() << endl;",
+        "output": "abc 3"
+      }
+    ]
+  },
+  {
+    "id": 706,
+    "title": "二维数组：矩阵的输入输出与转置",
+    "difficulty": "medium",
+    "description": "读入一个 r 行 c 列的整数矩阵，输出它的转置矩阵。\n\n转置就是「行列互换」：原来第 1 行变成新矩阵的第 1 列，原来第 2 行变成新矩阵的第 2 列……所以新矩阵是 c 行 r 列。",
+    "input_format": "第一行两个整数 r 和 c（1 ≤ r ≤ 50，1 ≤ c ≤ 50），用空格分隔\n接下来 r 行，每行 c 个整数，用空格分隔",
+    "output_format": "共 c 行，每行 r 个整数，用空格分隔，表示转置后的矩阵",
+    "sample_input": "2 3\n1 2 3\n4 5 6",
+    "sample_output": "1 4\n2 5\n3 6",
+    "test_cases": [
+      { "input": "2 3\n1 2 3\n4 5 6\n", "output": "1 4\n2 5\n3 6" },
+      { "input": "1 1\n7\n", "output": "7" },
+      { "input": "3 1\n1\n2\n3\n", "output": "1 2 3" },
+      { "input": "2 2\n-1 0\n0 -1\n", "output": "-1 0\n0 -1" }
+    ],
+    "hints": [
+      "二维数组 a[i][j] 的第一个下标是行、第二个是列，读入时用两层循环：外层走行，内层走列。",
+      "行列数最大都是 50，数组开成 int a[55][55]; 就够，多出来的格子当保险。",
+      "输出转置时把两层循环反过来：外层走列 j，内层走行 i，输出的就是 a[i][j]。"
+    ],
+    "solution": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int r, c;\n    cin >> r >> c;\n\n    // 二维数组 a[i][j]：第一个下标是「行」，第二个是「列」。\n    // 顺序写反了照样能编译、照样能跑，只是答案全错 —— 这是二维数组最常见的坑。\n    // 行列上限都是 50，各开 55 留点余量。\n    int a[55][55];\n\n    for (int i = 0; i < r; i++) {\n        for (int j = 0; j < c; j++) {\n            cin >> a[i][j];\n        }\n    }\n\n    // 转置输出：外层走「列」，内层走「行」。\n    // 一共输出 c 行，每行 r 个数（行列数正好和输入反过来）。\n    for (int j = 0; j < c; j++) {\n        for (int i = 0; i < r; i++) {\n            if (i > 0) {\n                cout << \" \";   // 每个数之间一个空格，行首不加\n            }\n            cout << a[i][j];\n        }\n        cout << endl;\n    }\n    return 0;\n}\n",
+    "tutorial": [
+      {
+        "title": "二维数组就是一张表格",
+        "body": "`int a[55][55];` 可以理解成 55 行 × 55 列的表格，`a[i][j]` 是第 i 行第 j 列那一格。**第一个下标是行，第二个是列**，顺序不能反。\n\n开 55 而不是 50，是因为下标从 0 开始：要放 50 行，最后一行是 `a[49]`，多开几个格子当保险，省得边界算错。\n\n内存里它其实是「一行一行排着放」的：`a[0][0]`、`a[0][1]`……把第 0 行放完，才轮到第 1 行。所以按行访问（外层循环走行、内层走列）最符合它的排列方式。\n\n输入也是两层循环：外层走行、内层走列，正好和「一行一行读进来」对应。",
+        "code": "int a[3][3];\n\nfor (int i = 0; i < 2; i++) {\n    for (int j = 0; j < 3; j++) {\n        cin >> a[i][j];\n    }\n}\n\ncout << a[0][0] << \" \" << a[1][2] << endl;   // 第一行第一列、第二行第三列",
+        "output": "输入 1 2 3 换行 4 5 6 时输出：1 6"
+      },
+      {
+        "title": "转置只是把两层循环换了个顺序",
+        "body": "转置后第 j 行，取的是原矩阵第 j **列**：`a[0][j]`、`a[1][j]`、……、`a[r-1][j]` —— 列号固定，行号在变。\n\n所以输出时把两层循环反过来就行：外层是列 j、内层是行 i，仍然输出 `a[i][j]`。\n\n输出的行数是 c（原来的列数），每行有 r 个数（原来的行数）。写循环上界的时候照抄这个关系，比死记「i 和 j 换一下」更不容易错。\n\n顺带一提：如果只想知道转置后某个位置是什么，那就是 `a[j][i]` —— 行列下标对调，这就是「转置」两个字的全部含义。",
+        "code": "for (int j = 0; j < c; j++) {          // 外层：列\n    for (int i = 0; i < r; i++) {      // 内层：行\n        if (i > 0) cout << \" \";\n        cout << a[i][j];\n    }\n    cout << endl;\n}",
+        "output": "输入 2 3 / 1 2 3 / 4 5 6 时输出：\n1 4\n2 5\n3 6"
+      },
+      {
+        "title": "进阶：用 vector 表示二维表",
+        "body": "如果行列数事先不知道（比如「读到 0 0 才结束」），`int a[55][55]` 就得赌一个上限。这时可以用**嵌套的 vector**：外层每个元素是一整行，行自己是一个 `vector<int>`。\n\n· `row.push_back(x)` 往当前这一行末尾加一个数；\n· `a.push_back(row)` 把这一行加到矩阵里；\n· `a.size()` 是行数，`a[0].size()` 是列数；\n· 范围 for 可以一次取出一整行（`for (vector<int> row : a)`），再套一层范围 for 就取到每个数。\n\n写法比数组啰嗦一点，但长度不用猜，第 11 分类（模板与 STL）会系统地讲。",
+        "code": "#include <vector>\nusing namespace std;\n\nvector<vector<int>> a;\nvector<int> row;\nrow.push_back(1);\nrow.push_back(2);\na.push_back(row);              // 加进一行\n\nfor (vector<int> r : a) {      // 范围 for：一次拿一整行\n    for (int j = 0; j < (int)r.size(); j++) {\n        if (j > 0) cout << \" \";\n        cout << r[j];\n    }\n    cout << endl;\n}\ncout << \"行数 \" << a.size() << \"，列数 \" << a[0].size() << endl;",
+        "output": "1 2\n行数 1，列数 2"
+      }
+    ]
+  }
+]

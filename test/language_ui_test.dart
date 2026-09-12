@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:python_practice/data/problem_repository.dart';
 import 'package:python_practice/models/programming_language.dart';
 import 'package:python_practice/pages/widgets/language_switcher.dart';
 import 'package:python_practice/pages/widgets/language_syntax.dart';
@@ -222,17 +223,29 @@ void main() {
     });
 
     test('拒绝切到没有题库的语言（避免进到空科目）', () async {
-      // Python 和 C 都有题库；C++ 的题库还没写，分类也没登记
-      final svc = LanguageService();
+      // 这里**不能**用「哪个语言恰好还没写题库」来构造场景：C++ 题库接入后
+      // 三种语言都有分类了，那种写法会随题库进度悄悄失效（曾经就是这么坏的）。
+      // 改成注入一个「只有 Python」的服务，直接锁 _safest 的回退规则本身。
+      final svc = LanguageService(
+        available: () => const [ProgrammingLanguage.python],
+      );
       await svc.select(ProgrammingLanguage.cpp);
       expect(svc.value, ProgrammingLanguage.python,
-          reason: 'C++ 还没题库，不该让人切过去看到空白');
+          reason: '该语言没有题库时，不该让人切过去看到空白科目');
     });
 
-    test('有题库的语言可以正常切入（C 已接入）', () async {
-      final svc = LanguageService();
-      await svc.select(ProgrammingLanguage.c);
-      expect(svc.value, ProgrammingLanguage.c);
+    test('三种语言的题库都已接入，都能切过去', () async {
+      // 与 lib/data/problem_repository.dart 的 _categoryMeta 对齐：
+      // 题库文件写了但分类表忘了登记，语言切换器里就看不到这门语言，
+      // 而这种漏登记不会让任何代码报错。
+      expect(availableLanguages, ProgrammingLanguage.values,
+          reason: '题库文件已全部落地，三种语言都应在语言切换器里可选');
+
+      for (final lang in ProgrammingLanguage.values) {
+        final svc = LanguageService();
+        await svc.select(lang);
+        expect(svc.value, lang, reason: '${lang.displayName} 应能切入');
+      }
     });
 
     test('存了一个已下线的语言会回退到可用语言', () async {
