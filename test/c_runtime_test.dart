@@ -11,6 +11,7 @@ import 'package:python_practice/data/problem_repository.dart';
 import 'package:python_practice/services/c_runtime.dart';
 import 'package:python_practice/pages/widgets/judge_result_panel.dart';
 import 'package:python_practice/services/judge_engine.dart';
+import 'package:python_practice/services/language_runtime.dart';
 
 /// C 的编译型判题链路。
 ///
@@ -176,6 +177,36 @@ int main() {
           reason: '应给出 C 特有的排查方向：${r.message}');
     });
 
+    test('整数除以 0 → 提示「除以 0」，不能误报成崩溃/指针问题', () async {
+      if (!compilerReady) return;
+      // 回归：除零(-8) 和段错误(-11) 都会让 exitCode 变成负数。
+      // 早先只判断 `exitCode < 0` 就一律报「崩溃：数组越界／指针」，
+      // 把写 `a / b` 的学生指去查指针 —— 方向完全相反。
+      const code = r'''
+#include <stdio.h>
+int main() {
+    int a = 10;
+    int b = 0;
+    printf("%d\n", a / b);
+    return 0;
+}
+''';
+      final result = await engine.judge(
+        cProblem(cases: [TestCase(input: '', output: '')]),
+        code,
+      );
+
+      final r = result.caseResults.first;
+      expect(r.status, JudgeStatus.runtimeError,
+          reason: '除零应判运行错误而不是答案错误');
+      expect(r.message, contains('除以 0'), reason: '实际信息：${r.message}');
+      // 这两句是段错误专属的排查方向，出现在除零的题上就是把学生带偏
+      expect(r.message.contains('数组下标越界'), isFalse,
+          reason: '除零不该被指去查数组越界：${r.message}');
+      expect(r.message.contains('指针指向了非法地址'), isFalse,
+          reason: '除零不该被指去查指针：${r.message}');
+    });
+
     test('用了 math.h 也能链接（-lm 生效）', () async {
       if (!compilerReady) return;
       const code = r'''
@@ -208,6 +239,55 @@ int main() {
       );
       expect(result.caseResults.first.status, JudgeStatus.timeout);
     }, timeout: const Timeout(Duration(seconds: 60)));
+  });
+
+  group('异常终止的退出码分类（跨平台）', () {
+    // 退出码是**唯一**可靠的线索：判题用 Process.start 直接拉进程、不走 shell，
+    // 而「Floating point exception」「Segmentation fault」这些字样是 shell 打印的，
+    // 在 stderr 里根本不会出现（实测：除零的 C 程序经 Dart 启动后 stderr 为空）。
+    //
+    // Windows 分支在本机（macOS）跑不到，所以这里直接喂状态码，把那半边逻辑锁住。
+    final rt = runtimeFor(ProgrammingLanguage.c);
+
+    // stderr 默认给非空值：空 stderr 会命中「非正常退出但没输出」那条兜底，
+    // 那是另一条分支，不该混进来干扰这里的判断。
+    String? explain(int exitCode, {String stderr = 'boom'}) =>
+        rt.explainRuntimeError(stderr, '', exitCode: exitCode);
+
+    test('POSIX：除零是 SIGFPE(-8)，段错误是 SIGSEGV(-11)，两者必须分开', () {
+      final dz = explain(-8)!;
+      expect(dz, contains('除以 0'), reason: '实际：$dz');
+      expect(dz.contains('数组下标越界'), isFalse,
+          reason: '除零不该被指去查数组越界：$dz');
+
+      final seg = explain(-11)!;
+      expect(seg, contains('崩溃'));
+      expect(seg, contains('数组下标越界'));
+    });
+
+    test('Windows：状态码被 Dart 转成负数后仍能分辨（0xC0000094 / 0xC0000005）', () {
+      // 依据 dart:io 的 Process.exitCode 文档：32 位状态码按**有符号**返回，
+      // 0xC0000094 → -1073741676，0xC0000005 → -1073741819。
+      final dz = explain(-1073741676)!;
+      expect(dz, contains('除以 0'), reason: 'Windows 除零应认出来：$dz');
+
+      final av = explain(-1073741819)!;
+      expect(av, contains('崩溃'));
+      expect(av, contains('数组下标越界'),
+          reason: '访问违规对标段错误，排查方向一致：$av');
+    });
+
+    test('abort / 未知信号不掉进「数组越界」的错误方向', () {
+      expect(explain(-6), contains('被强行中止')); // SIGABRT
+      final killed = explain(-9)!; // SIGKILL 等未列出的信号
+      expect(killed, contains('被系统异常终止'), reason: '实际：$killed');
+      expect(killed.contains('数组下标越界'), isFalse);
+    });
+
+    test('正常退出（exitCode >= 0）不触发任何崩溃文案', () {
+      expect(explain(0), isNull);
+      expect(explain(1), isNull);
+    });
   });
 
   group('Python 不受影响（回归）', () {

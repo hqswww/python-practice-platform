@@ -176,6 +176,25 @@ builtins.input = _judge_input
 
 // ------------------------------------------------------- 编译型语言公共实现
 
+/// 程序「被系统异常终止」的种类。
+///
+/// **为什么需要区分**：除零和段错误都会让进程非正常退出，但排查方向完全相反。
+/// 早先的代码只判断 `exitCode < 0` 就一律报「崩溃：数组越界／指针问题」，
+/// 于是写 `a / b` 且 b 为 0 的学生被指去查指针 —— 见 [CompiledLanguageRuntime._crashKind]。
+enum _CrashKind {
+  /// 整数除以 0（POSIX 的 SIGFPE / Windows 的 STATUS_INTEGER_DIVIDE_BY_ZERO）
+  divideByZero,
+
+  /// 访问了非法内存：段错误、数组越界、栈溢出
+  memory,
+
+  /// 被强行中止：assert 失败、abort()、C++ 抛出的异常没人接住
+  aborted,
+
+  /// 其它异常终止（信号种类未知）
+  other,
+}
+
 /// C / C++ 的公共实现
 ///
 /// 两者的判题流程**完全一样**（编译一次 → 所有用例复用产物），
@@ -230,24 +249,91 @@ abstract class CompiledLanguageRuntime extends LanguageRuntime {
   String? explainRuntimeError(String stderr, String output,
       {int exitCode = 0}) {
     final combined = '$stderr\n$output';
+    final crash = _crashKind(exitCode);
 
-    // 被信号杀掉（段错误 = SIGSEGV = 11，浮点异常 = 8，中止 = 6）。
-    // Shell 那边通常只打印 "Segmentation fault"，学生看不懂。
-    if (exitCode < 0 || combined.contains('Segmentation fault')) {
+    // ⚠️ 除零必须排在「崩溃」前面。两者都会让 exitCode 变成负数（-8 / -11），
+    // 只按 `exitCode < 0` 一刀切的话，写 `a / b` 且 b 为 0 的学生会被指去
+    // 查数组越界和指针 —— 方向完全相反，比不给提示还糟。
+    if (crash == _CrashKind.divideByZero) {
+      return '⚠️ 整数除以 0 了。\n'
+          '· 除数是变量时先想清楚它会不会是 0，尤其是从输入读进来的\n'
+          '· 取余 `%` 右边是 0 也一样会挂\n'
+          '· 动手除之前先挡一下：`if (b != 0) { ... }`\n'
+          '\n$combined';
+    }
+    if (crash == _CrashKind.memory ||
+        combined.contains('Segmentation fault')) {
       return '⚠️ 程序崩溃了。${language.displayName} 里最常见的原因是：\n'
           '· 数组下标越界（比如长度为 5 的数组访问了 a[5]）\n'
           '· 用了没初始化的指针，或用完释放之后又访问\n'
           '· 指针指向了非法地址（忘了取地址 & 或忘了分配内存）\n'
           '\n$combined';
     }
-    if (combined.contains('Floating point exception')) {
-      return '⚠️ 浮点异常，通常是**整数除以 0**。\n\n$combined';
+    if (crash == _CrashKind.aborted) {
+      return '⚠️ 程序被强行中止了。常见原因：\n'
+          '· 抛出的异常没人接住（C++ 的 `throw` 要用 `try / catch` 接住）\n'
+          '· `assert` 断言不成立，或代码里调用了 `abort()`\n'
+          '\n$combined';
+    }
+    if (crash == _CrashKind.other) {
+      // 信号种类没认出来时宁可说少，也不要把学生往某个方向带 ——
+      // 原来这里一律报「数组越界／指针」，对写除零的学生就是纯误导。
+      return '⚠️ 程序被系统异常终止了（退出码 $exitCode）。\n'
+          '进程不是自己正常退出的，常见于被信号打断或运行环境异常。\n'
+          '\n$combined';
     }
     if (combined.trim().isEmpty) {
       return '⚠️ 程序非正常退出（退出码 $exitCode），但没有输出错误信息。\n'
           '检查一下是不是 return 了非 0 的值，或者中途异常退出。';
     }
     return null; // 有 stderr 但没见过 → 交给通用兜底，把原文显示出来
+  }
+
+  /// 由退出码判断程序是不是被异常终止的，以及**是哪一种**。
+  ///
+  /// 两个平台对「异常终止」的编码完全不同，必须分别处理：
+  ///
+  /// - **POSIX**：Dart 返回 `-信号号`。整数除零是 SIGFPE(8)，段错误 SIGSEGV(11)，
+  ///   总线错误 SIGBUS(10)，`abort()` 是 SIGABRT(6)。
+  /// - **Windows**：Dart 把 32 位状态码当**有符号**数返回，所以 `0xC0000094`
+  ///   （整数除零）会变成负数 `-1073741676`。要拿回原始值得做
+  ///   `(0x100000000 + exitCode) & 0xFFFFFFFF`。
+  ///   （依据：`dart:io` 里 `Process.exitCode` 的文档原话是
+  ///   "if a process crashes due to an access violation the 32-bit exit code
+  ///   is 0xc0000005, which will be returned as the negative number -1073741819"。）
+  ///
+  /// ⚠️ **不能靠 stderr 里的文字判断**：判题用 `Process.start` 直接拉进程、
+  /// **不经过 shell**，而「Floating point exception」「Segmentation fault」
+  /// 这些字样恰恰是 **shell** 打印的。实测一个除零的 C 程序：
+  /// bash 里 `$?` = 136 且打印 "Floating point exception"，但经 Dart 启动后
+  /// `exitCode == -8` 而 stderr 是**空的** —— 退出码是唯一可靠的线索。
+  static _CrashKind? _crashKind(int exitCode) {
+    if (exitCode >= 0) return null;
+
+    // Windows：先还原成原始 32 位状态码
+    switch ((0x100000000 + exitCode) & 0xFFFFFFFF) {
+      case 0xC0000094: // STATUS_INTEGER_DIVIDE_BY_ZERO
+        return _CrashKind.divideByZero;
+      case 0xC0000005: // STATUS_ACCESS_VIOLATION
+      case 0xC000008C: // STATUS_ARRAY_BOUNDS_EXCEEDED
+      case 0xC00000FD: // STATUS_STACK_OVERFLOW
+      case 0xC0000409: // STATUS_STACK_BUFFER_OVERRUN
+        return _CrashKind.memory;
+      case 0xC000001D: // STATUS_ILLEGAL_INSTRUCTION
+        return _CrashKind.aborted;
+    }
+
+    // POSIX：-信号号
+    switch (-exitCode) {
+      case 8: // SIGFPE
+        return _CrashKind.divideByZero;
+      case 10: // SIGBUS
+      case 11: // SIGSEGV
+        return _CrashKind.memory;
+      case 6: // SIGABRT
+        return _CrashKind.aborted;
+    }
+    return _CrashKind.other;
   }
 
   /// 清洗编译器输出。
