@@ -1,44 +1,49 @@
 # 编程练习册 — 项目设计文档
 
-> 目标：面向计算机入门后辈的**编程**练习/检测综合平台（Python / C，可继续扩语言）
-> 形态：Flutter 本地桌面应用（Windows / Linux / macOS）
-> 状态：**v1.2**（多语言地基 + Python / C 两门题库就位）
+> 目标：面向计算机入门后辈的**编程**练习/检测综合平台（Python / C / C++，可继续扩语言）
+> 形态：Flutter 本地桌面应用（Windows / macOS / Linux）
+> 状态：**v1.3.0**（三门语言各 72 题 + 首次运行向导 + 安装包分发）
 >
-> ⚠️ 本文档记录的是 v1.0 时期的设计决策，其中「捆绑 Python runtime」等表述
-> 只适用于 Python；C 走系统编译器路线。多语言部分见 `docs/MACOS_MIGRATION.md`
-> 与 `tools/BANK_SPEC.md`。
+> 📌 阅读提示：本文档**保留了两段历史记录**（v1.0 小结、里程碑），
+> 里面的「72 道题」「5 项测试」等数字是当时的真实状态，不是笔误。
+> 想知道**现在**是什么样，看 README 的版本段与 `PROJECT_BACKLOG.md`。
+> 语言维度与题库规格详见 `PROJECT_MAP.md`、`tools/BANK_SPEC.md`。
 
 ## 一、核心闭环
-学生选题 → 写代码 → 运行（Python 解释执行 / C 先编译）→ 比对输出 → 对/错反馈 + 进度记录
+学生选题 → 写代码 → 运行（Python 解释执行 / C·C++ 先编译再跑）→ 比对输出 → 对/错反馈 + 进度记录
 
 ## 二、技术决策（已拍板）
 | 项 | 决策 |
 |----|------|
 | 框架 | Flutter（Dart），开发者已有 Flutter Android 经验 |
-| 开发机 | Linux（当前 Fedora 44），最终迁移 Windows 出 .exe |
-| 判题 | 捆绑 Python runtime，标准输入输出比对 |
-| 编辑器 | MVP 用基础文本框（TextField），增强留二期 |
-| 判题交互 | 即时运行 + 自动标对错 |
-| 进度存储 | shared_preferences（本地持久化） |
+| 语言范围 | **Python / C / C++ 三个独立科目**，不是合并的「C/C++」 |
+| 开发机 | macOS（`~/Develop/flutter`；项目最初在 Linux 上起头） |
+| 分发目标 | **Windows + macOS + Linux**；出安装包（Windows Setup.exe / macOS dmg） |
+| 判题 | **按语言分两条路**：Python 捆绑解释器解释执行；C/C++ 用系统编译器先编译 |
+| C/C++ 编译器 | **用系统编译器**，不捆进应用（clang + SDK 几百 MB，且许可证不允许再分发） |
+| 编辑器 | 自研 `PythonCodeField`：语法高亮 + 行号，零第三方依赖 |
+| 判题交互 | 即时运行 + 自动标对错；运行面板可逐步喂输入 |
+| 进度存储 | shared_preferences（本地持久化），**键带语言** |
 | 防作弊 | 不做（自习自测场景） |
 | 结果显示 | 可切换：简洁模式(对/错) / 详细模式(实际vs期望 + traceback) |
 
 ## 三、题库结构（对齐 runoob 学习进度）
+
+**按语言分目录**，每门语言 12 个分类、72 道题：
+
 ```
 assets/problems/
-├── 01_syntax.json      # 基础语法（缩进/注释/print/变量）
-├── 02_datatype.json    # 数据类型与转换
-├── 03_operators.json   # 运算符
-├── 04_conditionals.json  # 条件判断 if/elif/else
-├── 05_loops.json       # 循环 for/while
-├── 06_strings.json     # 字符串处理
-├── 07_lists.json       # 列表
-├── 08_tuples_sets.json # 元组+集合
-├── 09_dicts.json       # 字典
-├── 10_functions.json   # 函数
-├── 11_advanced.json    # 进阶（迭代器/生成器/异常/文件）
-└── 12_challenges.json  # 综合挑战
+├── python/   01_syntax … 12_challenges    （基础语法 → 综合挑战）
+├── c/        01_basics … 12_challenges    （基础语法 → 指针 → 结构体 → 综合挑战）
+└── cpp/      01_basics … 12_challenges    （基础语法 → 类 → 继承 → STL → 综合挑战）
 ```
+
+**id 段按分类序号走**（`NN*100+1..6`），三门语言各自独立 ——
+进度键是「语言_题号」，撞号会让两道题共享进度。
+
+⚠️ 加语言时三个落点缺一不可：新建目录 + `pubspec.yaml` 登记（**资源声明不递归**）
++ `problem_repository.dart` 的分类表。漏了分类表那门语言会少一块，且**不会报错**。
+
 难度：easy / medium / hard（3 级）
 - 入门同学接受能力偏弱 → 保留细分分类，循序渐进
 - 高难度题描述可更详细
@@ -89,17 +94,30 @@ assets/problems/
 - [x] 设置板块（主题模式切换、判题超时滑块、真实难度统计详情、清除进度）
 - [x] UI 动画体系（设置卡片 hover、判题结果交错入场、切题滑动、结果庆祝、练习网格入场、导航切换过渡）
 - [x] 迁移 Windows 构建 .exe
+- [x] 多语言重构：语言模型 / 进度主键带语言 + 旧数据迁移 / 运行时抽象 / 语法高亮按语言 / 顶栏切换器
+- [x] **接入 C**（12 分类 72 题）+ **接入 C++**（12 分类 72 题），各带教程
+- [x] 运行面板按语言分「交互终端 / 编译运行」，都能逐步喂输入
+- [x] **首次运行向导**：运行环境自检 + 一键装编译器（Windows）
+- [x] **安装包分发**：Windows `Setup.exe`（免管理员）、macOS `dmg`（拖拽安装）
+- [x] macOS 迁移 + 签名 + 14 项自动验收
+- [x] Linux 打包（绿色版 tar.gz + 用户级 `install.sh`）
 
 ## 七、后端引擎已验证的技术点
 - `Process.start(python3, [solution.py])` + stdin/stdout 管道判题可行
 - 判题通过判定用 `_normalizeLines`（去每行尾空白+统一换行），保留行内空格避免把"多打空格"误判为通过
 - 格式错误走 `_analyzeWrongAnswer` 友好提示（去空白一致→提示格式；首个不同字符定位）
-- 测试：`flutter test`（判题 4 项 + 启动 1 项，全过）
+- 编译型语言：**编译一次、所有用例复用产物**；编译超时与运行超时**分开**
+  （编译默认 10s，运行沿用设置里的判题超时）
+- 超时后**必须真的杀掉进程**（只返回结果不杀的话，学生的 `while(1)` 会在后台一直跑）
+- 测试：`flutter test` 全过；C/C++ 题库另有「参考答案必须全部判过」的自检
 
-## 八、题库档案（72 道）
-各分类均匀分布 easy/medium/hard 三级：
-- 01 语法 / 02 数据类型 / 03 运算符 / 04 条件 / 05 循环 / 06 字符串
-- 07 列表 / 08 元组集合 / 09 字典 / 10 函数 / 11 进阶 / 12 综合挑战
+## 八、题库档案（3 × 72 = 216 道）
+每门语言 12 分类 × 6 题，各分类均匀分布 easy/medium/hard 三级。
+
+每题除测试用例外**必带教程与提示**（平台的定位是「边学边练」，缺教程会被结构守卫拦下）。
+
+出题禁区（判题环境里做不到的事）：文件读写、打印内存地址、时间/随机数、联网。
+详见 `tools/BANK_SPEC.md`。
 
 ## 九、UI 动画体系 ⭐（Material 3 动效）
 全部基于 Flutter 内置动画组件，无第三方包：
@@ -152,6 +170,33 @@ final end = (start + 0.35).clamp(0.0, 1.0);
 
 **技术栈**：Flutter 3.44.9 / Dart 3.12.2 / 无第三方动画包 / shared_preferences 持久化
 
+## 十·补、v1.3.0 小结（多语言 + 安装包）✅
+
+第一版只做 Python；到 v1.3.0 已经是三门语言、三平台、带安装包的分发形态。
+
+| 维度 | 内容 |
+|------|------|
+| 语言 | **Python / C / C++ 三个独立科目**，各 12 分类 72 题、各带教程；进度/错题/收藏/成就按语言独立 |
+| 判题 | 按语言分两条路：Python 解释执行（捆绑解释器）；C/C++ 系统编译器 + 编译一次复用产物 |
+| 运行面板 | Python 是「交互终端」、C/C++ 是「编译运行」；**都能在程序读输入时逐步喂一行** |
+| 上手 | **首次运行向导**：第一次打开就自检三门语言的运行环境，Windows 上可一键装编译器 |
+| 诊断 | 环境故障与代码问题**分开报**；设置页显示「已就绪 + 实际路径」；日志中心含三门语言运行时 |
+| 分发 | Windows `Setup.exe`（免管理员）+ 绿色版目录；macOS `dmg`（拖拽安装）+ zip；Linux tar.gz |
+| 健壮 | Windows **中文用户名路径**防御（判题工作目录走 ASCII + 编译器 `-B`）；除零/崩溃/编译失败各有对症提示 |
+| 验证 | `flutter test` 全过、`flutter analyze` 无新增、macOS 14 项自动验收；两个平台的安装包本身待实机 |
+
+**技术栈（v1.3.0）**：Flutter 3.47.3 / 无第三方动画包 / shared_preferences 持久化 /
+判题零网络依赖；C/C++ 走系统编译器（见下）
+
+### 为什么 C/C++ 不捆绑编译器
+
+Python 解释器 54MB/架构、可以整包带走；而 C 编译器在 macOS 上要 clang（98MB）
++ MacOSX.sdk（**258MB**，且 Apple 不允许再分发），universal 两份就是 +700MB。
+所以 C/C++ 只能走「用系统编译器」路线 —— 与 Windows 装 MinGW-w64 是同一条思路。
+
+代价是**用户机器上可能没有编译器**，所以补了两处提示：首次运行向导里的
+「一键安装」（Windows）/ 下载页与安装命令（其它平台），以及设置页的运行时自检卡片。
+
 ## 十一、优化清单（分阶段，待用户挑选）
 ### P1 体验增强（已完成 ✅）
 - [x] 测试默认定位到**下一道未做的题**
@@ -173,10 +218,18 @@ final end = (start + 0.35).clamp(0.0, 1.0);
 - [x] 深色/浅色主题自定义强调色
 
 ### P4 工程化
-- [x] **迁移 Windows**：Windows 分区装 Flutter SDK → `flutter build windows` 出 .exe → 捆绑 Python runtime（方案 A）
-- [ ] 打包安装器（Windows 用 Inno Setup / MSIX）
+- [x] **迁移 Windows**：`flutter build windows` 出 .exe → 捆绑 Python runtime（方案 A）
+- [x] **打包安装器**：Windows 用 **Inno Setup**（单文件 `Setup.exe`，免管理员）；
+      macOS 用 **dmg**（拖拽安装，卷内附首次打开说明）
 - [ ] 数据库替换 shared_preferences（题目量大/需要复杂查询时，可评估 sqlite / drift 或 hive，先查开源）
 
-## 十二、待验证/进行中
-- [ ] 进度存储实机验证（做对一题 → 列表打勾 → 重启保留）
-- [ ] 测试板块自由选题实机体验反馈
+## 十二、待验证 / 已知缺口
+
+**代码写好但没人真跑过的**（详见 `PROJECT_BACKLOG.md`）：
+- [ ] Windows 安装包（Inno Setup 只能在 Windows 上跑，`.iss` 是静态核对过的）
+- [ ] Linux 打包（`build_linux.sh` 从未在真 Linux 上跑过）
+- [ ] exe 属性页的中文（`llvm-rc` 验证通过，MSVC 的 `rc.exe` 行为可能不同）
+- [ ] macOS arm64：universal 包里两份 Python，需要 Apple Silicon 机器确认选对了
+
+**已实机确认**：进度存储、判题（三门语言）、交互终端连续运行、
+macOS 打包与签名、Windows 构建与 C/C++ 判题。

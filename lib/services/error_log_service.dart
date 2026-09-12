@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../app_version.dart';
 import '../models/programming_language.dart';
 import 'c_runtime.dart';
 import 'python_runtime.dart';
@@ -273,7 +274,7 @@ class ErrorLogService {
     };
 
     // 记录应用启动横幅（含平台信息，崩溃排查时很有用）
-    log('应用启动 (V1.2)',
+    log('应用启动 (V$appVersion)',
         source: LogSource.system, level: LogLevel.info);
     log('系统信息：${_platformInfo()}',
         source: LogSource.system, level: LogLevel.info);

@@ -22,12 +22,12 @@
 
 | | Windows | macOS |
 |---|---|---|
-| 产物 | `编程练习册.exe` + 同目录 `python/` | `编程练习册.app`（Python 在 `Contents/Resources/` 内） |
+| 产物 | `code_workbook.exe` + 同目录 `python/` | `code_workbook.app`（打包进 dmg 时改名为 `编程练习册.app`；Python 在 `Contents/Resources/` 内） |
 | 解释器兜底 | `python.exe` | **不能靠 PATH**：`.app` 从 Finder 启动只有 `/usr/bin:/bin:/usr/sbin:/sbin` |
 | 系统 Python | 通常没装 | `/usr/bin/python3` 是 Xcode CLT 的 **shim**，没装 CLT 时会弹安装提示 |
 | 签名 | 无 | **必须签名**；且嵌套代码的位置有讲究（Frameworks 放不了 Python 大树） |
 | 架构 | x64 | **universal**（`flutter build macos` 没有架构开关，两种架构在同一份 `.app` 里） |
-| 包体 | ~110MB | **198MB**（App）/ **82MB**（zip）——两份 Python 的代价 |
+| 包体 | ~110MB | **201MB**（App）/ **106MB**（dmg）/ **85MB**（zip）——两份 Python 的代价 |
 
 **为什么是两份 Python：**
 
@@ -258,10 +258,10 @@ bash tools/build_macos.sh --sign "Developer ID Application: 你的名字 (TEAMID
 
 ```bash
 # 断掉开发环境依赖，直接跑产物
-open "build/macos/Build/Products/Release/python_practice.app"
+open "build/macos/Build/Products/Release/code_workbook.app"
 
 # 检查捆绑解释器（注意是 Resources 且带架构后缀）
-APP="build/macos/Build/Products/Release/python_practice.app"
+APP="build/macos/Build/Products/Release/code_workbook.app"
 "$APP/Contents/Resources/python-x86_64/bin/python3" -V   # Intel
 "$APP/Contents/Resources/python-arm64/bin/python3"  -V   # Apple Silicon
 
@@ -448,7 +448,7 @@ xattr -dr com.apple.quarantine "/Applications/编程练习册.app"
 | `flutter build macos --release`（含两个插件） | ✅ 成功，走 SPM 不需 CocoaPods |
 | `flutter pub get` | ✅ 成功 |
 | `flutter analyze` | ✅ 1 条 info（`import_service_test.dart` 引用 `path_provider_platform_interface` 未声明依赖，**历史遗留**，非本次改动引入） |
-| `flutter test` | ✅ **48/48 全过** |
+| `flutter test` | ✅ 全过（当前 280 项；数字会随版本增长） |
 | 判题引擎真机跑题库 | ✅ 题 301/501/701/901 判题 OK（含 `-X utf8`，中文正常） |
 | `tools/setup_macos_platform.sh` | ✅ 生成 `macos/`，沙盒已关并回读校验 |
 | `tools/build_macos.sh` 全流程 | ✅ 编译→捆绑两份 Python→裁减→签 14 个 Mach-O→`valid on disk`→出 zip |
@@ -474,9 +474,9 @@ xattr -dr com.apple.quarantine "/Applications/编程练习册.app"
 ### 打包产物真机启动日志（最终验收证据）
 
 ```
-[2026-09-10 20:31:30] [system] [info] 应用启动 (V1.2)
+[2026-09-10 20:31:30] [system] [info] 应用启动 (V1.3.0)
 macOS (Version 26.0 (Build 25A354)) / Dart 3.13.3 ... on "macos_x64"
-  / Python .../python_practice.app/Contents/Resources/python-x86_64/bin/python3
+  / Python 解释器: .../code_workbook.app/Contents/Resources/python-x86_64/bin/python3
 [2026-09-10 20:31:30] [system] [info] 日志文件目录：
   /Users/sakiriwaizumi/Library/Application Support/com.sakiri.python-practice/logs
 ```

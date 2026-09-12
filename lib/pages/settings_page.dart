@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../app_version.dart';
 import '../data/problem_repository.dart';
 import '../models/problem.dart';
 import '../services/export_service.dart';
@@ -900,7 +901,7 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: const Icon(Icons.info_outline, color: Colors.blue),
         title: const Text('关于'),
         subtitle: Text(
-          'V1.2 · Flutter (Material 3)\n'
+          'V$appVersion · Flutter (Material 3)\n'
           '本地判题：Python / C / C++ 全部用本机环境，无需联网',
           style: TextStyle(color: Colors.grey[600]),
         ),
@@ -909,10 +910,15 @@ class _SettingsPageState extends State<SettingsPage> {
           showAboutDialog(
             context: context,
             applicationName: '编程练习册',
-            applicationVersion: 'V1.2',
+            applicationVersion: 'V$appVersion',
             applicationLegalese: '为学弟学妹准备的编程练习与判题工具',
             children: const [
-              Text('技术栈：Flutter (Material 3) + 系统 Python 判题\n题库：12 分类 72 道题\n\nV1.2 新增：编辑器字体大小 / 缩进宽度 / 自定义 Python 解释器路径'),
+              Text(
+                '技术栈：Flutter (Material 3)，判题全部在本机完成、离线可用\n'
+                '题库：Python / C / C++ 各 12 分类 72 道题，共 216 道\n\n'
+                'Python 用内置解释器（免装）；C / C++ 用系统编译器，\n'
+                '缺什么可以在「设置 → 代码编辑」里看到提示和一键安装。',
+              ),
             ],
           );
         },

@@ -28,7 +28,7 @@
 ; ⚠️ 版本号在这里维护。
 ; build_windows.ps1 会拿 pubspec.yaml 的版本跟它比对，不一致会打警告 ——
 ; 单一事实来源仍然是 pubspec.yaml，这里是打包用的副本。
-#define AppVersion "1.2.0"
+#define AppVersion "1.3.0"
 
 ; ⚠️ **这个 GUID 绝对不能改**。Inno 用它识别「这是不是同一个应用」：
 ;    升级安装要认它、卸载要认它、控制面板里的条目也认它。
