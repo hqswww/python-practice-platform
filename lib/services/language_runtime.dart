@@ -17,6 +17,38 @@ class RunSpec {
   });
 }
 
+/// 运行时自检结果
+///
+/// 设置页拿它在「编译器 / 解释器」那几张卡片上**提前**告诉用户环境好了没，
+/// 而不是等写完代码点「运行并判题」才失败 —— 那种失败最气人，代码可能是对的。
+class RuntimeStatus {
+  const RuntimeStatus({
+    required this.available,
+    required this.resolved,
+    this.hint,
+  });
+
+  /// 真的能在文件系统里找到编译器/解释器
+  final bool available;
+
+  /// 实际解析到的路径或命令名。显示出来让用户能确认「用的是哪一个」——
+  /// 装了多个版本时（比如系统 python3 和 Homebrew python3）这个信息很关键。
+  final String resolved;
+
+  /// 不可用时的可操作修复指引（[available] 为 true 时为 null）
+  final String? hint;
+
+  @override
+  bool operator ==(Object other) =>
+      other is RuntimeStatus &&
+      other.available == available &&
+      other.resolved == resolved &&
+      other.hint == hint;
+
+  @override
+  int get hashCode => Object.hash(available, resolved, hint);
+}
+
 /// 一门语言的运行时策略：**怎么把学生写的一段源码跑起来**
 ///
 /// 这是「解释型 vs 编译型」的差别收口处。判题引擎只负责
@@ -68,6 +100,11 @@ abstract class LanguageRuntime {
   /// 清洗编译器/解释器的原始输出，去掉学生看不懂的噪音
   /// （临时目录绝对路径、内部符号等）。默认原样返回。
   String cleanDiagnostics(String raw, Directory workDir) => raw;
+
+  /// 运行时自检：这台机器上能不能跑这门语言。
+  ///
+  /// 设置页用它提前提示。会读文件系统，别在每帧 rebuild 里调 —— 调用方缓存结果。
+  RuntimeStatus checkStatus();
 }
 
 // ------------------------------------------------------------------ Python
@@ -118,6 +155,17 @@ builtins.input = _judge_input
         // 保证 sitecustomize.py 被加载 + 强制 UTF-8
         environment: PythonRuntime.withUtf8Env({'PYTHONPATH': workDir.path}),
       );
+
+  @override
+  RuntimeStatus checkStatus() {
+    final cmd = commandOverride ?? PythonRuntime.resolvePythonCommand();
+    final ok = PythonRuntime.isCommandAvailable(cmd);
+    return RuntimeStatus(
+      available: ok,
+      resolved: cmd,
+      hint: ok ? null : PythonRuntime.installHint(),
+    );
+  }
 
   static const List<String> _errorMarkers = [
     'Traceback', 'SyntaxError', 'NameError', 'TypeError', 'ValueError',
@@ -243,6 +291,22 @@ abstract class CompiledLanguageRuntime extends LanguageRuntime {
   @override
   bool looksLikeRuntimeError(String stderr, String output) =>
       stderr.trim().isNotEmpty;
+
+  /// 编译器自检。
+  ///
+  /// 注意用 [resolveCompiler] 而不是 `CRuntime.isCompilerAvailable(language)`：
+  /// 前者会尊重 [commandOverride]（设置页填的路径 / 测试注入），后者只看
+  /// 平台默认解析，会把「用户指定了一个好用的编译器」误判成不可用。
+  @override
+  RuntimeStatus checkStatus() {
+    final cmd = resolveCompiler();
+    final ok = CRuntime.isCommandAvailable(cmd);
+    return RuntimeStatus(
+      available: ok,
+      resolved: cmd,
+      hint: ok ? null : CRuntime.installHint(language),
+    );
+  }
 
   /// 崩溃/除零这类**两种语言共有**的提示；子类可以再补自己特有的
   @override
@@ -466,8 +530,8 @@ class CppLanguageRuntime extends CompiledLanguageRuntime {
 
 /// 取某门语言的运行时策略。
 ///
-/// [commandOverride] 供测试注入或设置页自定义路径使用，
-/// 只对实现了它的语言（目前是 Python）生效。
+/// [commandOverride] 供测试注入或设置页自定义路径使用，**三种语言都支持**
+/// （编译型语言在 [CompiledLanguageRuntime.resolveCompiler] 里生效）。
 LanguageRuntime runtimeFor(
   ProgrammingLanguage language, {
   String? commandOverride,

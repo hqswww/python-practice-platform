@@ -107,12 +107,20 @@ class CRuntime {
   static String extensionFor(ProgrammingLanguage language) =>
       _extensions[language] ?? 'c';
 
-  /// 该语言的编译器是否可用（用于 UI 提前提示，而不是等判题才报错）
-  static bool isCompilerAvailable(ProgrammingLanguage language) {
-    final cmd = resolveCompiler(language);
+  /// 某个「编译器命令」当前能不能用。
+  ///
+  /// 传进来的可能是绝对路径（设置页填的、兜底候选）也可能是裸命令名
+  /// （交给 PATH 查找），两种都要能判。
+  static bool isCommandAvailable(String command) {
+    final cmd = command.trim();
+    if (cmd.isEmpty) return false;
     if (cmd.contains('/') || cmd.contains(r'\')) return _isExecutable(cmd);
     return _which(cmd) != null;
   }
+
+  /// 该语言的编译器是否可用（用于 UI 提前提示，而不是等判题才报错）
+  static bool isCompilerAvailable(ProgrammingLanguage language) =>
+      isCommandAvailable(resolveCompiler(language));
 
   /// 给用户的安装指引（各平台一句话）
   static String installHint(ProgrammingLanguage language) {

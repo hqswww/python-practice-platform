@@ -133,6 +133,41 @@ class PythonRuntime {
     return 'python.exe'; // 开发期回退
   }
 
+  /// 某个「解释器命令」当前能不能用。
+  ///
+  /// 传进来的可能是绝对路径（设置页填的、或捆绑解释器）也可能是裸命令名
+  /// （交给 PATH 查找），两种都要能判。
+  ///
+  /// ⚠️ 不能只看 [resolvePythonCommand] 非空就算「可用」—— 它找不到时也会
+  /// 返回兜底的裸命令名（`python3` / `python.exe`），那是留给判题阶段抛
+  /// ProcessException 用的，不代表这个命令真的存在。设置页要提前提示，
+  /// 就必须真的去文件系统确认一次。
+  static bool isCommandAvailable(String command) {
+    final cmd = command.trim();
+    if (cmd.isEmpty) return false;
+    if (cmd.contains('/') || cmd.contains(r'\')) return _isExecutableFile(cmd);
+    return _whichSync(cmd) != null;
+  }
+
+  /// 给用户的安装指引（各平台一句话）。
+  ///
+  /// 和 C/C++ 那边的 `CRuntime.installHint` 对称：缺编译器早就有可操作提示了，
+  /// 缺解释器却一直没有 —— 判题时只会显示「程序运行环境有问题，请联系管理员」，
+  /// 对自服务的刷题软件来说等于没说。
+  static String installHint() {
+    if (Platform.isMacOS) {
+      return '请先安装 Python 3：`brew install python3`，或到 python.org 下载安装包；'
+          '也可以在本页手动指定解释器路径';
+    }
+    if (Platform.isWindows) {
+      return '请到 python.org 安装 Python 3（安装时勾选 “Add Python to PATH”），'
+          '或在本页手动指定 python.exe 的路径';
+    }
+    return '请先安装 Python 3：`sudo apt install python3`（Debian/Ubuntu）、'
+        '`sudo dnf install python3`（Fedora）、`sudo pacman -S python`（Arch）；'
+        '也可以在本页手动指定解释器路径';
+  }
+
   /// 捆绑 python.exe 的绝对路径（基于当前 exe 所在目录）
   ///
   /// 兼容两种布局：
@@ -200,9 +235,15 @@ class PythonRuntime {
   static String? _whichSync(String exe) {
     final rawPath = Platform.environment['PATH'];
     if (rawPath == null || rawPath.isEmpty) return null;
-    for (final dir in rawPath.split(':')) {
+    // ⚠️ 分隔符必须按平台取。原来这里写死 ':' 和 '/'，在 Windows 上永远
+    // 找不到任何东西 —— 当时只有 macOS 分支调它，所以没暴露；现在设置页
+    // 会在 Windows 上也调，必须修掉。
+    // （Windows 的 `.exe` 能被 _isExecutableFile 认出来：Dart 在 Windows 上
+    //   会按扩展名合成执行位，见 dart:io 的 file_win.cc。）
+    final sep = Platform.isWindows ? ';' : ':';
+    for (final dir in rawPath.split(sep)) {
       if (dir.isEmpty) continue;
-      final candidate = '$dir/$exe';
+      final candidate = '$dir${Platform.pathSeparator}$exe';
       if (_isExecutableFile(candidate)) return candidate;
     }
     return null;

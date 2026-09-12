@@ -11,6 +11,7 @@ import '../services/progress_service.dart';
 import '../services/settings_service.dart';
 import '../models/programming_language.dart';
 import '../services/language_service.dart';
+import '../services/language_runtime.dart';
 import 'achievements_page.dart';
 import 'log_center_page.dart';
 import 'widgets/language_switcher.dart';
@@ -59,7 +60,7 @@ const List<_CategoryMeta> _kCategories = [
   _CategoryMeta(
     id: 'editor',
     title: '代码编辑',
-    subtitle: '字体、缩进、Python 解释器',
+    subtitle: '字体、缩进、解释器/编译器路径',
     icon: Icons.code_outlined,
     color: Colors.blueGrey,
   ),
@@ -120,6 +121,12 @@ class _SettingsPageState extends State<SettingsPage> {
       lang: TextEditingController(text: settings.runtimePath(lang)),
   };
 
+  /// 各语言运行时自检结果。
+  ///
+  /// **必须缓存**：`checkStatus()` 会读文件系统（找编译器/解释器、扫 PATH），
+  /// 直接塞进 build 里就是每帧几十次 stat。只在进页面和「保存路径」后重算。
+  final Map<ProgrammingLanguage, RuntimeStatus> _runtimeStatus = {};
+
   Future<(int, int, Map<Difficulty, (int, int)>)>? _statsFuture;
 
   @override
@@ -130,6 +137,23 @@ class _SettingsPageState extends State<SettingsPage> {
     for (final entry in _runtimeControllers.entries) {
       entry.value.text = settings.runtimePath(entry.key);
     }
+    _refreshRuntimeStatus();
+  }
+
+  /// 重算全部语言的运行时自检（进页面时一次）
+  void _refreshRuntimeStatus() {
+    for (final lang in availableLanguages) {
+      _runtimeStatus[lang] = runtimeFor(lang).checkStatus();
+    }
+  }
+
+  /// 保存某语言的运行时路径，并**立刻重算它的自检结果** ——
+  /// 用户填完路径就能看到「已就绪 / 还是找不到」，是本页最有用的一处反馈。
+  void _saveRuntimePath(ProgrammingLanguage lang) {
+    settings.setRuntimePath(lang, _runtimeControllers[lang]!.text);
+    setState(() {
+      _runtimeStatus[lang] = runtimeFor(lang).checkStatus();
+    });
   }
 
   @override
@@ -825,20 +849,72 @@ class _SettingsPageState extends State<SettingsPage> {
               TextField(
                 controller: controller,
                 decoration: InputDecoration(hintText: hint),
-                onSubmitted: (v) => settings.setRuntimePath(lang, v),
+                onSubmitted: (v) {
+                  controller.text = v;
+                  _saveRuntimePath(lang);
+                },
               ),
+              const SizedBox(height: 8),
+              _runtimeStatusRow(lang),
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
                 child: OutlinedButton(
-                  onPressed: () =>
-                      settings.setRuntimePath(lang, controller.text),
+                  onPressed: () => _saveRuntimePath(lang),
                   child: const Text('保存路径'),
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// 运行时自检结果那一行。
+  ///
+  /// 为什么值得放在这儿：环境缺件的失败发生在**判题时**，而那时学生已经写完
+  /// 代码了 —— 明明代码是对的，却弹一句「运行环境有问题」，最打击人。
+  /// 把「有没有编译器/解释器」提前摆在这一页，缺什么就直说缺什么、怎么补。
+  /// （Windows 没装 MinGW、Linux 没装 build-essential 都会走到这里。）
+  Widget _runtimeStatusRow(ProgrammingLanguage lang) {
+    final st = _runtimeStatus[lang];
+    if (st == null) return const SizedBox.shrink();
+
+    final ok = st.available;
+    final color = ok ? Colors.green : Colors.orange;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(ok ? Icons.check_circle_outline : Icons.error_outline,
+                  size: 16, color: color),
+              const SizedBox(width: 6),
+              Text(
+                ok ? '已就绪' : '未找到${lang.compiled ? '编译器' : '解释器'}',
+                style: TextStyle(
+                    color: color, fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // 不可用时给出的是「怎么补」，可用时给出的是「实际用的是哪一个」——
+          // 装了多个版本时（系统 python3 vs Homebrew python3）这句很关键。
+          SelectableText(
+            ok ? '实际使用：${st.resolved}' : (st.hint ?? ''),
+            style: TextStyle(
+                fontSize: 12, height: 1.5, color: Colors.grey[800]),
+          ),
+        ],
       ),
     );
   }
@@ -888,7 +964,7 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('关于'),
         subtitle: Text(
           'V1.2 · Flutter (Material 3)\n'
-          '本地判题：Python 用捆绑解释器，C 用系统编译器',
+          '本地判题：Python / C / C++ 全部用本机环境，无需联网',
           style: TextStyle(color: Colors.grey[600]),
         ),
         trailing: const Icon(Icons.chevron_right),
