@@ -122,6 +122,18 @@ fi
 head_ "4. 判题链路（用捆绑解释器，复现判题引擎的调用方式）"
 HOST_DIR="python-x86_64"; [[ "$(uname -m)" == "arm64" ]] && HOST_DIR="python-arm64"
 PY="$APP/Contents/Resources/$HOST_DIR/bin/python3"
+
+# ⚠️ 下面每次调用捆绑解释器都必须带 -B / PYTHONDONTWRITEBYTECODE=1。
+#
+# 解释器就在 .app 里面，而 Python 默认会往自己的 lib 目录写
+# `__pycache__/*.pyc` —— 也就是说**跑一次检查就等于改一次应用包**。
+# 签名把包内资源封存了，事后新增文件会让 codesign 报
+# 「a sealed resource is missing or invalid」，于是本脚本**第二次跑必然失败**
+# （第 1 项签名校验会挂），而且是真的把包改坏了，不是误报。
+# 应用侧也设了同样的变量（见 python_runtime.dart），但这里是脚本直接调解释器，
+# 拿不到那边的环境，必须自己带上。
+PYB=(-X utf8 -B)
+
 D="$(mktemp -d)"
 cat > "$D/sitecustomize.py" <<'EOF'
 import builtins, sys
@@ -138,14 +150,15 @@ nums = list(map(int, input("请输入几个数字：").split()))
 print(f"你好，{name}！最大值 {max(nums)}，和 {sum(nums)}")
 EOF
 OUT="$(printf '沙姬\n3 7 2\n' | PYTHONPATH="$D" PYTHONIOENCODING=utf-8 PYTHONUTF8=1 \
-        "$PY" -X utf8 "$D/solution.py" 2>"$D/err")"
+        PYTHONDONTWRITEBYTECODE=1 "$PY" "${PYB[@]}" "$D/solution.py" 2>"$D/err")"
 ERR="$(cat "$D/err")"
 EXPECT="你好，沙姬！最大值 7，和 12"
 if [[ "$OUT" == "$EXPECT" ]]; then ok "中文输出正确：$OUT"
 else bad "判题输出不符\n      期望: $EXPECT\n      实际: $OUT"; fi
 if [[ "$ERR" == *"请输入姓名"* ]]; then ok "input() 提示被正确挪到 stderr（不会污染判题比对）"
 else bad "input() 提示未出现在 stderr，实际: $ERR"; fi
-if PYTHONPATH="" "$PY" -X utf8 -c "import json,re,math,random,itertools,collections,datetime,decimal,statistics,csv,heapq,bisect" 2>/dev/null; then
+if PYTHONPATH="" PYTHONDONTWRITEBYTECODE=1 "$PY" "${PYB[@]}" \
+     -c "import json,re,math,random,itertools,collections,datetime,decimal,statistics,csv,heapq,bisect" 2>/dev/null; then
   ok "常用标准库齐全（裁减 Tcl/Tk 未误伤）"
 else
   bad "标准库导入失败 —— 裁减可能过度"

@@ -260,6 +260,22 @@ class PythonRuntime {
       ...(base ?? {}),
       'PYTHONIOENCODING': 'utf-8',
       'PYTHONUTF8': '1',
+      // ⚠️ 禁止写 .pyc 字节码缓存。
+      //
+      // Python 默认会往**自己的安装目录**写 `lib/python3.12/__pycache__/*.pyc`。
+      // 而捆绑解释器就在应用包里面，于是「跑一次程序」= 「改一次应用包」。
+      //
+      // 后果不是慢，是**把代码签名弄坏**：macOS 的签名会把包内所有资源封存，
+      // 事后新增任何文件都会让 `codesign --verify` 报
+      // 「a sealed resource is missing or invalid」，公证过的包还会被 Gatekeeper
+      // 拦下。学生每做一道 import 了新模块的题就多几个 .pyc —— 包迟早失效。
+      //
+      // 实测：不加这个变量，跑一次判题会往 .app 里新增若干 .pyc；
+      // 加上之后新增 0 个文件，签名保持有效。
+      //
+      // 代价只是每次运行重新解析少量纯 Python 模块（math 这类 C 扩展本来就
+      // 不需要 .pyc），判题场景下可以忽略。
+      'PYTHONDONTWRITEBYTECODE': '1',
     };
   }
 }

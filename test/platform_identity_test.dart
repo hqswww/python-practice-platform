@@ -133,4 +133,28 @@ void main() {
           isNot(contains('com.example')));
     });
   });
+
+  group('已签名的包不能被自己改坏', () {
+    // 捆绑的 Python 默认会往**自己的安装目录**写 __pycache__/*.pyc，而它就在
+    // .app 里面 —— 跑一次程序就等于改一次应用包，签名随即报
+    // 「a sealed resource is missing or invalid」。
+    // 应用侧靠 python_runtime.dart 的环境变量挡住（那条有独立测试）；
+    // 这里守的是**直接调用解释器的那些脚本**，它们拿不到应用的环境变量。
+    //
+    // 说明：这是绊线不是证明 —— 它只能发现「有人把这段删了」，
+    // 真正的验证是连着跑三次 tools/verify_macos.sh 都该是 14/14。
+    test('verify_macos.sh 调捆绑解释器时带 -B', () {
+      final sh = read('tools/verify_macos.sh');
+      expect(sh, contains('PYB=(-X utf8 -B)'),
+          reason: '这是给捆绑解释器用的统一参数数组');
+      expect(sh, contains('PYTHONDONTWRITEBYTECODE=1'),
+          reason: '双保险：环境变量也设上');
+    });
+
+    test('build_macos.sh 的自检也不写字节码', () {
+      final sh = read('tools/build_macos.sh');
+      expect(sh, contains('PYTHONDONTWRITEBYTECODE=1'),
+          reason: '构建期跑一次解释器就会把 .pyc 打进包并封存');
+    });
+  });
 }

@@ -194,8 +194,16 @@ bundle_python() {
   echo "  体积: $(du -sh "$dest" | cut -f1)"
 
   # 冒烟测试：只有本机架构那一份能就地跑，另一份必然 Bad CPU type（正常）
+  #
+  # ⚠️ 必须带 -B（不写字节码缓存）。Python 默认会往自己的 lib 目录写
+  # `__pycache__/*.pyc`，而这里跑的解释器**就在 .app 里面** —— 跑一下就等于
+  # 改了应用包。签名会把包内资源封存，事后新增文件会让
+  # `codesign --verify` 报「a sealed resource is missing or invalid」。
+  # 虽然应用侧也设了 PYTHONDONTWRITEBYTECODE（见 python_runtime.dart），
+  # 但这一句是构建脚本直接调解释器，得自己带上，否则包里会带一堆没用的缓存。
   if [[ "$arch_dir" == "$(host_py_dir)" ]]; then
-    if PYTHONPATH="" "$dest/bin/python3" -X utf8 -c "print('ok')" >/dev/null 2>&1; then
+    if PYTHONPATH="" PYTHONDONTWRITEBYTECODE=1 \
+        "$dest/bin/python3" -B -X utf8 -c "print('ok')" >/dev/null 2>&1; then
       echo "  ✅ 本机架构解释器可执行（含 -X utf8）"
     else
       echo "  ⚠️  本机架构解释器自检未通过（签名前可能被 Gatekeeper 拦，签名后复查）"
