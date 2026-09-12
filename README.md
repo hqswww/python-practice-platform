@@ -42,11 +42,19 @@ bash tools/build_linux.sh
 
 # Windows 发布（需 Windows 机器 + Flutter + VS2022 C++ 工作负载）
 powershell -ExecutionPolicy Bypass -File tools\build_windows.ps1
+#   → dist\编程练习册\            绿色版目录（解压即用）
+#   → dist\编程练习册-Setup.exe    安装包（免管理员；需 Inno Setup 6.5+）
 
 # macOS 发布（需 macOS 机器 + Flutter + CocoaPods）
 bash tools/setup_macos_platform.sh   # 首次：生成 macos/ 脚手架 + 关闭 App Sandbox
-bash tools/build_macos.sh            # 打包：捆绑 Python + 签名 + 出 zip
+bash tools/build_macos.sh            # 打包：捆绑 Python + 签名 + 出 dmg/zip
+#   → dist/编程练习册-macOS-universal.dmg   安装包（拖进 Applications）
+#   → dist/编程练习册-macOS-universal.zip   绿色版
 ```
+
+> **关于安装包**：能省掉「解压到哪、怎么建快捷方式」这些麻烦，但**不解决**
+> 「系统信任」问题 —— 没买签名证书的话，macOS 会提示「来自身份不明的开发者」、
+> Windows 会弹 SmartScreen，用户要手动放行一次。dmg 里附了说明文件讲这一步。
 
 > 三平台**不能交叉编译**（各自走原生工具链），打包脚本里有平台护栏会直接拦下来。
 >
@@ -59,7 +67,8 @@ bash tools/build_macos.sh            # 打包：捆绑 Python + 签名 + 出 zip
 - `lib/` — Flutter 源码（models / services / pages / widgets）
 - `assets/problems/` — 题库 JSON，按语言分目录（`python/` `c/` `cpp/`），各 72 道
 - `tools/` — 题库批量脚本与校验（`verify_bank.py`）、图标生成（`make_icons.py`）、
-  三平台打包脚本（`build_linux.sh` / `build_windows.ps1` / `build_macos.sh`）
+  三平台打包脚本（`build_linux.sh` / `build_windows.ps1` / `build_macos.sh`）、
+  Windows 安装包脚本（`windows_installer.iss`）、C/C++ 编译器一键安装（`install_mingw.ps1`）
 - `docs/LINUX_MIGRATION.md` — Linux 迁移手册（为什么用系统环境、`.desktop` 与图标）
 - `docs/WINDOWS_MIGRATION.md` — Windows 迁移手册
 - `docs/MACOS_MIGRATION.md` — macOS 迁移手册（含 App Sandbox 坑与公证流程）

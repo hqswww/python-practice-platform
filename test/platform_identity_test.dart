@@ -59,6 +59,67 @@ void main() {
       expect(read('pubspec.yaml'), contains('name: python_practice'),
           reason: '改包名要同步改所有 import 和平台脚手架，收益为零');
     });
+
+    test('Windows 安装包的 AppId —— 和 Bundle ID 是同一类东西', () {
+      // Inno 用它识别「这是不是同一个应用」：升级安装、卸载、控制面板条目都认它。
+      // 改了等于变成另一个软件 —— 老用户装新版会得到两份并存，卸载也清不掉旧的。
+      final iss = read('tools/windows_installer.iss');
+      // Inno 里 `{` 是常量起始符，要写字面花括号得写 `{{`。
+      // 所以规范写法是 `AppId={{GUID}` —— 开头双括号、结尾单括号，
+      // 展开后有效值是 `{GUID}`。末尾允许 `}` 或 `}}`，免得被写法差异绊住。
+      final m = RegExp(r'#define AppId "\{\{([0-9A-Fa-f-]{36})\}\}?')
+          .firstMatch(iss);
+      expect(m, isNotNull, reason: '没找到 AppId 定义，格式可能被改坏了');
+      expect(m!.group(1)!.toUpperCase(), 'CCAA5D7C-47D3-4F51-AF55-A566213C04E3');
+    });
+  });
+
+  group('安装包', () {
+    test('Inno 脚本引用的中文语言包确实在仓库里', () {
+      // 语言包不是 Inno Setup 官方自带，所以随仓库带（MIT，见 tools/inno/README.md）。
+      // 少了它 ISCC 会直接编译失败。
+      expect(File('tools/inno/ChineseSimplified.isl').existsSync(), isTrue,
+          reason: '缺语言包，ISCC 会报 MessagesFile 找不到');
+      expect(File('tools/inno/LICENSE').existsSync(), isTrue,
+          reason: 'MIT 许可要求保留版权声明');
+      expect(read('tools/windows_installer.iss'),
+          contains(r'inno\ChineseSimplified.isl'));
+    });
+
+    test('Inno 脚本引用的图标存在', () {
+      expect(read('tools/windows_installer.iss'),
+          contains(r'SetupIconFile=..\windows\runner\resources\app_icon.ico'));
+      expect(File('windows/runner/resources/app_icon.ico').existsSync(), isTrue);
+    });
+
+    test('安装包是免管理员的（和绿色版一个精神）', () {
+      expect(read('tools/windows_installer.iss'),
+          contains('PrivilegesRequired=lowest'));
+    });
+
+    test('macOS 打包产出 dmg，且做成拖拽安装的形式', () {
+      final sh = read('tools/build_macos.sh');
+      expect(sh, contains('hdiutil create'), reason: '没有 dmg 生成步骤');
+      expect(sh, contains('ln -s /Applications'),
+          reason: 'dmg 里要有指向 /Applications 的落点，否则没法拖拽安装');
+      expect(sh, contains('首次打开请先读我.txt'),
+          reason: 'Gatekeeper 那步得让最终用户看得到，不能只写在构建输出里');
+    });
+
+    test('dmg 里把 .app 改成中文名（磁盘名/Finder 名/说明文案三处一致）', () {
+      expect(read('tools/build_macos.sh'),
+          contains('APP_NAME="编程练习册.app"'));
+    });
+
+    test('zip 刻意保留 ASCII 名（ditto 写 zip 不设 UTF-8 标志位）', () {
+      final sh = read('tools/build_macos.sh');
+      // 防止有人「顺手统一一下」把 zip 也改成中文名 ——
+      // 那会让 Windows/Linux 的解压工具按 CP437 解出乱码。
+      expect(sh, contains(r'--keepParent "$APP" "$ZIP"'),
+          reason: 'zip 应从原始 ASCII 名的产物打包；改中文名会引入 zip 编码乱码');
+      expect(RegExp(r'keepParent "\$STAGE/\$APP_NAME"').hasMatch(sh), isFalse,
+          reason: 'zip 不该用改名后的副本');
+    });
   });
 
   test('build_linux.sh 有平台护栏（Flutter 桌面版不能交叉编译）', () {

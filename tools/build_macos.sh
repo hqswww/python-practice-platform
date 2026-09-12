@@ -347,10 +347,92 @@ codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | tail -3 || true
 # ---------------------------------------------------------------- 6. 打包
 
 echo
-echo "=== 6/6 打包分发 zip ==="
+echo "=== 6/6 打包（dmg 安装包 + zip 绿色版）==="
 mkdir -p "$DIST_DIR"
 NAME_SAFE="编程练习册"
 ZIP="$DIST_DIR/${NAME_SAFE}-macOS-${ARCH_TAG}.zip"
+DMG="$DIST_DIR/${NAME_SAFE}-macOS-${ARCH_TAG}.dmg"
+
+# ---- 6a. dmg 安装包（主要分发形式）----
+#
+# 做成「打开后把图标拖进 Applications」的经典形式：
+#   卷里放 .app 本体 + 一个指向 /Applications 的符号链接当作落点，
+#   再附一份首次打开的说明（Gatekeeper 那道坎得让**最终用户**看得到，
+#   写在构建脚本的输出里他们看不到）。
+#
+# 不做的两件事，都是有意的：
+#   · **不做花哨的窗口布局**（自定义背景图、图标坐标）：那要靠 AppleScript
+#     驱动 Finder，在无 GUI 会话里会挂住。收益只是好看，风险是构建立不起来。
+#   · **不压缩时用 UDBZ**：UDZO 通用性最好，体积差别不大。
+STAGE="$(mktemp -d)"
+trap 'rm -rf "$STAGE"' EXIT
+
+# ⚠️ 打包时把 .app 改名成中文，让「磁盘上的名字 / Finder 显示的名字 / 说明文案」
+#    三处一致。
+#
+# Xcode 产出的是 `code_workbook.app`（PRODUCT_NAME，为了跟 Windows/Linux 的可执行
+# 文件名统一）。Finder 靠 CFBundleDisplayName 显示成「编程练习册」，所以用户平时
+# 看不出差别 —— 但**终端里、脚本里、说明文档里**那个名字是 code_workbook.app，
+# 而分发提示写的是 `/Applications/编程练习册.app`，指向了一个不存在的路径。
+#
+# 改名是安全的，已实测：签名覆盖的是包**内容**，不含目录名；
+# CFBundleExecutable 与 Contents/MacOS/ 里的文件名都没动，仍然对得上。
+APP_NAME="编程练习册.app"
+# 必须用 ditto 复制：cp -R 会破坏 .app 的符号链接/扩展属性，进而弄坏签名
+ditto "$APP" "$STAGE/$APP_NAME"
+ln -s /Applications "$STAGE/Applications"
+
+cat > "$STAGE/首次打开请先读我.txt" <<'NOTE'
+编程练习册 —— 首次打开说明
+================================
+
+安装
+----
+把左边的「编程练习册」拖到右边的 Applications（应用程序）文件夹即可。
+
+第一次打开被系统拦住？
+----------------------
+本应用没有购买 Apple 开发者签名证书，macOS 第一次打开时会提示
+「来自身份不明的开发者」或「无法验证开发者」。这是正常的，按下面任一种做即可：
+
+  方法一（推荐）
+    在「应用程序」里找到它 → 右键（或按住 Control 点击）→ 选「打开」
+    → 弹窗里再点一次「打开」。以后就正常了。
+
+  方法二
+    打开「系统设置 → 隐私与安全性」，往下找到被拦的提示，
+    点「仍要打开」。
+
+需要 C / C++ 判题的话
+--------------------
+Python 判题自带解释器，无需任何安装。
+C / C++ 用的是你电脑上的编译器，没装的话打开应用后
+在「设置 → 代码编辑」里会看到提示和安装命令（xcode-select --install）。
+NOTE
+
+rm -f "$DMG"
+hdiutil create -volname "$NAME_SAFE" -srcfolder "$STAGE" \
+  -ov -format UDZO "$DMG" >/dev/null
+
+# 有真实签名身份时把 dmg 也签上（公证要求这一步；ad-hoc 签了也无害）
+if [[ "$SIGN_IDENTITY" != "-" ]]; then
+  codesign --force --sign "$SIGN_IDENTITY" $TS_FLAG "$DMG" 2>/dev/null &&
+    echo "  ✅ 已签名 dmg" || echo "  ⚠️  dmg 签名失败（不影响使用）"
+fi
+
+# ---- 6b. zip 绿色版（保留：有人偏好解压即用、不进 Applications）----
+#
+# ⚠️ 这里刻意**不**改名，用的是 Xcode 原始产物 `code_workbook.app`。
+#
+# 原因是个编码陷阱：`ditto -c -k` 写 zip 时用的是 UTF-8 字节，但**不设 UTF-8
+# 标志位**（实测 2438 个条目一个都没设）。macOS 自己的归档工具按 UTF-8 解释，
+# 解出来名字是对的；但 Windows 资源管理器、Linux 的 unzip 会按 CP437 解，
+# 中文名就成了「τ╝ûτ¿ïτ╗âΣ╣áσåî.app」那种乱码。
+#
+# zip 本来就是给 macOS 用户解压即用的，ASCII 名不影响观感 ——
+# Finder 靠 CFBundleDisplayName 显示的仍然是「编程练习册」。
+# dmg 那边没这个问题（磁盘文件系统原生支持 Unicode，不经过 zip 编码层），
+# 所以 dmg 里用中文名。
 rm -f "$ZIP"
 # ditto 才能正确保留符号链接与扩展属性（用 zip 命令会破坏 .app）
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
@@ -358,16 +440,22 @@ ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 echo
 echo "✅ 完成！"
 echo "  App : $APP  ($(du -sh "$APP" | cut -f1))"
-echo "  Zip : $ZIP  ($(du -sh "$ZIP" | cut -f1))"
+echo "  Dmg : $DMG  ($(du -sh "$DMG" | cut -f1))   ← 发给用户的安装包"
+echo "  Zip : $ZIP  ($(du -sh "$ZIP" | cut -f1))   ← 绿色版，解压即用"
 cat <<'EOF'
 
 分发提示：
-  1. 未公证的包在别人机器上首次打开会被 Gatekeeper 拦（"来自身份不明的开发者"）。
+  1. **dmg 是给别人用的那个**：双击打开 → 把图标拖进 Applications → 完成。
+     卷里附了「首次打开请先读我.txt」，把 Gatekeeper 那步写清楚了 ——
+     用户看不到构建脚本的输出，这一步得留在包里。
+  2. 未公证的包首次打开会被 Gatekeeper 拦（"来自身份不明的开发者"）。
      让对方右键 →「打开」，或执行：
          xattr -dr com.apple.quarantine "/Applications/编程练习册.app"
-  2. 想彻底免提示，需要 Apple Developer 账号（$99/年）走 codesign + notarytool 公证，
-     用 --sign "Developer ID Application: ..." 重跑本脚本，再 notarytool submit。
-  3. universal 包会同时带 x86_64 与 arm64 两份 Python，所以体积比单架构大约一倍。
+     ⚠️ 安装包本身不能免掉这道坎 —— 那是签名证书的事，不是打包形式的事。
+  3. 想彻底免提示，需要 Apple Developer 账号（$99/年）走 codesign + notarytool 公证，
+     用 --sign "Developer ID Application: ..." 重跑本脚本（dmg 会一并签名），
+     再 notarytool submit 那个 dmg。
+  4. universal 包会同时带 x86_64 与 arm64 两份 Python，所以体积比单架构大约一倍。
      只想给一种架构的人用时，可在 Xcode 里把 ARCHS 设成单一架构后重跑本脚本，
      体积能省下一份 Python（约 54MB）。
 EOF

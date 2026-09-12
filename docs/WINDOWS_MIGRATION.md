@@ -47,11 +47,45 @@
 powershell -ExecutionPolicy Bypass -File tools\build_windows.ps1
 ```
 
-脚本自动完成 4 步：
+脚本自动完成 5 步：
 1. `flutter build windows --release` 编译 exe
 2. 下载嵌入式 Python
 3. 配置 `.pth`（可选开启 site-packages）
-4. 组装到 `dist\编程练习册\`（exe + data + python/）
+4. 组装到 `dist\编程练习册\`（exe + data + lib + python/ + install_mingw.ps1）
+5. 打包安装程序 `dist\编程练习册-Setup.exe`（装了 Inno Setup 才会做）
+
+### 两个产物，按场景挑
+
+| 产物 | 形态 | 适合 |
+|------|------|------|
+| `dist\编程练习册\` | 绿色版目录 | 解压即用、放 U 盘、不想装东西 |
+| `dist\编程练习册-Setup.exe` | **安装包** | 发给同学：一路下一步，有开始菜单项和卸载器 |
+
+安装包的特点：
+
+- **免管理员**：装到 `%LOCALAPPDATA%\Programs\编程练习册`，和绿色版一个精神。
+  想装给所有用户的话，向导里可以选（那时才提权）
+- 中文安装界面（语言包随仓库带，见下）
+- **卸载不删用户进度**：进度存在 `%APPDATA%` 下，不属于安装目录。
+  顺手删掉的话，用户重装一次就发现进度没了 —— 那是数据丢失，不是清理
+- 安装包要装 **Inno Setup 6.5.0+** 才能构建，缺失时脚本只警告、不影响绿色版：
+  ```powershell
+  winget install JRSoftware.InnoSetup
+  ```
+
+> ⚠️ **安装包照样会被 SmartScreen 拦**（"Windows 保护了你的电脑"）——
+> 那需要买代码签名证书，和 macOS 的公证是同一类成本。
+> 安装包解决的是「装起来方便」，不是「系统信任」。
+
+### 为什么语言包要随仓库带
+
+`tools/inno/ChineseSimplified.isl` 是从
+[kira-96/Inno-Setup-Chinese-Simplified-Translation](https://github.com/kira-96/Inno-Setup-Chinese-Simplified-Translation)
+取来的（MIT，版权声明随文件一起放在 `tools/inno/`）。
+
+Inno Setup 官方的翻译虽然「通常随安装包提供」，但**不同版本带的不一样**，
+而且中文翻译更新得比官方版本快。钉在仓库里可以保证：构建结果可复现、
+不用联网下载、翻译改动能在 git 里看到。
 
 ---
 

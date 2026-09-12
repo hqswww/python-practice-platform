@@ -361,7 +361,35 @@ bash tools/build_macos.sh          # 重新打包（会自动重打完整尺寸�
 
 ## 十、分发与公证
 
-**不公证也能分发**，但对方首次打开会被拦：
+### 分发产物：dmg（主要）+ zip（备选）
+
+`build_macos.sh` 现在一次产出两个：
+
+| 产物 | 用途 | 应用在里面的名字 |
+|------|------|------------------|
+| `dist/编程练习册-macOS-universal.dmg` | **发给别人的那个**，拖拽安装 | `编程练习册.app` |
+| `dist/编程练习册-macOS-universal.zip` | 解压即用的绿色版 | `code_workbook.app` |
+
+dmg 的形态就是经典的「左边应用、右边 Applications」：卷里放 `.app` 本体、
+一个指向 `/Applications` 的符号链接当落点，外加一份
+`首次打开请先读我.txt` —— **Gatekeeper 那步必须让最终用户看得到**，
+写在构建脚本的输出里他们看不到。
+
+> **为什么 dmg 里用中文名、zip 里用 ASCII 名？**
+> 不是疏漏，是躲一个编码陷阱：`ditto -c -k` 写 zip 时用的是 UTF-8 字节，
+> 但**不设 UTF-8 标志位**（实测 2438 个条目一个都没设）。macOS 自己的归档工具
+> 按 UTF-8 解释，解出来名字是对的；而 Windows 资源管理器、Linux 的 `unzip`
+> 会按 CP437 解，中文名会变成 `τ╝ûτ¿ïτ╗âΣ╣áσåî.app` 那种乱码。
+> dmg 不经过 zip 编码层（磁盘文件系统原生支持 Unicode），所以用中文名没有风险。
+> Finder 两边都显示「编程练习册」（靠 `CFBundleDisplayName`）。
+
+改名是安全的，已实测：签名覆盖的是包**内容**，不含目录名；
+`CFBundleExecutable` 与 `Contents/MacOS/` 里的文件名都没动，仍然对得上。
+
+### 首次打开会被拦（安装包也躲不掉）
+
+**不公证也能分发**，但对方首次打开会被 Gatekeeper 拦 ——
+**换成 dmg 并不能免掉这一步**，那是签名证书的事，不是打包形式的事：
 
 ```bash
 # 让对方执行（或右键 →「打开」）
@@ -375,14 +403,16 @@ xattr -dr com.apple.quarantine "/Applications/编程练习册.app"
    ```bash
    bash tools/build_macos.sh --sign "Developer ID Application: 你的名字 (TEAMID)"
    ```
-3. 公证：
+   有真实身份时脚本会**连 dmg 一起签**（公证要求这一步）。
+3. 公证 **dmg**（分发的是它，就公证它）：
    ```bash
-   xcrun notarytool submit dist/编程练习册-macOS-universal.zip \
+   xcrun notarytool submit dist/编程练习册-macOS-universal.dmg \
      --apple-id "你的AppleID" --team-id "TEAMID" --password "App专用密码" --wait
-   xcrun stapler staple "build/macos/Build/Products/Release/python_practice.app"
+   xcrun stapler staple dist/编程练习册-macOS-universal.dmg
    ```
 
-> Windows 绿色版没有这部分成本，这是 macOS 多出来的工作量。
+> Windows 那边同样要面对 SmartScreen，同样需要买证书。
+> 两个平台的「未知开发者」提示是同一类成本。
 
 ---
 

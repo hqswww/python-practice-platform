@@ -67,7 +67,7 @@ if ($HAS_NON_ASCII) {
   Write-Host ""
 }
 
-Write-Host "=== 1/4 编译 Windows Release 版 ===" -ForegroundColor Cyan
+Write-Host "=== 1/5 编译 Windows Release 版 ===" -ForegroundColor Cyan
 flutter build windows --release
 if ($LASTEXITCODE -ne 0) {
   if ($HAS_NON_ASCII) {
@@ -79,7 +79,7 @@ if ($LASTEXITCODE -ne 0) {
   throw "flutter build 失败"
 }
 
-Write-Host "=== 2/4 下载嵌入式 Python $PY_VER ===" -ForegroundColor Cyan
+Write-Host "=== 2/5 下载嵌入式 Python $PY_VER ===" -ForegroundColor Cyan
 $PY_ZIP = Join-Path $env:TEMP "python-embed.zip"
 $PY_URL = "https://www.python.org/ftp/python/$PY_VER/python-$PY_VER-embed-amd64.zip"
 if (-not (Test-Path $PY_ZIP)) {
@@ -99,7 +99,7 @@ $PY_TMP = Join-Path $env:TEMP "py_embed_$PID"
 if (Test-Path $PY_TMP) { Remove-Item -Recurse -Force $PY_TMP }
 Expand-Archive -Path $PY_ZIP -DestinationPath $PY_TMP -Force
 
-Write-Host "=== 3/4 配置嵌入式 Python（开启 site-packages + 自动 sitecustomize）===" -ForegroundColor Cyan
+Write-Host "=== 3/5 配置嵌入式 Python（开启 site-packages + 自动 sitecustomize）===" -ForegroundColor Cyan
 # 嵌入式 Python 默认没有 site-packages（import 不出第三方库）且 stdlib 精简。
 # 打开 python312._pth 里的 import site，让它能加载标准库/第三方包。
 $PTH = Get-ChildItem -Path $PY_TMP -Filter "python*._pth" | Select-Object -First 1
@@ -110,7 +110,7 @@ if ($PTH) {
  Set-Content -Path $PTH.FullName -Value $content -Encoding ASCII
 }
 
-Write-Host "=== 4/4 组装分发目录 ===" -ForegroundColor Cyan
+Write-Host "=== 4/5 组装分发目录 ===" -ForegroundColor Cyan
 if (Test-Path $DIST_DIR) { Remove-Item -Recurse -Force $DIST_DIR }
 New-Item -ItemType Directory -Path $DIST_DIR -Force | Out-Null
 
@@ -136,7 +136,63 @@ if (Test-Path $MINGW) {
 # 清理临时 python 解压目录
 Remove-Item -Recurse -Force $PY_TMP
 
-Write-Host "`n✅ 完成！分发目录: $DIST_DIR" -ForegroundColor Green
-Write-Host " 直接把整个『编程练习册』文件夹拷给用户即可。"
-Write-Host " 用户双击 code_workbook.exe 即可运行（判题用捆绑 python 无需装 Python）。"
+# ============================================================
+# 5/5 打包安装程序（Inno Setup）
+#
+# 绿色版（上面那个目录）适合「解压就用」，但发给同学时安装包更省事：
+# 有开始菜单项、有卸载器、双击一路下一步。两者都产出，用户自己挑。
+#
+# 找不到 Inno Setup 不算失败 —— 绿色版已经好了，只是少一个安装包。
+# ============================================================
+Write-Host "`n=== 5/5 打包安装程序 ===" -ForegroundColor Cyan
+
+$ISS = Join-Path $PWD "tools\windows_installer.iss"
+
+# 版本号一致性：单一事实来源是 pubspec.yaml，
+# installer.iss 里那份是打包用的副本，对不上就提醒（不自动改，免得动到仓库文件）
+$pubspec = Join-Path $PWD "pubspec.yaml"
+$issText = Get-Content $ISS -Raw
+$issVer = [regex]::Match($issText, '#define AppVersion "([^"]+)"').Groups[1].Value
+$pubVer = [regex]::Match((Get-Content $pubspec -Raw), '(?m)^version:\s*([0-9]+\.[0-9]+\.[0-9]+)').Groups[1].Value
+if ($issVer -and $pubVer -and $issVer -ne $pubVer) {
+  Write-Host " ⚠️  版本号不一致：pubspec.yaml 是 $pubVer，installer.iss 是 $issVer" -ForegroundColor Yellow
+  Write-Host "     改 tools\windows_installer.iss 里的 #define AppVersion 对齐后再打安装包。" -ForegroundColor Yellow
+}
+
+# 找 ISCC.exe：PATH → 两个常见安装位置
+$ISCC = $null
+$cmd = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+if ($cmd) { $ISCC = $cmd.Source }
+if (-not $ISCC) {
+  foreach ($p in @(
+    "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
+    "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+    "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+  )) {
+    if ($p -and (Test-Path $p)) { $ISCC = $p; break }
+  }
+}
+
+if (-not $ISCC) {
+  Write-Host " ⚠️  没找到 Inno Setup，跳过安装包（绿色版已就绪）" -ForegroundColor Yellow
+  Write-Host "     想要 setup.exe 的话装一下：winget install JRSoftware.InnoSetup"
+  Write-Host "     ⚠️ 需要 6.5.0 或更高（中文语言包与 x64compatible 都要求它）"
+} else {
+  Write-Host " 用 $ISCC 编译安装包…"
+  & $ISCC $ISS
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host " ❌ 安装包编译失败（绿色版不受影响）" -ForegroundColor Red
+  } else {
+    $setup = Join-Path $PWD "dist\编程练习册-Setup.exe"
+    if (Test-Path $setup) {
+      $mb = [math]::Round((Get-Item $setup).Length / 1MB, 1)
+      Write-Host " ✅ 安装包: dist\编程练习册-Setup.exe ($mb MB)" -ForegroundColor Green
+    }
+  }
+}
+
+Write-Host "`n✅ 完成！" -ForegroundColor Green
+Write-Host " 绿色版目录: $DIST_DIR"
+Write-Host " 把整个『编程练习册』文件夹拷给用户即可；双击 code_workbook.exe 运行。"
 Write-Host " C / C++ 需要编译器：首次运行向导里可一键安装，或跑 install_mingw.ps1。"
+Write-Host " 安装包（如果有）: dist\编程练习册-Setup.exe —— 免管理员，装到当前用户目录。"
