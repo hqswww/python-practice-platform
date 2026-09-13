@@ -125,6 +125,25 @@ void main() {
           isNull);
     });
 
+    test('文件名随便起 —— 只看扩展名（用真实发布时的名字验证）', () {
+      // 发布时附件名是人手起的，跟构建脚本产出的名字**可以完全不一样**：
+      // 大小写不同、拼写不同、基名不同，都不该影响挑包。
+      // 这里用的就是真实发布时的名字（注意 macOS 那段是大写 OS）。
+      const realNames = [
+        UpdateAsset(
+            name: 'CodeWorkboox-macOS-universal.dmg', url: 'https://e/dmg'),
+        UpdateAsset(
+            name: 'CodeWorkboox-macOS-universal.zip', url: 'https://e/zip'),
+        UpdateAsset(name: 'CodeWorkboox-Setup.exe', url: 'https://e/exe'),
+        UpdateAsset(
+            name: 'CodeWorkboox-linux-x86_64.tar.gz', url: 'https://e/tar'),
+      ];
+      expect(pickAsset(realNames, UpdatePlatform.macos)?.url, 'https://e/dmg',
+          reason: 'macOS 要挑 dmg，不能挑到 zip');
+      expect(pickAsset(realNames, UpdatePlatform.windows)?.url, 'https://e/exe');
+      expect(pickAsset(realNames, UpdatePlatform.linux)?.url, 'https://e/tar');
+    });
+
     test('大小写不敏感', () {
       expect(
           pickAsset(const [UpdateAsset(name: 'A.DMG', url: 'u')],
