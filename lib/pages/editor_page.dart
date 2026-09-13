@@ -479,7 +479,7 @@ class _AchievementUnlockDialog extends StatelessWidget {
                         Text(
                           a.description,
                           style: TextStyle(
-                              fontSize: 12, color: Colors.grey[600]),
+                              fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),

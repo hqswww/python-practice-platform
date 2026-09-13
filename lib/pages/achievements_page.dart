@@ -148,7 +148,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
             const SizedBox(height: 4),
             Text(
               '已完成 ${snapshot.solvedCount} / ${snapshot.totalCount} 题',
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
             // 下一档进度
@@ -167,7 +167,9 @@ class _AchievementsPageState extends State<AchievementsPage> {
               title.maxed
                   ? '🏆 已达成最高称号！'
                   : '再完成 ${title.nextNeeded} 题晋升「${title.nextTitle}」',
-              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 13),
             ),
           ],
         ),
@@ -204,13 +206,13 @@ class _AchievementsPageState extends State<AchievementsPage> {
                     child: CircularProgressIndicator(
                       value: progress,
                       strokeWidth: 3,
-                      color: unlocked ? a.color : Colors.grey,
+                      color: unlocked ? a.color : Theme.of(context).colorScheme.onSurfaceVariant,
                       backgroundColor: scheme.surfaceContainerHighest,
                     ),
                   ),
                   Icon(
                     unlocked ? a.icon : Icons.lock_outline,
-                    color: unlocked ? a.color : Colors.grey,
+                    color: unlocked ? a.color : Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                 ],
@@ -234,7 +236,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
                 unlocked ? '已解锁' : '${(progress * 100).round()}%',
                 style: TextStyle(
                   fontSize: 9,
-                  color: unlocked ? a.color : Colors.grey,
+                  color: unlocked ? a.color : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

@@ -357,7 +357,7 @@ class _PythonCodeFieldState extends State<PythonCodeField> {
                 decoration: InputDecoration(
                   hintText: widget.hintText,
                   hintStyle: base.copyWith(
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   border: InputBorder.none,
                   // 不用 isCollapsed（会破坏 TextField 正常布局、光标偏左上）；

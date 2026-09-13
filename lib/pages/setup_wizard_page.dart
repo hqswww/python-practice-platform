@@ -256,7 +256,10 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(subtitle,
-                style: TextStyle(fontSize: 14, height: 1.7, color: Colors.grey[700])),
+                style: TextStyle(
+                    fontSize: 14,
+                    height: 1.7,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
       );
@@ -290,7 +293,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                   Text(
                     '所有设置之后都能在「设置」页里改，随时可以重新跑这个向导。'
                     '现在不想管，直接点「下一步」到最后就行。',
-                    style: TextStyle(fontSize: 13, height: 1.7, color: Colors.grey[700]),
+                    style: TextStyle(fontSize: 13, height: 1.7, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -342,7 +345,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                         fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(width: 8),
                 Text(isCompiler ? '编译器' : '解释器',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 const Spacer(),
                 IconButton(
                   tooltip: '重新检测',
@@ -371,7 +374,11 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    // onSurface 而非黑：深色主题下黑@5% 等于没画
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: ListView(
@@ -418,7 +425,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                   style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 12,
-                    color: Colors.grey[700],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -508,7 +515,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
             const Text('代码字号', style: TextStyle(fontWeight: FontWeight.w600)),
             const Spacer(),
             Text('${settings.editorFontSize} px',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
           ]),
           Slider(
             value: settings.editorFontSize.toDouble(),
@@ -569,7 +576,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                     '· 写完代码点「运行并判题」，对了就会自动记录进度和成就\n'
                     '· 卡住时先看题目的「提示」，再看「教程」分区\n'
                     '· 缺环境、想改设置，随时去「设置」页，那里能重新跑一遍本向导',
-                    style: TextStyle(fontSize: 13, height: 1.9, color: Colors.grey[700]),
+                    style: TextStyle(fontSize: 13, height: 1.9, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),

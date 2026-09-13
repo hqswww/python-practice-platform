@@ -12,6 +12,7 @@ import 'pages/settings_page.dart';
 import 'services/error_log_service.dart';
 import 'services/settings_service.dart';
 import 'services/language_service.dart';
+import 'theme.dart';
 
 /// 全局设置服务单例（供各页面读取/修改）
 // main.dart 顶部不再重复定义，统一用 services/settings_service.dart 里的全局 settings
@@ -48,8 +49,14 @@ class PythonPracticeApp extends StatelessWidget {
         return MaterialApp(
           title: '编程练习册',
           debugShowCheckedModeBanner: false,
-          theme: _buildTheme(Brightness.light),
-          darkTheme: _buildTheme(Brightness.dark),
+          theme: buildAppTheme(
+            brightness: Brightness.light,
+            seedColor: settings.accentColor,
+          ),
+          darkTheme: buildAppTheme(
+            brightness: Brightness.dark,
+            seedColor: settings.accentColor,
+          ),
           themeMode: settings.themeMode, // 主题模式可切换
           // 首次运行先走向导：这台机器上有没有编译器/解释器，直接决定学生能不能
           // 做题，值得在第一次打开时说清楚。
@@ -61,80 +68,6 @@ class PythonPracticeApp extends StatelessWidget {
               : const HomePage(),
         );
       },
-    );
-  }
-
-  /// Material 3 主题构建
-  ThemeData _buildTheme(Brightness brightness) {
-    // 强调色可由用户在设置页选择（默认清新绿）
-    final scheme = ColorScheme.fromSeed(
-      seedColor: settings.accentColor,
-      brightness: brightness,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      // 全局默认字体：捆绑的更纱黑体（简体），保证 Linux/Windows 中文渲染一致
-      fontFamily: 'SarasaGothicSC',
-      cardTheme: CardThemeData(
-        elevation: 1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        clipBehavior: Clip.antiAlias,
-        margin: EdgeInsets.zero,
-      ),
-      appBarTheme: AppBarTheme(
-        centerTitle: false,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        backgroundColor: scheme.surface,
-        foregroundColor: scheme.onSurface,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: brightness == Brightness.light
-            ? Colors.grey.shade100
-            : Colors.grey.shade900,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: scheme.primary, width: 2),
-        ),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 44),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, 44),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      ),
-      navigationBarTheme: NavigationBarThemeData(
-        elevation: 3,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-      ),
-      listTileTheme: const ListTileThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-        ),
-      ),
-      dividerTheme: DividerThemeData(color: scheme.outlineVariant),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
     );
   }
 }

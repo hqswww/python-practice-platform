@@ -538,11 +538,11 @@ class _TestPageState extends State<TestPage> {
                     style: TextStyle(height: 1.5),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  Text(
                     '右侧 ⏱ 是每个模式**各自**的倒计时，互不影响：选「不限时」就是普通练习；'
                     '设了时间则进入测试即开始计时，时间到自动交卷。',
                     style:
-                        TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
+                        TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4),
                   ),
                 ],
               ),
@@ -801,7 +801,7 @@ class _TestPageState extends State<TestPage> {
                 const SizedBox(height: 8),
                 Text(
                   passed ? '表现很棒，继续冲刺！🎉' : '再接再厉，去练习板块多练一练～',
-                  style: const TextStyle(color: Colors.grey),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 24),
                 Row(

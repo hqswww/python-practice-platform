@@ -803,7 +803,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
-                                      ?.copyWith(color: Colors.grey[600])),
+                                      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                           ],
                         ),
                       ),
@@ -919,7 +919,7 @@ class _SettingsPageState extends State<SettingsPage> {
         subtitle: Text(
           'V$appVersion · Flutter (Material 3)\n'
           '本地判题：Python / C / C++ 全部用本机环境，无需联网',
-          style: TextStyle(color: Colors.grey[600]),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {

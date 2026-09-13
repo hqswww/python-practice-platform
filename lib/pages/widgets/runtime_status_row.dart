@@ -62,7 +62,7 @@ class RuntimeStatusRow extends StatelessWidget {
           // 装了多个版本时（系统 python3 vs Homebrew python3）这句很关键。
           SelectableText(
             ok ? '实际使用：${st.resolved}' : (st.hint ?? ''),
-            style: TextStyle(fontSize: 12, height: 1.5, color: Colors.grey[800]),
+            style: TextStyle(fontSize: 12, height: 1.5, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),

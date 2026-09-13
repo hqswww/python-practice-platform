@@ -78,7 +78,7 @@ class _LearnPageState extends State<LearnPage> {
             Text('学习笔记', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             Text(
               '${current.category.name} · ${current.problem.title}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -229,7 +229,7 @@ class _LearnPageState extends State<LearnPage> {
                     const SizedBox(width: 8),
                     Text(
                       '#${p.id}',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
                     ),
                   ],
                 ),
@@ -479,7 +479,7 @@ class _CategoryHeader extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               '${category.problems.length}',
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -634,7 +634,8 @@ class _CodeBlock extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.06),
+        // onSurface 而非黑：深色主题下黑@6% 等于没画（见 problem_panel 的同款说明）
+        color: scheme.onSurface.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.3)),
       ),

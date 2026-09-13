@@ -289,7 +289,7 @@ class _InteractiveTerminalState extends State<InteractiveTerminal> {
                         fontWeight: FontWeight.w700)),
                 Expanded(
                   child: Container(
-                    // 深色衬底：让输入栏和白色文字在深色终端上有清晰对比
+                    // 深色衬底：让输入栏和浅色文字在深色终端上有清晰对比
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E2430),
@@ -304,7 +304,13 @@ class _InteractiveTerminalState extends State<InteractiveTerminal> {
                           color: Color(0xFFF0F6FC),
                           fontSize: 13),
                       cursorColor: Colors.tealAccent,
+                      // ⚠️ `filled: false` 不能省。全局 InputDecorationTheme 是
+                      //    `filled: true` + 浅灰/深灰 fillColor：浅色模式下它会在这层
+                      //    深色衬底上再刷一层**浅灰**，而这里的文字是写死的浅色 ——
+                      //    结果就是「浅色主题下终端输入框里的字看不见了」。
+                      //    输入框自己画了底色，就必须显式声明不要再填一层。
                       decoration: const InputDecoration(
+                        filled: false,
                         isDense: true,
                         hintText: '输入数据后按回车…',
                         hintStyle:

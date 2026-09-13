@@ -38,18 +38,20 @@ class JudgeResultPanel extends StatelessWidget {
             const CircularProgressIndicator(),
             const SizedBox(height: 12),
             Text('正在运行 $languageName 判题…',
-                style: const TextStyle(color: Colors.grey)),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
       );
     }
 
     if (result == null) {
-      return const Center(
+      return Center(
         child: Text(
           '编写代码后点击“运行并判题”\n结果会显示在这里',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       );
     }
@@ -69,13 +71,13 @@ class JudgeResultPanel extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _stagger(t, 0, _headerSummary(r)),
+            _stagger(t, 0, _headerSummary(context, r)),
             const SizedBox(height: 12),
             if (isCompileError)
-              _stagger(t, 1, _compileErrorBlock(r.caseResults.first))
+              _stagger(t, 1, _compileErrorBlock(context, r.caseResults.first))
             else ...[
               if (r.hasUnmetRequirements)
-                _stagger(t, 1, _requirementBlock(r.unmetRequirements)),
+                _stagger(t, 1, _requirementBlock(context, r.unmetRequirements)),
               for (var i = 0; i < r.caseResults.length; i++) ...[
                 _stagger(t, 1 + i * 1.0, _caseTile(context, r.caseResults[i])),
                 const SizedBox(height: 8),
@@ -110,7 +112,10 @@ class JudgeResultPanel extends StatelessWidget {
     );
   }
 
-  Widget _headerSummary(JudgeResult result) {
+  Widget _headerSummary(BuildContext context, JudgeResult result) {
+    // 副标题这类「次级说明」必须取主题的 onSurfaceVariant。
+    // 原来写死 Colors.black54 在深色主题下就是黑字压深底 —— 学生说看不清。
+    final subtle = Theme.of(context).colorScheme.onSurfaceVariant;
     final compileFailed = result.isCompileFailure;
     // 输出全对、只是没按要求用上语法 —— 这不是「做错了」，而是「还没练到」，
     // 用红色会让学生以为答案算错了，用橙色更贴近实情。
@@ -161,7 +166,7 @@ class JudgeResultPanel extends StatelessWidget {
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(color: Colors.black54),
+          style: TextStyle(color: subtle),
         ),
       ),
     );
@@ -186,8 +191,9 @@ class JudgeResultPanel extends StatelessWidget {
   /// 为什么值得单独一块：学生的第一反应一定是「输出明明对啊」。
   /// 所以这里必须把三件事讲清楚 —— 输出确实算对了、为什么还判不过、
   /// 以及具体要改成什么样。
-  Widget _requirementBlock(List<SourceRequirement> unmet) {
+  Widget _requirementBlock(BuildContext context, List<SourceRequirement> unmet) {
     const color = Colors.orange;
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       elevation: 1,
       child: Padding(
@@ -212,12 +218,14 @@ class JudgeResultPanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               '判题除了比对输出，还会核对本题要练的语法 —— '
               '有些写法输出一模一样，但练不到东西。你的输出没问题，'
               '把下面这几点补上就能通过了：',
               style: TextStyle(
-                  fontSize: 12, color: Colors.black54, height: 1.5),
+                  fontSize: 12,
+                  color: scheme.onSurfaceVariant,
+                  height: 1.5),
             ),
             const SizedBox(height: 12),
             for (final req in unmet) ...[
@@ -245,10 +253,13 @@ class JudgeResultPanel extends StatelessWidget {
                 ),
               ),
             ],
-            const Text(
+            Text(
               '如果确认自己的写法没问题，可以在「设置 → 判题」里关掉'
               '「源码语法要求检查」—— 那样就只比对输出。',
-              style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.5),
+              style: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
+                  height: 1.5),
             ),
           ],
         ),
@@ -257,7 +268,7 @@ class JudgeResultPanel extends StatelessWidget {
   }
 
   /// 编译失败区块：一块搞定，不逐用例重复
-  Widget _compileErrorBlock(TestCaseResult cr) {
+  Widget _compileErrorBlock(BuildContext context, TestCaseResult cr) {
     const color = Colors.red;
     return Card(
       elevation: 1,
@@ -284,7 +295,10 @@ class JudgeResultPanel extends StatelessWidget {
             Text(
               '编译型语言要先编译成可执行文件再运行。编译没过就不会执行，'
               '所有测试用例都不算数 —— 先按下面的报错把代码改对。',
-              style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.5),
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  height: 1.5),
             ),
             const SizedBox(height: 12),
             _messageBox(cr.message, color),
@@ -315,7 +329,9 @@ class JudgeResultPanel extends StatelessWidget {
             const Spacer(),
             Text(
               '${cr.timeMs}ms',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -333,11 +349,12 @@ class JudgeResultPanel extends StatelessWidget {
                 if (!cr.isPassed && cr.message.isNotEmpty)
                   _messageBox(cr.message, color),
                 if (showDetailed) ...[
-                  _outputBlock('实际输出', cr.actualOutput, monospace: true),
-                  _outputBlock('期望输出', cr.testCase.output, monospace: true),
+                  _outputBlock(context, '实际输出', cr.actualOutput, monospace: true),
+                  _outputBlock(context, '期望输出', cr.testCase.output,
+                      monospace: true),
                 ],
                 if (!showDetailed && cr.stderr.isNotEmpty)
-                  _outputBlock('错误信息', cr.stderr, monospace: true),
+                  _outputBlock(context, '错误信息', cr.stderr, monospace: true),
               ],
             ),
           ),
@@ -372,7 +389,9 @@ class JudgeResultPanel extends StatelessWidget {
     );
   }
 
-  Widget _outputBlock(String label, String content, {bool monospace = false}) {
+  Widget _outputBlock(
+    BuildContext context, String label, String content,
+    {bool monospace = false}) {
     final textStyle = monospace
         ? const TextStyle(fontFamily: 'monospace', fontSize: 13)
         : const TextStyle(fontSize: 13);
@@ -381,13 +400,21 @@ class JudgeResultPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const SizedBox(height: 3),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.05),
+              // onSurface@5% 而不是 black@5%：浅色主题下两者一模一样，
+              // 深色主题下前者是「稍微亮一点」、后者是黑压黑（等于没画分层）。
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(content.isEmpty ? '(空)' : content, style: textStyle),

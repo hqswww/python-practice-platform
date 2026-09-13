@@ -105,16 +105,24 @@ class _FavoritePageState extends State<FavoritePage> {
           }
           final favs = snapshot.data ?? [];
           if (favs.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.star_border, size: 64, color: Colors.grey),
+                  Icon(Icons.star_border,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
                   SizedBox(height: 12),
-                  Text('还没有收藏任何题目', style: TextStyle(color: Colors.grey)),
+                  Text('还没有收藏任何题目',
+                      style: TextStyle(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant)),
                   SizedBox(height: 4),
                   Text('在题目右上角点 ⭐ 就能收藏，方便复习～',
-                      style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant)),
                 ],
               ),
             );

@@ -142,7 +142,7 @@
 
 | 目录 | 作用 |
 |------|------|
-| `test/` | Flutter 自动测试（判题链路、语言维度、响应式、题库结构守卫等） |
+| `test/` | Flutter 自动测试（判题链路、语言维度、响应式、题库结构守卫、深浅主题对比度等） |
 | `tools/` | 题库校验（`verify_bank.py`）、图标生成（`make_icons.py`）、三平台打包脚本、`install_mingw.ps1`、`windows_installer.iss`、`inno/`（安装包中文语言包） |
 | `docs/` | `WINDOWS_MIGRATION.md` / `MACOS_MIGRATION.md` / `LINUX_MIGRATION.md` |
 | `windows/` `macos/` `linux/` | Flutter 三平台构建配置 |
@@ -150,6 +150,15 @@
 | `build/` | 编译中间产物（不用管，gitignore） |
 
 ---
+
+## 🎨 主题
+
+`lib/theme.dart` 是**唯一的主题定义处**（`buildAppTheme`），`main.dart` 只是调用它。
+单独一个文件是为了测试能拿到界面真正在用的那份主题 ——
+`test/theme_contrast_test.dart` 靠它做深浅两套主题的可读性断言。
+
+颜色规矩见 DESIGN.md「主题与颜色的规矩」：次级文字用 `onSurfaceVariant`、
+自带宽底色的输入框写 `filled: false`、衬底用 `onSurface.withValues(alpha:)`。
 
 ## 🎯 一条主线串起来（怎么找代码）
 

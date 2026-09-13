@@ -38,16 +38,24 @@ class _TestHistoryPageState extends State<TestHistoryPage> {
           }
           final records = snapshot.data ?? [];
           if (records.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.history, size: 64, color: Colors.grey),
+                  Icon(Icons.history,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
                   SizedBox(height: 12),
-                  Text('还没有测试记录', style: TextStyle(color: Colors.grey)),
+                  Text('还没有测试记录',
+                      style: TextStyle(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant)),
                   SizedBox(height: 4),
                   Text('去测试板块做一次测验，交卷后就会留在这里～',
-                      style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant)),
                 ],
               ),
             );
@@ -343,7 +351,7 @@ class TestRecordDetailPage extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             record.passed ? '表现很棒，继续冲刺！🎉' : '再接再厉，去练习板块多练练～',
-                            style: const TextStyle(color: Colors.grey),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),

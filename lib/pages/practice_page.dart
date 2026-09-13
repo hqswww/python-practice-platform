@@ -327,9 +327,9 @@ class _WrongBookEntryCardState extends State<_WrongBookEntryCard> {
                         ),
                         Text(
                           count > 0 ? '有 $count 道错题等你重练' : '测试中做错的题会收集到这里',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -354,7 +354,7 @@ class _WrongBookEntryCardState extends State<_WrongBookEntryCard> {
                       ),
                     )
                   else
-                    const Icon(Icons.chevron_right, color: Colors.grey),
+                    Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ],
               ),
             ),
@@ -417,9 +417,9 @@ class _FavoriteEntryCardState extends State<_FavoriteEntryCard> {
                         ),
                         Text(
                           count > 0 ? '有 $count 道收藏题可复习' : '在题目右上角点 ⭐ 收藏，方便复习',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -444,7 +444,7 @@ class _FavoriteEntryCardState extends State<_FavoriteEntryCard> {
                       ),
                     )
                   else
-                    const Icon(Icons.chevron_right, color: Colors.grey),
+                    Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ],
               ),
             ),
@@ -510,7 +510,7 @@ class _CategoryCardState extends State<_CategoryCard> {
                         child: Text(
                           category.description,
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),

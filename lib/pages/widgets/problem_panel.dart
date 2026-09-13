@@ -126,7 +126,12 @@ class _ProblemPanelState extends State<ProblemPanel> {
             width: double.infinity,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.06),
+              // 用 onSurface 而不是黑：浅色主题下两者一样，深色主题下
+              // 黑@6% 压在深色底上等于没画，代码块就没有分层了
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(value,
@@ -188,7 +193,7 @@ class _ProblemPanelState extends State<ProblemPanel> {
         if (!allShown && _revealedHints > 0)
           Text(
             '还有 ${p.hints.length - _revealedHints} 条',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
       ],
     );

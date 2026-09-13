@@ -124,9 +124,9 @@ class _WrongBookPageState extends State<WrongBookPage> {
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '做错或未作答的题会收集到这里，做对后自动清除。',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
