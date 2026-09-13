@@ -42,6 +42,13 @@ class SettingsService extends ChangeNotifier {
   /// 是否执行题库声明的源码语法要求检查（见 source_check.dart）
   static const String _strictSourceKey = 'settings_strict_source_check';
 
+  /// 启动时自动检查更新（见 update_service.dart）
+  static const String _autoUpdateKey = 'settings_auto_check_update';
+
+  /// 用户点了「跳过这个版本」的版本号。只跳过**这一个**版本，
+  /// 下一个版本照常提示 —— 不能变成「永久不再提示」。
+  static const String _skippedUpdateKey = 'settings_skipped_update_version';
+
   /// 首次运行向导是否已完成。
   ///
   /// 用「已完成」而不是「未完成」做键：键不存在时默认 false（= 该显示向导），
@@ -81,6 +88,13 @@ class SettingsService extends ChangeNotifier {
   /// 默认开 —— 这正是解决「不用指针也能判过」的那个开关。
   bool _strictSourceCheck = true;
 
+  /// 启动时自动检查更新。默认开：这是个纯离线应用，用户没有别的途径
+  /// 知道有新版本，不主动提示就永远不会更新。
+  bool _autoCheckUpdate = true;
+
+  /// 用户选择跳过的版本号（空 = 没跳过任何版本）
+  String _skippedUpdateVersion = '';
+
   /// 首次运行向导是否已完成（false = 启动时进向导）
   bool _setupWizardDone = false;
   // 各语言自定义运行时路径（解释器 / 编译器），空 = 自动解析。
@@ -104,6 +118,12 @@ class SettingsService extends ChangeNotifier {
 
   /// 是否执行题库声明的源码语法要求检查（默认开）
   bool get strictSourceCheck => _strictSourceCheck;
+
+  /// 启动时是否自动检查更新（默认开）
+  bool get autoCheckUpdate => _autoCheckUpdate;
+
+  /// 用户点过「跳过这个版本」的版本号（空 = 没跳过）
+  String get skippedUpdateVersion => _skippedUpdateVersion;
 
   /// 某语言的自定义运行时路径（解释器 / 编译器）；空字符串表示自动解析
   String runtimePath(ProgrammingLanguage language) =>
@@ -147,6 +167,8 @@ class SettingsService extends ChangeNotifier {
     // 默认 true：老用户升级上来也享受到这道检查（他们那台机器上
     // 「不用指针也能过」的问题一样存在），需要关的人自己去设置页关。
     _strictSourceCheck = _prefs!.getBool(_strictSourceKey) ?? true;
+    _autoCheckUpdate = _prefs!.getBool(_autoUpdateKey) ?? true;
+    _skippedUpdateVersion = _prefs!.getString(_skippedUpdateKey) ?? '';
     for (final lang in ProgrammingLanguage.values) {
       _runtimePaths[lang] =
           _prefs!.getString('$_runtimePathPrefix${lang.id}') ?? '';
@@ -218,6 +240,23 @@ class SettingsService extends ChangeNotifier {
     _strictSourceCheck = value;
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setBool(_strictSourceKey, value);
+    notifyListeners();
+  }
+
+  /// 开关「启动时自动检查更新」并持久化
+  Future<void> setAutoCheckUpdate(bool value) async {
+    _autoCheckUpdate = value;
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setBool(_autoUpdateKey, value);
+    notifyListeners();
+  }
+
+  /// 记下「这个版本我不再提示了」并持久化。
+  /// 传空字符串 = 清掉（手动检查时想重新看到提示就用它）。
+  Future<void> setSkippedUpdateVersion(String version) async {
+    _skippedUpdateVersion = version.trim();
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setString(_skippedUpdateKey, _skippedUpdateVersion);
     notifyListeners();
   }
 

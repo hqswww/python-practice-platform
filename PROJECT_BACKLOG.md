@@ -8,18 +8,17 @@
 
 ## 🎯 当前版本状态
 
-**v1.4.0** —— 版本号单一维护点在 `lib/app_version.dart`（pubspec 与安装包脚本里的
+**v1.5.0** —— 版本号单一维护点在 `lib/app_version.dart`（pubspec 与安装包脚本里的
 副本由测试盯着，改一处漏一处会测试失败）。
 
-本版相比 v1.3.0 的主要变化：
+本版相比 v1.4.0 的主要变化：
 
 | 方向 | 内容 |
 |------|------|
-| 判题 | **源码语法要求检查**：指针/引用题不再能靠「输出一样」蒙混过关（12 道题已覆盖） |
-| 设置 | 新增「源码语法要求检查」开关（默认开），误判时学生有退路 |
-| 修正 | 判题结果面板里写死的「正在运行 **Python** 判题…」改成按科目显示 |
+| 更新 | **自动检查更新**：启动时查 GitHub Releases，有新版弹窗显示更新内容，一键跳到本平台安装包 |
+| 设置 | `关于 → 检查更新`：开关（默认开）+「立即检查更新」；可只跳过某一个版本 |
 
-v1.3.0 的内容见下方归档。
+v1.4.0 与更早的内容见下方归档。
 
 ---
 
@@ -77,6 +76,20 @@ v1.3.0 的内容见下方归档。
 ---
 
 ## ✅ 已完成（按主题归档）
+
+### 🔄 自动检查更新（v1.5.0）
+- [x] `lib/services/update_service.dart`：查 `releases/latest`、比语义化版本
+      （容忍 `v` 前缀 / `+构建号` / `-beta.1` 预发布）、按扩展名挑本平台安装包
+- [x] `lib/services/url_opener.dart`：零依赖打开链接（`open` / `cmd start` / `xdg-open`）
+      \+ URL 安全校验（只放行干净的 `https://`）
+- [x] 启动时在**首帧之后**静默检查；有新版本才弹窗
+- [x] 弹窗：版本对照 + 更新内容（Markdown 收拾过）+「去下载」+「以后再说」+「跳过这个版本」
+- [x] 设置页 `关于 → 检查更新`：开关（默认开）+「立即检查更新」+ 当前版本
+- [x] 失败一律静默（断网/限流/接口挂了都只写一行日志，绝不打扰用户）
+- [x] 覆盖安装不丢进度的前提被测试钉住：Windows 版 `Runner.rc` 的
+      `CompanyName` / `ProductName` 不能改（`shared_preferences` 的落盘路径由它们拼出来）
+- [x] 真实网络验证过：本项目仓库无 Release 时返回「已是最新」；
+      另拿 pandoc / cli 的真实 Release 返回体验证了解析与挑包
 
 ### 📐 响应式界面
 - [x] `lib/pages/widgets/responsive.dart`：断点（`twoPane`=840）+ `AdaptiveMasterDetail`
@@ -252,6 +265,28 @@ v1.3.0 的内容见下方归档。
 - **判断「这个颜色在两套主题下都行吗」靠算，不靠看**。WCAG 对比度公式
   `(亮+0.05)/(暗+0.05)`，见 `test/theme_contrast_test.dart`。
 
+### 自动更新（v1.5.0 踩的）
+- **GitHub API 对没有 `User-Agent` 的请求直接 403** —— 不是限流，是「你不告诉我你是谁」。
+  用 `curl` 手测时 curl 会自己带 UA，所以很容易在代码里漏掉而这个坑只在应用里发作
+- **仓库还没有 Release 时 `releases/latest` 返回 404**。这不是错误，是「没什么可更新的」——
+  报成「检查失败」会让用户以为网络坏了（这个项目现在的状态就是这样）
+- **`shared_preferences` 在 Windows 上的落盘路径是从 exe 的版本资源拼的**
+  （`%APPDATA%\<CompanyName>\<ProductName>\`）。改这两个字段等于让老用户
+  「找不到自己的进度」——跟 macOS 改 bundle id 是同一类事故，已有测试钉住
+- **`Process.run(url)` 在 Windows 上打不开浏览器**：dart:io 走 CreateProcess，
+  而打开 URL 要 ShellExecute。常见解法是 `cmd /c start`，但那条路对本项目**特别危险**：
+  安装包名字是中文 → GitHub 给的链接是百分号转义的 → cmd 会把 `%E7%` 这样的片段
+  当变量去展开，链接被悄悄改坏，用户只看到打不开的页面。
+  改用 `rundll32 url.dll,FileProtocolHandler`（不经过命令行解析）。
+  ⚠️ 这一条**没有在真 Windows 上实测**，只做了静态推理
+- **URL 安全校验要先过 `Uri` 规范化再判断**：`Uri.parse(...).toString()` 会把中文
+  转义成 `%XX`。不先规范化的话，我们自己发的「编程练习册-Setup.exe」链接
+  （带中文）会被判成不合法，「去下载」永远只能退化成手动复制网址。
+  反过来，`&` `;` `(` `)` `'` `$` 这些字符 **Uri 转义不掉**，会原样进命令行，
+  必须自己挡 —— 这两类要分开对待，一刀切会错一头
+- 顺带：用 `dart:io` 的 `HttpClient` 时 `findProxyFromEnvironment` 要显式设，
+  否则国内直连 GitHub 常常不通
+
 ### 测试与工具
 - **rootBundle 在同一个测试文件里只能成功加载一次**；每个语言的结构守卫要单独一个文件
 - **一条测试里判完整个题库会把 flutter_tools 搞崩**（72 题 33 秒 → `Bad state:
@@ -273,10 +308,18 @@ v1.3.0 的内容见下方归档。
 2. **升版本号**（改 `lib/app_version.dart`，测试会告诉你 pubspec 与
    `windows_installer.iss` 里那两份漏没漏）
 3. 更新 `README.md` 的版本段与 `PROJECT_BACKLOG.md` 的状态
-4. 提交 + 打 tag（如 `v1.3.0`）+ `git push --tags`
+4. 提交 + 打 tag（如 `v1.5.0`，**必须带 `v` 前缀** —— 应用侧的版本比较虽然两种都认，
+   但统一写法免得混乱）+ `git push --tags`
 5. 在 Windows 上重跑 `tools\build_windows.ps1` → 绿色版目录 + `Setup.exe`
 6. 在 macOS 上重跑 `tools/build_macos.sh` → dmg + zip
 7. 分发：Windows 发 `Setup.exe`，macOS 发 dmg，Linux 发 tar.gz
+8. **⭐ 在 GitHub 上建 Release 并挂上这些安装包** —— 这是自动更新功能的开关：
+   没有 Release，应用检查到的永远是「已是最新」。
+   - tag 用 `v1.5.0`（与 `appVersion` 一致，否则会提示一个不存在的版本）
+   - **正文就是用户看到的「更新内容」**，写给人看：分「新增 / 修复 / 变化」列要点。
+     `#` 标题、``` 围栏、`- ` 列表会在弹窗里被收拾成纯文本，`**加粗**` 和
+     `` `代码` `` 会被渲染 —— 写 Markdown 没问题，但别写表格和图片（弹窗里显示不出来）
+   - 附件名带 `.dmg` / `.exe` / `.tar.gz` 后缀即可，中文名不影响（应用按后缀挑）
 
 ---
 

@@ -47,6 +47,8 @@
 | `python_runtime.dart` ⭐ | **找 Python 解释器**：macOS / Windows 捆绑路径、PATH 回退、`-X utf8` 加固、安装指引 |
 | `c_runtime.dart` ⭐ | **找 C / C++ 编译器**：按平台给候选路径（Windows 含 w64devkit 的安装位置）、`-B` 参数、安装指引 |
 | `temp_workspace.dart` ⭐ | **判题工作目录**。Windows 上刻意避开用户目录（中文用户名会让 `as`/`ld` 找不到文件） |
+| `update_service.dart` | **自动检查更新**：查 GitHub Releases、比版本号、挑本平台安装包。失败静默不抛异常 |
+| `url_opener.dart` | 用系统默认程序打开链接（`open`/`cmd start`/`xdg-open`，零依赖）+ URL 安全校验 |
 | `source_check.dart` ⭐ | **源码语法要求检查**：判题只比对输出，「用不用指针」在输出上完全看不出来 —— 这里到源码里核对（启发式，不是语义分析） |
 | `runtime_installer.dart` | 一键安装编译器：找随包的 `install_mingw.ps1`、跑它、给退路（下载页/安装命令） |
 | `interactive_runner.dart` ⭐ | 运行面板的进程管理：**按语言**决定编译与否，流式 I/O + 逐步喂 stdin |
@@ -167,6 +169,7 @@
 想知道怎么判对错？        → lib/services/judge_engine.dart      ← 心脏！
 想知道某门语言怎么跑？    → lib/services/language_runtime.dart  ← 语言差异都收在这
 想知道「用了没用上指针」怎么判？→ lib/services/source_check.dart（判题只比输出时分不出，得看源码）
+想让应用提示新版本？      → lib/services/update_service.dart（只跳转下载，不自动安装）
 想知道编译器/解释器怎么找？→ python_runtime.dart / c_runtime.dart
 判题临时目录放哪？        → lib/services/temp_workspace.dart（Windows 中文路径的防御在这）
 想知道界面在哪儿？        → lib/pages/*.dart（按板块找）

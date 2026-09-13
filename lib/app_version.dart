@@ -9,10 +9,10 @@
 ///
 /// ⚠️ 发新版时要一起改的四处（测试会告诉你漏了哪个）：
 ///   1. 这里
-///   2. `pubspec.yaml` 的 `version:`（形如 `1.4.0+4`，`+` 后面是构建号）
+///   2. `pubspec.yaml` 的 `version:`（形如 `1.5.0+5`，`+` 后面是构建号）
 ///   3. `tools/windows_installer.iss` 的 `#define AppVersion`
 ///   4. `README.md` 的「版本」段（写给用户看的变更摘要）
 library;
 
 /// 语义化版本，形如 `1.3.0`。**不带 `v` 前缀**，展示时自己加。
-const String appVersion = '1.4.0';
+const String appVersion = '1.5.0';

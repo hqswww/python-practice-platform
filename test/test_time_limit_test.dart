@@ -114,6 +114,23 @@ void main() {
               '遇到误判就彻底没法做题了');
     });
 
+    test('自动检查更新：默认开，关掉之后重启仍然是关的', () async {
+      // 这是个纯离线应用，用户没有别的途径知道有新版本 —— 默认必须是 true。
+      expect(SettingsService().autoCheckUpdate, isTrue);
+      expect(SettingsService().skippedUpdateVersion, '',
+          reason: '默认没跳过任何版本');
+
+      final a = SettingsService();
+      await a.setAutoCheckUpdate(false);
+      await a.setSkippedUpdateVersion('1.5.0');
+
+      final b = SettingsService();
+      await b.load();
+      expect(b.autoCheckUpdate, isFalse, reason: 'load() 漏读会变成「关了还提示」');
+      expect(b.skippedUpdateVersion, '1.5.0',
+          reason: '漏读的话，用户跳过过的版本每次启动又弹一次');
+    });
+
     test('原有三项照常读回（别改出回归）', () async {
       final a = SettingsService();
       await a.setTimeoutMs(3500);

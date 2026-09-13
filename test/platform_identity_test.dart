@@ -193,6 +193,22 @@ void main() {
       expect(stripComments(read('macos/Runner/Configs/AppInfo.xcconfig')),
           isNot(contains('com.example')));
     });
+
+    test('CompanyName / ProductName 是用户进度的定位键（Windows 版）', () {
+      // ⚠️ 这两项不只是「属性页里好看」：Windows 的 shared_preferences
+      // 把数据写进 %APPDATA%\<CompanyName>\<ProductName>\，路径就是从
+      // exe 的版本资源里读的。改了它，老用户下次启动会**找不到自己的进度**
+      // （不是丢失，是换了个新目录，看起来跟丢失一样）。
+      //
+      // 和 macOS 的 PRODUCT_BUNDLE_IDENTIFIER 是同一类东西 ——
+      // 而且自动更新功能承诺「覆盖安装不会丢进度」，前提就是它不变。
+      final rc = read('windows/runner/Runner.rc');
+      expect(rc, contains('VALUE "CompanyName", "com.sakiri"'),
+          reason: '改了它，Windows 用户的进度目录会跟着变');
+      expect(rc, contains('VALUE "ProductName", L"编程练习册"'),
+          reason: '中文必须用宽字符，否则版本资源里存进去的是乱码，'
+              '进度目录名也就跟着乱（而且两次可能不一样）');
+    });
   });
 
   group('已签名的包不能被自己改坏', () {

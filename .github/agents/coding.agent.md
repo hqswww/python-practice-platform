@@ -22,6 +22,7 @@ argument-hint: 要做的改动，或要回答的问题。
 | Dart 包名 `python_practice` | 21 个文件 import 它；改包名要同步改所有 import 与平台脚手架，收益为零 |
 | Inno Setup 的 `AppId` GUID | Inno 用它识别「是不是同一个应用」：升级安装、卸载、控制面板条目都认它。改了等于变成另一个软件 |
 | 题库文件的分类 key 与 id 段 | 进度键是「语言_题号」，撞号会让两道题共享进度，而且**不会报错** |
+| Windows `Runner.rc` 的 `CompanyName` / `ProductName` | Windows 版**用户进度的定位键**：`shared_preferences` 的落盘路径就是从这两项拼出来的，改了老用户会「找不到自己的进度」 |
 | Windows `.ps1` 的 UTF-8 BOM | Windows PowerShell 5.1 读无 BOM 的脚本按 ANSI 解码，中文全成乱码甚至语法报错 |
 
 以上几条都有测试盯着（`test/platform_identity_test.dart`、`test/version_consistency_test.dart` 等），

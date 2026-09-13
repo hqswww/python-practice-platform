@@ -12,6 +12,8 @@ import 'pages/settings_page.dart';
 import 'services/error_log_service.dart';
 import 'services/settings_service.dart';
 import 'services/language_service.dart';
+import 'services/update_service.dart';
+import 'pages/widgets/update_dialog.dart';
 import 'theme.dart';
 
 /// 全局设置服务单例（供各页面读取/修改）
@@ -95,6 +97,30 @@ class _HomePageState extends State<HomePage> {
     // 用监听而不是在切换回调里 setState，是因为语言还可能被别处改
     // （比如启动时从偏好恢复）。
     languageService.addListener(_loadCategoriesForCurrentLanguage);
+    // 检查更新放在**首帧之后**：它要联网，绝不能拖慢启动，
+    // 也不能跟首屏的题库加载抢；失败时更是悄无声息。
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkUpdate());
+  }
+
+  /// 启动时检查一次更新，有新的就问用户要不要去下载。
+  ///
+  /// 三层「不打扰」：设置里可以整体关掉；同一个版本被跳过就不再提示；
+  /// 检查失败（断网、限流、接口挂了）完全静默。
+  Future<void> _checkUpdate() async {
+    if (!settings.autoCheckUpdate) return;
+
+    final result = await updateService.check();
+    if (!mounted || !result.hasUpdate) return;
+
+    final info = result.update!;
+    // 同一个版本只提示一次 —— 用户点过「跳过这个版本」就别再烦他。
+    // 注意只跳过这一个版本，下个版本照常提示。
+    if (info.version == settings.skippedUpdateVersion) return;
+
+    final action = await showUpdateDialog(context, info);
+    if (action == UpdateDialogAction.skipVersion) {
+      await settings.setSkippedUpdateVersion(info.version);
+    }
   }
 
   @override

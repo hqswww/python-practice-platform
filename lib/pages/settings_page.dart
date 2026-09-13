@@ -13,6 +13,7 @@ import '../services/settings_service.dart';
 import '../models/programming_language.dart';
 import '../services/language_service.dart';
 import '../services/language_runtime.dart';
+import '../services/update_service.dart';
 import 'achievements_page.dart';
 import 'log_center_page.dart';
 import 'setup_wizard_page.dart';
@@ -20,6 +21,7 @@ import 'widgets/accent_color_picker.dart';
 import 'widgets/language_switcher.dart';
 import 'widgets/responsive.dart';
 import 'widgets/runtime_status_row.dart';
+import 'widgets/update_dialog.dart';
 
 /// 设置分类：宽屏时作为左栏条目，窄屏时作为「点进去看详情」的入口
 class _CategoryMeta {
@@ -113,6 +115,9 @@ class _SettingsPageState extends State<SettingsPage> {
   final ProgressService _progress = ProgressService();
   final ExportService _export = ExportService();
   final ImportService _import = ImportService();
+
+  /// 「立即检查更新」是否正在进行（防连点、按钮转圈）
+  bool _checkingUpdate = false;
 
   // 动画控制
   int _hoveredCard = -1;
@@ -721,6 +726,10 @@ class _SettingsPageState extends State<SettingsPage> {
       // ---------------------------------------------------------- 关于
       case 'about':
         return [
+          // 更新检查放在「关于」里：它跟「这个应用本身是什么版本」是同一件事，
+          // 而且用户找版本号时就会看到这个开关。
+          _updateCard(context),
+          const SizedBox(height: 12),
           // 放在「关于」里而不是另开一栏：它属于「应用本身的说明」这一类，
           // 而且向导应当可重复进入，不能被「已完成」标记挡在外面。
           _settingsCard(
@@ -749,9 +758,87 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  /// 「检查更新」卡片：开关 + 立即检查 + 当前版本
+  ///
+  /// 开关默认**开**：这是个纯离线应用，用户没有任何别的途径知道有新版本，
+  /// 不主动提示就等于永远停在装的那一版。
+  Widget _updateCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return _settingsCard(
+      index: 15,
+      icon: Icons.system_update_alt,
+      color: Colors.teal,
+      title: '检查更新',
+      subtitle: '当前版本 v$appVersion',
+      child: ListenableBuilder(
+        listenable: settings,
+        builder: (context, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: settings.autoCheckUpdate,
+              onChanged: (v) => settings.setAutoCheckUpdate(v),
+              title: const Text('启动时自动检查更新'),
+              subtitle: const Text('发现新版本时弹窗提示更新内容，可一键跳到下载页'),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.tonalIcon(
+                onPressed: _checkingUpdate ? null : _checkUpdateNow,
+                icon: _checkingUpdate
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh, size: 18),
+                label: Text(_checkingUpdate ? '检查中…' : '立即检查更新'),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '更新只会跳到 GitHub 的下载页，由你决定什么时候装；'
+              '覆盖安装不会丢失做题进度。',
+              style: TextStyle(
+                  fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 手动检查一次更新。三种结果都要有明确反馈 —— 用户是主动来问的，
+  /// 不能像启动时那样静默。
+  Future<void> _checkUpdateNow() async {
+    // 用 State 自己的 context：下面的 mounted 检查才是「对得上号」的那个。
+    // 传进来的 BuildContext 会被 lint 拦（它是别的 widget 的 context）。
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _checkingUpdate = true);
+    final result = await updateService.check();
+    if (!mounted) return;
+    setState(() => _checkingUpdate = false);
+
+    switch (result.status) {
+      case UpdateCheckStatus.updateAvailable:
+        final info = result.update!;
+        await showUpdateDialog(context, info, allowSkip: false);
+      case UpdateCheckStatus.upToDate:
+        messenger.showSnackBar(SnackBar(
+          content: Text('已是最新版本（v$appVersion）'),
+        ));
+      case UpdateCheckStatus.failed:
+        messenger.showSnackBar(SnackBar(
+          content: Text('检查更新失败：${result.error}。'
+              '可以直接去 GitHub 的 Releases 页面看看。'),
+          duration: const Duration(seconds: 5),
+        ));
+    }
+  }
+
   /// 带悬浮/点击动画的设置卡片
-  Widget _settingsCard({
-    required int index,
+  Widget _settingsCard({    required int index,
     required IconData icon,
     required Color color,
     required String title,
