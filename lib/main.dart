@@ -76,7 +76,14 @@ class PythonPracticeApp extends StatelessWidget {
 
 /// 主框架：底部 NavigationBar 切换三个板块（练习/测试/设置）
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.updateServiceOverride});
+
+  /// 覆盖更新检查服务（**只给测试用**）。
+  ///
+  /// 启动时的「有新版就弹窗」是这个功能唯一没法用单元测试直接覆盖的一环
+  /// （它挂在首帧回调上），所以留一个注入口 —— 否则只能靠「发个真 Release
+  /// 再手工打开应用看看」来验证，那种验证没人会每次改完都跑。
+  final UpdateService? updateServiceOverride;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -109,7 +116,8 @@ class _HomePageState extends State<HomePage> {
   Future<void> _checkUpdate() async {
     if (!settings.autoCheckUpdate) return;
 
-    final result = await updateService.check();
+    final result =
+        await (widget.updateServiceOverride ?? updateService).check();
     if (!mounted || !result.hasUpdate) return;
 
     final info = result.update!;

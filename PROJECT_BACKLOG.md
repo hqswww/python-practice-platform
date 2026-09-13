@@ -302,6 +302,40 @@ v1.4.0 与更早的内容见下方归档。
 
 ---
 
+## 🧪 怎么测「更新提示」（造一个报旧版本的包）
+
+要看到更新弹窗，**装在机器上的版本必须比 GitHub 上的 tag 旧**。开发机上跑的
+就是最新代码，自己不会提示自己，所以要么找一台装着旧版的机器，要么造一个包。
+
+造的办法：把版本号改小、别的不动，编译一个出来（**编完必须改回来**）：
+
+```bash
+# 1. 三处版本号一起改成旧版本（不一致会被 version_consistency_test 抓住）
+#    lib/app_version.dart      const String appVersion = '1.4.0';
+#    pubspec.yaml               version: 1.4.0+99     ← 构建号给个显眼的数，一眼认出是测试包
+#    tools/windows_installer.iss  #define AppVersion "1.4.0"
+# 2. 构建
+bash tools/build_macos.sh          # 或 Windows 上 tools\build_windows.ps1
+# 3. 把产物改成一眼能认出的名字，免得跟正式包混在一起
+mv dist/编程练习册-macOS-universal.dmg dist/更新测试-报1.4.0.dmg
+# 4. ⚠️ 改回来！git status 必须是干净的
+git checkout -- lib/app_version.dart pubspec.yaml tools/windows_installer.iss
+```
+
+然后：**先在 GitHub 上发好 Release**（tag 要是 `v1.5.0` 这种比测试包新的），
+再打开测试包 → 应当弹「发现新版本」。
+
+自检点（哪一步不对会静默失败，所以值得逐个确认）：
+- Release 的 tag 与 `appVersion` 比是不是更大？tag 写成 `1.5.0`（没 v）也能认
+- Release **不是草稿、也不是 Pre-release** —— `releases/latest` 会跳过这两种
+- 系统时间对不对（HTTPS 握手会失败，然后被静默当成「检查失败」）
+- 想直接看结果：设置页 `关于 → 检查更新 → 立即检查更新`，它会把失败原因说出来
+
+启动那条链路由 `test/update_startup_test.dart` 覆盖（有版本就弹、关掉开关不弹、
+断网静默、跳过的版本不再弹）—— 这几条一旦坏了都是静默的，所以才专门测。
+
+---
+
 ## 🚀 发布流程（改完一轮怎么发新版）
 
 1. 攒一批改动，测完：`flutter test` 全过 + `flutter analyze` 无新增 + build 成功
