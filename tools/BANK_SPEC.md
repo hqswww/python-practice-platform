@@ -90,6 +90,13 @@
   "sample_input": "",
   "sample_output": "Hello, C!",
   "test_cases": [{ "input": "", "output": "Hello, C!" }],
+  "source_requirements": [
+    {
+      "check": "pointer.use",
+      "label": "真的用上了指针（解引用 *p、下标 p[i] 或步进 p++）",
+      "hint": "先写 `int *p = &n;`，再用 `printf(\"%d\", *p);`"
+    }
+  ],
   "hints": ["提示一", "提示二"],
   "solution": "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, C!\\n\");\n    return 0;\n}\n",
   "tutorial": [
@@ -111,6 +118,50 @@
 - `tutorial` 至少 1 节；`code` / `output` 可以为空字符串
 - 测试用例的 `input` 结尾**要带 `\n`**（跟真实键盘输入一致），
   无输入的题写空字符串
+- `source_requirements` **可以不写**；写了就要满足下面的规矩
+
+### source_requirements：光看输出分不出对错时用它
+
+判题只比对 stdout。有些题目的输出**用不用那个语法完全一样** —— 最典型的是
+指针入门题：期望输出是同一个数打两遍，那么 `int b = n; printf("%d\n%d", n, b);`
+跟 `printf("%d\n%d", n, *p);` 输出一字不差，判题根本看不出来学生在练什么。
+
+这类题就要加一条 `source_requirements`，判题会额外到**源码**里核对：
+
+```json
+"source_requirements": [
+  { "check": "pointer.use", "label": "给学生看的要求", "hint": "具体怎么改" }
+]
+```
+
+可用的 `check`（**写错了测试会挂**，见 `lib/services/source_check.dart`）：
+
+| check | 通过条件 |
+|---|---|
+| `pointer.use` | 声明了指针，并且真的解引用（`*p`）/ 下标（`p[i]`）/ 步进（`p++`）/ `*(p+i)` 过一次 |
+| `pointer.walk` | 在上面基础上更严：必须是**逐元素遍历**（步进，或指针取值出现 ≥2 次） |
+| `reference.use` | 声明了 C++ 引用，并且这个名字在别处真的被用过 |
+
+什么时候用哪个：
+
+- 「用指针读/改一个变量」「函数用指针参数改外部变量」→ `pointer.use`
+- 「用指针**遍历**数组」→ `pointer.walk`（只取一个元素就改用数组下标的不算遍历）
+- C++ 引用 → `reference.use`
+
+⚠️ 两条硬规矩（`test/bank_structure.dart` 会逐题检查）：
+
+1. **参考答案必须满足自己声明的每一条要求**。检查是启发式的文本匹配，
+   写宽了挡不住作弊、写窄了连正确答案都判不过 —— 后者是最坏的情况
+   （照抄参考答案都过不了），所以有测试钉死。
+2. `label` 与 `hint` 都不能空。学生看到的只有这两句话：
+   前者说明「要求什么」，后者说明「怎么改」。
+
+`hint` 里可以用 `` `代码` `` 和 `**加粗**`（判题面板会渲染掉标记）。
+
+**别滥用**：输出能区分对错的题一律不加。这条检查是启发式的（关键字级别的
+文本分析，不是编译器级语义分析），它挡得住「压根没用指针」和「声明了却不用」，
+挡不住蓄意伪装。它只该用在「不加就等于没练」的题上。
+
 
 ---
 
@@ -171,6 +222,12 @@ flutter test test/cpp_runtime_test.dart   # C++
 
 两边都要过。写完一个分类至少跑一次脚本自检。
 
+> ⚠️ `verify_bank.py` **不检查 `source_requirements`** —— 它只比对输出，
+> 而要求检查是 Dart 侧的启发式实现（`source_check.dart`）。硬要在 Python 里
+> 再写一份，等于同一套规则维护两遍、迟早对不上。
+> 「参考答案满足自己的要求」由 `flutter test test/c_bank_structure_test.dart`
+> （以及 `cpp_bank_structure_test.dart`）保证，两门语言都要跑。
+
 ---
 
 ## 六、容易翻车的地方
@@ -183,3 +240,5 @@ flutter test test/cpp_runtime_test.dart   # C++
 | 浮点输出对不上 | `%.2f` 的四舍五入 vs 学生用 `%g`；用例里写清保留几位 |
 | **C++ 报一屏 `Undefined symbols for architecture …`** | 用 **C 编译器**编了 C++（漏了 `++`）。判题侧已修并有回归测试锁死；手写命令时注意用 `clang++` 而不是 `clang` |
 | C++ 输出多了/少了尾随空格 | `cout << a << endl` 每个值都会紧跟输出，不像 `printf` 有格式串控制；题目里写清分隔方式 |
+| 加了 `source_requirements` 后参考答案判不过 | 检查写严了。跑 `c_bank_structure_test.dart` 看是哪条 `check`，放宽或换一个 |
+| 学生说「我明明用指针了还是判不过」 | 先看他的指针有没有**真的被用**：`int *p = &n;` 之后只用 `n` 是过不了的。注释掉的那行不算数 |

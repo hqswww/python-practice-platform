@@ -76,10 +76,27 @@ class JudgeResult {
   /// 代码是否有编译/运行错误（任一用例内存 stderr 等）
   final bool hasError;
 
+  /// 没被满足的**源码语法要求**（见 [SourceRequirement]）；空表示都满足或没要求。
+  ///
+  /// 只在「输出全对」时才会非空 —— 输出都不对时，先让学生解决输出问题，
+  /// 同时甩两条互不相干的结论只会让人不知道该先改哪个。
+  final List<SourceRequirement> unmetRequirements;
+
   /// 汇总信息
   int get totalCases => caseResults.length;
   int get passedCases => caseResults.where((r) => r.isPassed).length;
-  bool get allPassed => passedCases == totalCases && totalCases > 0;
+
+  /// 所有用例的输出都对（**不看**语法要求）
+  bool get outputAllPassed => passedCases == totalCases && totalCases > 0;
+
+  /// 真正算通过：输出全对，**并且**语法要求都满足。
+  ///
+  /// 进度记录、错题本、测试模式都认这一个 —— 所以「输出对了但没用指针」
+  /// 不会把题目标记成已解决，这正是引入源码检查的目的。
+  bool get allPassed => outputAllPassed && unmetRequirements.isEmpty;
+
+  /// 是不是「输出全对，但没按要求用上某个语法」
+  bool get hasUnmetRequirements => unmetRequirements.isNotEmpty;
 
   /// 是否「整份代码没编译过」——所有用例都是编译错误。
   ///
@@ -97,5 +114,6 @@ class JudgeResult {
     required this.problem,
     required this.caseResults,
     this.hasError = false,
+    this.unmetRequirements = const [],
   });
 }

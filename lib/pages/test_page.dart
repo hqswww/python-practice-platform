@@ -53,6 +53,11 @@ class _JudgeRecord {
   final int totalCases;
   final int timeMs;
   final bool hasRuntimeError;
+
+  /// 输出全对，但题库要求的语法没用上（见 SourceRequirement）。
+  /// 这种情况下 [allPassed] 也是 false —— 不能算做对。
+  final bool requirementUnmet;
+
   /// 判题过程的附加消息（如出错时的提示）
   final String? message;
 
@@ -61,10 +66,12 @@ class _JudgeRecord {
     required this.totalCases,
     required this.timeMs,
     required this.hasRuntimeError,
+    this.requirementUnmet = false,
     this.message,
   });
 
-  bool get allPassed => passedCases == totalCases && totalCases > 0;
+  bool get allPassed =>
+      passedCases == totalCases && totalCases > 0 && !requirementUnmet;
 }
 
 /// 交卷后的逐题回看项（对错 + 我的代码 + 参考代码）
@@ -313,7 +320,10 @@ class _TestPageState extends State<TestPage> {
   Future<_JudgeRecord> _judgeCurrent(String code) async {
     // 快照当前题目，防止 await 期间题目列表被清空（交卷）导致越界
     final problem = _questions[_questionIndex];
-    final engine = JudgeEngine(timeoutMs: settings.timeoutMs);
+    final engine = JudgeEngine(
+      timeoutMs: settings.timeoutMs,
+      enforceSourceRequirements: settings.strictSourceCheck,
+    );
     final JudgeResult result;
     try {
       result = await engine.judge(problem, code);
@@ -355,6 +365,7 @@ class _TestPageState extends State<TestPage> {
       hasRuntimeError: result.caseResults.any(
         (r) => !r.isPassed && r.stderr.isNotEmpty,
       ),
+      requirementUnmet: result.hasUnmetRequirements,
     );
 
     setState(() {
@@ -1180,6 +1191,12 @@ class _TestQuestionViewState extends State<_TestQuestionView> {
       if (rec.allPassed) {
         _lastFeedback =
             '✔ 这题做对了！（${rec.passedCases}/${rec.totalCases} 用例 · ${rec.timeMs}ms）';
+      } else if (rec.requirementUnmet) {
+        // 输出全对、只是没按要求用上语法。不能笼统说「还有用例没过」——
+        // 那会把学生引向「再检查输出」，而输出一点问题都没有。
+        _lastFeedback =
+            '✘ 输出全对，但本题要求的语法没用上（${rec.passedCases}/${rec.totalCases} 用例）'
+            ' · 回到练习页能看具体要改什么';
       } else if (rec.message != null) {
         _lastFeedback = '⚠️ ${rec.message}';
       } else {

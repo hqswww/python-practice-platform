@@ -451,6 +451,22 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
           ),
+          const SizedBox(height: 12),
+          _settingsCard(
+            index: 3,
+            icon: Icons.rule,
+            color: Colors.indigo,
+            title: '源码语法要求检查',
+            subtitle: '有些题光看输出分不出有没有用对语法（比如指针题），'
+                '开启后会额外核对代码里是否真的用上了。关掉则只比对输出',
+            trailing: ListenableBuilder(
+              listenable: settings,
+              builder: (context, _) => Switch(
+                value: settings.strictSourceCheck,
+                onChanged: (v) => settings.setStrictSourceCheck(v),
+              ),
+            ),
+          ),
         ];
 
       // ---------------------------------------------------------- 代码编辑

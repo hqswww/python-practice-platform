@@ -13,6 +13,13 @@
       { "input": "-7\n", "output": "-7\n-7" },
       { "input": "0\n", "output": "0\n0" }
     ],
+    "source_requirements": [
+      {
+        "check": "pointer.use",
+        "label": "用指针读取变量的值（*p 解引用）",
+        "hint": "本题练的是指针：`int *p = &n;` 之后要**通过 p 取值**，比如 `printf(\"%d\\n\", *p);`。像 `int b = n; printf(\"%d\", b);` 这样拷贝一份普通变量，输出虽然一模一样，但指针从头到尾没被用到 —— 这正是这题要防的。"
+      }
+    ],
     "hints": [
       "int *p; 声明的是一个「指向 int 的指针」——星号跟着类型写，表示 p 里存的是地址，不是整数。",
       "用 &n 取出 n 的地址再交给指针：p = &n;（声明时也可以直接写 int *p = &n;）。",
@@ -48,6 +55,13 @@
       { "input": "0\n", "output": "0\n0" },
       { "input": "-5\n", "output": "-5\n-10" },
       { "input": "100\n", "output": "100\n200" }
+    ],
+    "source_requirements": [
+      {
+        "check": "pointer.use",
+        "label": "通过指针修改 n（*p 写在等号左边）",
+        "hint": "先 `int *p = &n;`，再写 `*p = *p * 2;` —— `*p` 出现在等号左边，表示往 p 指向的那个变量里写。写 `n = n * 2;` 结果虽然也是对的，但这题要练的正是「通过指针改别人」。"
+      }
     ],
     "hints": [
       "先让指针指向 n：int *p = &n;",
@@ -85,6 +99,13 @@
       { "input": "0 0\n", "output": "0\n0" },
       { "input": "42 -42\n", "output": "-42\n42" }
     ],
+    "source_requirements": [
+      {
+        "check": "pointer.use",
+        "label": "在 swap 里通过指针交换（*x / *y）",
+        "hint": "交换必须发生在 `swap` 内部、通过 `*x`、`*y` 读写调用者的变量。在 `main` 里自己用临时变量换一遍，输出虽然对，但完全没练到「函数靠指针改外部变量」这个知识点 —— 那才是本题的重点。"
+      }
+    ],
     "hints": [
       "函数参数写成指针类型 int *x、int *y，调用时用 swap(&a, &b) 把地址传进去。",
       "函数体里 *x 和 *y 就是 main 里的 a 和 b，交换它们同样需要一个临时变量。",
@@ -120,6 +141,13 @@
       { "input": "1\n7\n", "output": "7" },
       { "input": "4\n-3 0 -4 10\n", "output": "3" },
       { "input": "3\n-1 -2 -3\n", "output": "-6" }
+    ],
+    "source_requirements": [
+      {
+        "check": "pointer.walk",
+        "label": "用指针逐个访问数组元素（p++ / *(p+i) / p[i]）",
+        "hint": "这题要求**用指针遍历**。`int *p = a;` 之后，循环里要真的通过 p 取值：\n```\nfor (int *p = a; p < a + n; p++) sum += *p;\n```\n只拿 `p[0]` 取一个元素、其余仍然用 `a[i]`，不算遍历。"
+      }
     ],
     "hints": [
       "数组名本身就是一个地址：a 等价于 &a[0]，可以直接赋给指针 int *p = a;",
@@ -157,6 +185,13 @@
       { "input": "3\n-1 -2 -3\n", "output": "-1\n0" },
       { "input": "4\n0 0 0 0\n", "output": "0\n0" }
     ],
+    "source_requirements": [
+      {
+        "check": "pointer.walk",
+        "label": "用指针逐个访问数组元素（p[i] / *(p+i)）",
+        "hint": "求出最值的过程要**通过指针访问数组**，比如循环里写 `if (p[i] > max)`，而不是绕开指针去用 `a[i]`。`int *p = a;` 拿到指针之后就得真的用它。"
+      }
+    ],
     "hints": [
       "先假设第一个元素就是最大值，然后从第 2 个元素开始逐个比较。",
       "用指针访问：int *p = a; 之后 p[i] 和 *(p + i) 都是 a[i]。",
@@ -192,6 +227,13 @@
       { "input": "1\n7\n", "output": "7\n7\n0" },
       { "input": "4\n-5 -5 -5 -5\n", "output": "-5\n-5\n0" },
       { "input": "5\n-3 0 8 -1 2\n", "output": "8\n-3\n11" }
+    ],
+    "source_requirements": [
+      {
+        "check": "pointer.use",
+        "label": "在 minmax 里通过指针写回结果（*pmax / *pmin）",
+        "hint": "`pmax`、`pmin` 是函数**带回结果**的唯一途径：函数里必须写 `*pmax = ...`。把最值直接算在 `main` 里、函数里不碰这两个指针，输出虽然对，但没练到本题的知识点。"
+      }
     ],
     "hints": [
       "C 的函数只能 return 一个结果，但参数可以是指针：把「结果放到哪儿」用地址告诉函数。",

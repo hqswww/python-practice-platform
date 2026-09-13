@@ -99,6 +99,21 @@ void main() {
           reason: '以前漏读，重启会丢失');
     });
 
+    test('源码语法要求检查：默认开，关了之后重启仍然是关的', () async {
+      // 默认必须是 true —— 这是「不用指针也能判过」那个漏洞的修复开关，
+      // 默认关掉等于老用户升级上来问题照旧。
+      expect(SettingsService().strictSourceCheck, isTrue);
+
+      final a = SettingsService();
+      await a.setStrictSourceCheck(false);
+
+      final b = SettingsService();
+      await b.load();
+      expect(b.strictSourceCheck, isFalse,
+          reason: 'load() 漏读的话，学生关掉检查重启又会被打开，'
+              '遇到误判就彻底没法做题了');
+    });
+
     test('原有三项照常读回（别改出回归）', () async {
       final a = SettingsService();
       await a.setTimeoutMs(3500);

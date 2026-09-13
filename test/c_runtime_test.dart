@@ -558,6 +558,84 @@ int main() {
     });
   });
 
+  group('结果面板：源码要求未满足', () {
+    Future<void> pumpPanel(WidgetTester tester, JudgeResult result) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: JudgeResultPanel(
+              result: result,
+              isJudging: false,
+              showDetailed: true,
+            ),
+          ),
+        ),
+      ));
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+    }
+
+    /// 输出全对、但没用指针 —— 面板最容易讲错的一种结果：
+    /// 既不能说「全部通过」，也不能说「0/3 通过」。
+    JudgeResult outputRightButNoPointer() => JudgeResult(
+          problem: cProblem(cases: const []),
+          caseResults: [
+            for (var i = 0; i < 3; i++)
+              TestCaseResult(
+                testCase: TestCase(input: '$i', output: '$i\n$i'),
+                status: JudgeStatus.passed,
+                actualOutput: '$i\n$i',
+                stderr: '',
+                timeMs: 1,
+              ),
+          ],
+          unmetRequirements: const [
+            SourceRequirement(
+              check: 'pointer.use',
+              label: '用指针读取变量的值（*p 解引用）',
+              hint: '先写 `int *p = &n;`，再 `printf("%d", *p);`',
+            ),
+          ],
+        );
+
+    testWidgets('头部不能说「全部通过」', (tester) async {
+      await pumpPanel(tester, outputRightButNoPointer());
+      expect(find.text('全部通过！'), findsNothing,
+          reason: '没用指针却显示「全部通过」，那这道题就白练了');
+      expect(find.textContaining('输出对了，但没按要求用上语法'), findsOneWidget);
+      expect(find.textContaining('输出都正确'), findsOneWidget,
+          reason: '必须讲清楚「输出没错」，否则学生会以为判题坏了');
+    });
+
+    testWidgets('也不能说「0/3 通过」—— 那 3 个用例输出全是对的', (tester) async {
+      await pumpPanel(tester, outputRightButNoPointer());
+      expect(find.textContaining('0/3'), findsNothing,
+          reason: '输出确实全对，说 0/3 是错的');
+      expect(find.textContaining('还有 3 个用例没过'), findsNothing);
+    });
+
+    testWidgets('具体要求与改法都要显示出来', (tester) async {
+      await pumpPanel(tester, outputRightButNoPointer());
+      final all = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.textSpan?.toPlainText() ?? t.data ?? '')
+          .join('\n');
+
+      expect(all, contains('用指针读取变量的值'), reason: '学生要知道要求什么：$all');
+      expect(all, contains('int *p = &n;'), reason: '学生要知道怎么改：$all');
+      expect(all, isNot(contains('**')), reason: 'markdown 标记漏出来了：$all');
+      expect(all, isNot(contains('`')), reason: '反引号漏出来了：$all');
+      // 必须告诉学生「设置里能关」，否则遇到误判他改无可改
+      expect(all, contains('源码语法要求检查'));
+    });
+
+    testWidgets('用例本身仍显示为「通过」—— 它们真的过了', (tester) async {
+      await pumpPanel(tester, outputRightButNoPointer());
+      expect(find.text('通过'), findsNWidgets(3));
+    });
+  });
+
 
   group('C 题库内容自检', () {
     // ⚠️ 两条踩过的坑：
@@ -604,6 +682,72 @@ int main() {
         }
       }, timeout: const Timeout(Duration(minutes: 2)));
     }
+
+    group('源码语法要求：不用指针不许过关', () {
+      // 上报的真实案例：901「用指针读取变量的值」期望输出是同一个数打两遍，
+      // 于是这段一个指针都没有的代码输出完全正确 —— 判题光看 stdout 分不出来。
+      const withoutPointer = '''
+#include <stdio.h>
+
+int main(void) {
+    // 在此编写你的代码
+    int a ;
+    //int *p = &a ;
+    scanf("%d",&a);
+    int b = a;
+    //printf("%d\\n%d",a,*p);
+    printf("%d\\n%d",a,b);
+    return 0;
+}
+''';
+
+      Future<Problem> problem901() async {
+        final cats = await allCats();
+        return cats
+            .firstWhere((c) => c.key == '09_pointers')
+            .problems
+            .firstWhere((p) => p.id == 901);
+      }
+
+      test('901：不用指针的等价写法必须判不过', () async {
+        if (!compilerReady) return;
+        final p = await problem901();
+
+        final r = await JudgeEngine(timeoutMs: 5000).judge(p, withoutPointer);
+
+        // 先确认前提：这段代码的输出**确实**全对，否则测的就不是「源码检查」
+        expect(r.outputAllPassed, isTrue,
+            reason: '前提不成立：这段代码输出没全对，'
+                '那就测不出源码检查了。${r.caseResults.first.message}');
+        expect(r.allPassed, isFalse,
+            reason: '一个指针都没用却判过了 —— 这正是要修的那个漏洞');
+        expect(r.hasUnmetRequirements, isTrue);
+        expect(r.unmetRequirements.map((e) => e.check), contains('pointer.use'));
+      }, timeout: const Timeout(Duration(minutes: 2)));
+
+      test('901：自己写对了（真的用 *p）就该过', () async {
+        if (!compilerReady) return;
+        final p = await problem901();
+        final r = await JudgeEngine(timeoutMs: 5000).judge(p, p.solution);
+        expect(r.allPassed, isTrue,
+            reason: '参考答案必须判过，否则检查过严');
+        expect(r.unmetRequirements, isEmpty);
+      }, timeout: const Timeout(Duration(minutes: 2)));
+
+      test('901：关掉检查后，同一段代码回到「判过」——逃生门有效', () async {
+        if (!compilerReady) return;
+        final p = await problem901();
+        final r = await JudgeEngine(
+          timeoutMs: 5000,
+          enforceSourceRequirements: false,
+        ).judge(p, withoutPointer);
+
+        expect(r.allPassed, isTrue,
+            reason: '设置页那个开关必须真的能关掉检查，'
+                '否则遇到误判学生就彻底改不动了');
+        expect(r.unmetRequirements, isEmpty);
+      }, timeout: const Timeout(Duration(minutes: 2)));
+    });
   });
 
 }

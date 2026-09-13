@@ -39,6 +39,9 @@ class SettingsService extends ChangeNotifier {
   static const String _fontSizeKey = 'settings_editor_font_size';
   static const String _indentWidthKey = 'settings_editor_indent_width';
 
+  /// 是否执行题库声明的源码语法要求检查（见 source_check.dart）
+  static const String _strictSourceKey = 'settings_strict_source_check';
+
   /// 首次运行向导是否已完成。
   ///
   /// 用「已完成」而不是「未完成」做键：键不存在时默认 false（= 该显示向导），
@@ -74,6 +77,10 @@ class SettingsService extends ChangeNotifier {
   int _editorFontSize = 14;
   int _editorIndentWidth = 4;
 
+  /// 严格模式：题库声明了「必须用上某个语法」时，判题会到源码里核对。
+  /// 默认开 —— 这正是解决「不用指针也能判过」的那个开关。
+  bool _strictSourceCheck = true;
+
   /// 首次运行向导是否已完成（false = 启动时进向导）
   bool _setupWizardDone = false;
   // 各语言自定义运行时路径（解释器 / 编译器），空 = 自动解析。
@@ -94,6 +101,9 @@ class SettingsService extends ChangeNotifier {
 
   /// 首次运行向导是否已完成
   bool get setupWizardDone => _setupWizardDone;
+
+  /// 是否执行题库声明的源码语法要求检查（默认开）
+  bool get strictSourceCheck => _strictSourceCheck;
 
   /// 某语言的自定义运行时路径（解释器 / 编译器）；空字符串表示自动解析
   String runtimePath(ProgrammingLanguage language) =>
@@ -134,6 +144,9 @@ class SettingsService extends ChangeNotifier {
     _editorFontSize = _prefs!.getInt(_fontSizeKey) ?? 14;
     _editorIndentWidth = _prefs!.getInt(_indentWidthKey) ?? 4;
     _setupWizardDone = _prefs!.getBool(_setupDoneKey) ?? false;
+    // 默认 true：老用户升级上来也享受到这道检查（他们那台机器上
+    // 「不用指针也能过」的问题一样存在），需要关的人自己去设置页关。
+    _strictSourceCheck = _prefs!.getBool(_strictSourceKey) ?? true;
     for (final lang in ProgrammingLanguage.values) {
       _runtimePaths[lang] =
           _prefs!.getString('$_runtimePathPrefix${lang.id}') ?? '';
@@ -197,6 +210,14 @@ class SettingsService extends ChangeNotifier {
     _setupWizardDone = done;
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setBool(_setupDoneKey, done);
+    notifyListeners();
+  }
+
+  /// 开关「源码语法要求检查」并持久化
+  Future<void> setStrictSourceCheck(bool value) async {
+    _strictSourceCheck = value;
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setBool(_strictSourceKey, value);
     notifyListeners();
   }
 

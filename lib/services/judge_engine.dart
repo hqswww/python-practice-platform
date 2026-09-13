@@ -18,6 +18,7 @@ import '../models/problem.dart';
 import 'error_log_service.dart';
 import 'c_runtime.dart';
 import 'language_runtime.dart';
+import 'source_check.dart';
 import 'temp_workspace.dart';
 
 class JudgeEngine {
@@ -31,10 +32,17 @@ class JudgeEngine {
   /// 混在一起会把「首次编译慢」误判成超时。
   final int compileTimeoutMs;
 
+  /// 是否执行题库声明的**源码语法要求**检查（见 source_check.dart）。
+  ///
+  /// 默认开。关掉的口子是给「检查误判」留的逃生门：文本启发式再小心也可能
+  /// 冤枉一份正确代码，而那时学生改无可改 —— 设置页里有对应开关。
+  final bool enforceSourceRequirements;
+
   JudgeEngine({
     this.timeoutMs = 2000,
     this.compileTimeoutMs = 10000,
     this.commandOverride,
+    this.enforceSourceRequirements = true,
   });
 
 
@@ -96,10 +104,17 @@ class JudgeEngine {
         results.add(result);
       }
 
+      // ── 源码语法要求检查
+      //
+      // 只在**输出全对**时才做：输出本来就不对，再多给一条「没用指针」
+      // 只会让学生不知道该先改哪个。真正的错优先。
+      final unmet = _unmetRequirements(problem, code, runtime, results);
+
       return JudgeResult(
         problem: problem,
         caseResults: results,
         hasError: hasRuntimeError,
+        unmetRequirements: unmet,
       );
     } finally {
       // 清理临时目录
@@ -107,6 +122,33 @@ class JudgeEngine {
         await tempDir.delete(recursive: true);
       } catch (_) {}
     }
+  }
+
+  /// 跑一遍题库声明的语法要求检查；没有要求、没开启、或输出没全对时返回空。
+  List<SourceRequirement> _unmetRequirements(
+    Problem problem,
+    String code,
+    LanguageRuntime runtime,
+    List<TestCaseResult> results,
+  ) {
+    if (!enforceSourceRequirements) return const [];
+    if (problem.sourceRequirements.isEmpty) return const [];
+    if (results.isEmpty || results.any((r) => !r.isPassed)) return const [];
+
+    // ⚠️ 必须用**去掉注释和字符串字面量**的源码：学生在注释里留着
+    // `// int *p = n;` 是常事，直接匹配原文会把注释算成「用过指针」。
+    final stripped = runtime.stripCommentsAndLiterals(code);
+    final unmet = unmetSourceRequirements(problem.sourceRequirements, stripped);
+    if (unmet.isNotEmpty) {
+      // 也记进日志：这是「判题结果令人意外」时最需要的一条线索
+      errorLog.log(
+        '源码要求未满足（${problem.language.displayName} 第 ${problem.id} 题 '
+        '${problem.title}）：${unmet.map((r) => r.label).join('、')}',
+        source: LogSource.judge,
+        level: LogLevel.warning,
+      );
+    }
+    return unmet;
   }
 
   /// 编译源码。成功返回 null；失败返回给学生看的错误信息。

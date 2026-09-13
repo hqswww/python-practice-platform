@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/judge_result.dart';
+import '../../models/problem.dart';
 import 'rich_message_text.dart';
 
 /// 判题结果面板
@@ -13,23 +14,31 @@ class JudgeResultPanel extends StatelessWidget {
   final bool isJudging;
   final bool showDetailed;
 
+  /// 判题进行中的提示语要写哪门语言。
+  ///
+  /// 这里原本写死「正在运行 Python 判题…」—— 有了 C/C++ 之后，
+  /// 用 C 写题的人会看到屏幕上说 Python，很荒谬。
+  final String languageName;
+
   const JudgeResultPanel({
     super.key,
     required this.result,
     required this.isJudging,
     required this.showDetailed,
+    this.languageName = 'Python',
   });
 
   @override
   Widget build(BuildContext context) {
     if (isJudging) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 12),
-            Text('正在运行 Python 判题…', style: TextStyle(color: Colors.grey)),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 12),
+            Text('正在运行 $languageName 判题…',
+                style: const TextStyle(color: Colors.grey)),
           ],
         ),
       );
@@ -64,11 +73,14 @@ class JudgeResultPanel extends StatelessWidget {
             const SizedBox(height: 12),
             if (isCompileError)
               _stagger(t, 1, _compileErrorBlock(r.caseResults.first))
-            else
+            else ...[
+              if (r.hasUnmetRequirements)
+                _stagger(t, 1, _requirementBlock(r.unmetRequirements)),
               for (var i = 0; i < r.caseResults.length; i++) ...[
                 _stagger(t, 1 + i * 1.0, _caseTile(context, r.caseResults[i])),
                 const SizedBox(height: 8),
               ],
+            ],
           ],
         );
       },
@@ -100,19 +112,40 @@ class JudgeResultPanel extends StatelessWidget {
 
   Widget _headerSummary(JudgeResult result) {
     final compileFailed = result.isCompileFailure;
-    final color = result.allPassed ? Colors.green : Colors.red;
+    // 输出全对、只是没按要求用上语法 —— 这不是「做错了」，而是「还没练到」，
+    // 用红色会让学生以为答案算错了，用橙色更贴近实情。
+    final unmet = result.hasUnmetRequirements;
+    final color = result.allPassed
+        ? Colors.green
+        : unmet
+            ? Colors.orange
+            : Colors.red;
     final icon = result.allPassed
         ? Icons.check_circle
         : compileFailed
             ? Icons.build_circle_outlined
-            : Icons.cancel;
+            : unmet
+                ? Icons.rule
+                : Icons.cancel;
     // 编译失败要说「编译没通过」，不能说「0/N 通过」——
     // 后者听起来像跑了但没过，实际是一个用例都没跑。
     final title = result.allPassed
         ? '全部通过！'
         : compileFailed
             ? '编译没通过'
-            : '${result.passedCases}/${result.totalCases} 通过';
+            : unmet
+                ? '输出对了，但没按要求用上语法'
+                : '${result.passedCases}/${result.totalCases} 通过';
+
+    // 「没达要求」时也要把「输出其实是对的」说清楚：学生的第一反应会是
+    // 「输出明明对啊」，不讲明白他会以为是判题坏了。
+    final subtitle = result.allPassed
+        ? '干得漂亮！代码正确 🎉'
+        : compileFailed
+            ? '代码没能编译成可执行文件，所以一个用例都没跑'
+            : unmet
+                ? '${result.totalCases} 个用例的输出都正确 —— 但这题要练的语法还没用上'
+                : '还有 ${result.totalCases - result.passedCases} 个用例没过，继续加油！';
 
     final card = Card(
       color: color.withValues(alpha: 0.1),
@@ -127,11 +160,7 @@ class JudgeResultPanel extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          result.allPassed
-              ? '干得漂亮！代码正确 🎉'
-              : compileFailed
-                  ? '代码没能编译成可执行文件，所以一个用例都没跑'
-                  : '还有 ${result.totalCases - result.passedCases} 个用例没过，继续加油！',
+          subtitle,
           style: const TextStyle(color: Colors.black54),
         ),
       ),
@@ -150,6 +179,81 @@ class JudgeResultPanel extends StatelessWidget {
       );
     }
     return card;
+  }
+
+  /// 「输出对了，但题面要求的语法没用上」区块。
+  ///
+  /// 为什么值得单独一块：学生的第一反应一定是「输出明明对啊」。
+  /// 所以这里必须把三件事讲清楚 —— 输出确实算对了、为什么还判不过、
+  /// 以及具体要改成什么样。
+  Widget _requirementBlock(List<SourceRequirement> unmet) {
+    const color = Colors.orange;
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.rule, color: color),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '还差一点：本题要求的语法没用上',
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              '判题除了比对输出，还会核对本题要练的语法 —— '
+              '有些写法输出一模一样，但练不到东西。你的输出没问题，'
+              '把下面这几点补上就能通过了：',
+              style: TextStyle(
+                  fontSize: 12, color: Colors.black54, height: 1.5),
+            ),
+            const SizedBox(height: 12),
+            for (final req in unmet) ...[
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '· ${req.label}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    const SizedBox(height: 6),
+                    RichMessageText(req.hint,
+                        style: const TextStyle(fontSize: 13, height: 1.5)),
+                  ],
+                ),
+              ),
+            ],
+            const Text(
+              '如果确认自己的写法没问题，可以在「设置 → 判题」里关掉'
+              '「源码语法要求检查」—— 那样就只比对输出。',
+              style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.5),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// 编译失败区块：一块搞定，不逐用例重复

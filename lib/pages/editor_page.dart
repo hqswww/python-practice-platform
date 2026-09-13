@@ -84,7 +84,10 @@ class _EditorPageState extends State<EditorPage> {
       _judgeRun++; // 触发结果面板过渡动画
     });
     // 使用当前设置里的超时时间创建引擎
-    final engine = JudgeEngine(timeoutMs: settings.timeoutMs);
+    final engine = JudgeEngine(
+      timeoutMs: settings.timeoutMs,
+      enforceSourceRequirements: settings.strictSourceCheck,
+    );
     final result = await engine.judge(widget.problem, _codeController.text);
     if (!mounted) return;
     setState(() {
@@ -340,6 +343,7 @@ class _EditorPageState extends State<EditorPage> {
               result: _lastResult,
               isJudging: _isJudging,
               showDetailed: _showDetailed,
+              languageName: widget.problem.language.displayName,
             ),
           ),
         ),

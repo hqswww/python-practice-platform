@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:python_practice/data/problem_repository.dart';
 import 'package:python_practice/models/programming_language.dart';
+import 'package:python_practice/services/language_runtime.dart';
+import 'package:python_practice/services/source_check.dart';
 
 /// 题库结构守卫的共用实现（C / C++ 各有一个薄薄的 `*_bank_structure_test.dart`）。
 ///
@@ -79,6 +81,35 @@ Future<void> verifyBankStructure(
         final tc = p.testCases[i];
         expect(tc.output.trim().isNotEmpty, isTrue,
             reason: '题 ${p.id} 用例 ${i + 1} 的期望输出是空的');
+      }
+
+      // ── 源码语法要求（见 source_check.dart）
+      if (p.sourceRequirements.isNotEmpty) {
+        // 检查名写错的话，运行时按「满足」处理（不冤判学生），
+        // 于是错了也没人知道 —— 所以必须在这里拦住。
+        expect(unknownSourceChecks(p.sourceRequirements), isEmpty,
+            reason: '题 ${p.id}「${p.title}」用了不存在的检查名：'
+                '${unknownSourceChecks(p.sourceRequirements)}；'
+                '可用的是 ${kSourceChecks.keys.join('、')}');
+
+        for (final req in p.sourceRequirements) {
+          expect(req.label.trim(), isNotEmpty,
+              reason: '题 ${p.id} 的要求 ${req.check} 缺 label（学生看不到要改什么）');
+          expect(req.hint.trim(), isNotEmpty,
+              reason: '题 ${p.id} 的要求 ${req.check} 缺 hint（学生不知道怎么改）');
+        }
+
+        // ⚠️ 这条是整个机制的**底线**：参考答案必须满足它自己声明的每一条要求。
+        // 检查是启发式的文本匹配，写宽了挡不住作弊、写窄了连正确答案都判不过 ——
+        // 后者是最坏的情况（照抄参考答案都过不了），所以用一个测试钉死。
+        final solution = runtimeFor(language)
+            .stripCommentsAndLiterals(p.solution);
+        final unmet =
+            unmetSourceRequirements(p.sourceRequirements, solution);
+        expect(unmet, isEmpty,
+            reason: '题 ${p.id}「${p.title}」的参考答案满足不了自己声明的源码要求：'
+                '${unmet.map((r) => r.check).join('、')} —— '
+                '这样学生照抄参考答案都会判不过');
       }
     }
   }

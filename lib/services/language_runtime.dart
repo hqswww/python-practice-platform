@@ -104,6 +104,16 @@ abstract class LanguageRuntime {
   /// （临时目录绝对路径、内部符号等）。默认原样返回。
   String cleanDiagnostics(String raw, Directory workDir) => raw;
 
+  /// 去掉注释与字符串/字符字面量，只留下真正的代码。
+  ///
+  /// 给「源码语法要求检查」用（见 source_check.dart）。**这一步不能省**：
+  /// 学生在注释里留着 `// int *p = &n;` 是极常见的事（自己写了一半注释掉），
+  /// 直接对原文做文本匹配，会把注释掉的那行算成「用过指针」——
+  /// 于是判过，而他实际运行的那份代码里一个指针都没有。
+  ///
+  /// 默认原样返回（假想中的新语言如果还没实现，检查只是变宽松，不会崩）。
+  String stripCommentsAndLiterals(String code) => code;
+
   /// 运行时自检：这台机器上能不能跑这门语言。
   ///
   /// 设置页用它提前提示。会读文件系统，别在每帧 rebuild 里调 —— 调用方缓存结果。
@@ -158,6 +168,10 @@ builtins.input = _judge_input
         // 保证 sitecustomize.py 被加载 + 强制 UTF-8
         environment: PythonRuntime.withUtf8Env({'PYTHONPATH': workDir.path}),
       );
+
+  /// Python 的注释与字面量清洗（`#` 注释、三引号文档字符串、普通字符串）
+  @override
+  String stripCommentsAndLiterals(String code) => SourceStripper.python(code);
 
   @override
   RuntimeStatus checkStatus() {
@@ -477,6 +491,10 @@ abstract class CompiledLanguageRuntime extends LanguageRuntime {
     return _CrashKind.other;
   }
 
+  /// C / C++ 的注释与字面量清洗，交给 [SourceStripper.cLike]。
+  @override
+  String stripCommentsAndLiterals(String code) => SourceStripper.cLike(code);
+
   /// 清洗编译器输出。
   ///
   /// 原始输出长这样，直接甩给学生全是噪音：
@@ -621,4 +639,137 @@ LanguageRuntime runtimeFor(
     case ProgrammingLanguage.cpp:
       return CppLanguageRuntime(commandOverride: commandOverride);
   }
+}
+
+// --------------------------------------------------- 注释与字面量清洗
+
+/// 把源码里的注释和字符串/字符字面量换成空白，只留下真正的代码。
+///
+/// 抽成独立类（而不是各运行时各写一遍）是因为它是**纯文本处理**，
+/// 没有平台/进程相关的东西，单独测起来最省事 —— 而它恰恰是最容易写错、
+/// 错了又最难发现的一环：多删一个字符会让检查变严（学生无故判不过），
+/// 少删一个字符会让检查变松（注释掉的东西也算数）。
+///
+/// 两者都保留**换行**：报错信息里的行号、以及源码自身的可读性都不受影响。
+abstract final class SourceStripper {
+  /// C / C++：`//` 行注释、`/* */` 块注释、`"字符串"`、`'字符'`
+  static String cLike(String code) {
+    final out = StringBuffer();
+    var i = 0;
+    while (i < code.length) {
+      final c = code[i];
+
+      // `//` 到行尾
+      if (c == '/' && _at(code, i + 1) == '/') {
+        while (i < code.length && code[i] != '\n') {
+          i++;
+        }
+        continue; // 换行留给下一轮原样写出
+      }
+
+      // `/* ... */`：里面的换行要保留，其余丢掉
+      if (c == '/' && _at(code, i + 1) == '*') {
+        i += 2;
+        while (i < code.length &&
+            !(code[i] == '*' && _at(code, i + 1) == '/')) {
+          if (code[i] == '\n') out.write('\n');
+          i++;
+        }
+        i = i + 2 <= code.length ? i + 2 : code.length;
+        continue;
+      }
+
+      // 字符串 / 字符字面量
+      // ⚠️ `'` 只有在**前面不是字母数字**时才算字面量开始：
+      //    C++14 起 `1'000'000` 用单引号做数字分隔符，不防的话会把
+      //    `'000` 当成字符字面量一路吃到下一个引号，把中间的代码全删掉。
+      final prevIsWord = i > 0 && _isWordChar(code.codeUnitAt(i - 1));
+      if (c == '"' || (c == "'" && !prevIsWord)) {
+        i++;
+        while (i < code.length && code[i] != c) {
+          if (code[i] == '\\') {
+            i += 2; // 跳过转义的下一个字符（\" \' \\ 等）
+            continue;
+          }
+          if (code[i] == '\n') out.write('\n');
+          i++;
+        }
+        i++;
+        out.write(' '); // 占位，免得 "a""b" 被粘成一个标识符
+        continue;
+      }
+
+      out.write(c);
+      i++;
+    }
+    return out.toString();
+  }
+
+  /// Python：`#` 行注释、三引号字符串（文档字符串）、普通字符串
+  static String python(String code) {
+    final out = StringBuffer();
+    var i = 0;
+    while (i < code.length) {
+      final c = code[i];
+
+      if (c == '#') {
+        while (i < code.length && code[i] != '\n') {
+          i++;
+        }
+        continue;
+      }
+
+      // 三引号：先于单引号判断，否则会当成空字符串再乱套
+      final triple = _tripleQuoteAt(code, i);
+      if (triple != null) {
+        i += 3;
+        while (i < code.length && !_startsWith(code, i, triple)) {
+          if (code[i] == '\n') out.write('\n');
+          i++;
+        }
+        i = (i + 3).clamp(0, code.length);
+        out.write(' ');
+        continue;
+      }
+
+      if (c == '"' || c == "'") {
+        i++;
+        while (i < code.length && code[i] != c) {
+          if (code[i] == '\\') {
+            i += 2;
+            continue;
+          }
+          if (code[i] == '\n') out.write('\n');
+          i++;
+        }
+        i++;
+        out.write(' ');
+        continue;
+      }
+
+      out.write(c);
+      i++;
+    }
+    return out.toString();
+  }
+
+  /// [i] 处是不是三引号；是则返回那个三引号本身
+  static String? _tripleQuoteAt(String code, int i) {
+    if (_startsWith(code, i, '"""')) return '"""';
+    if (_startsWith(code, i, "'''")) return "'''";
+    return null;
+  }
+
+  static bool _startsWith(String code, int i, String s) =>
+      i + s.length <= code.length && code.startsWith(s, i);
+
+  /// 越界返回 '\u0000'（不会等于任何正常字符，比较自然为 false）
+  static String _at(String code, int i) =>
+      i >= 0 && i < code.length ? code[i] : '\u0000';
+
+  static bool _isWordChar(int c) =>
+      (c >= 0x30 && c <= 0x39) ||
+      (c >= 0x41 && c <= 0x5A) ||
+      (c >= 0x61 && c <= 0x7A) ||
+      c == 0x5F;
 }

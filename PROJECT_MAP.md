@@ -30,9 +30,9 @@
 | 文件 | 作用 |
 |------|------|
 | `programming_language.dart` ⭐⭐ | **语言的单一事实来源**：id / 显示名 / 扩展名 / 是否编译型 / 运行面板标题 / 起步代码。加语言从这里开始 |
-| `problem.dart` ⭐ | 题目模型。`language` 是**必填**（刻意不给默认值：漏传会静默变成 Python 题） |
+| `problem.dart` ⭐ | 题目模型。`language` 是**必填**（刻意不给默认值：漏传会静默变成 Python 题）；`sourceRequirements` 是「这题必须用上某个语法」的声明 |
 | `problem_category.dart` | 分类模型：对应 `assets/problems/<语言>/01_xxx.json` 一个文件 |
-| `judge_result.dart` ⭐ | 判题结果模型：`JudgeStatus`（passed / wrongAnswer / runtimeError / timeout / **compileError**）+ 逐用例结果 |
+| `judge_result.dart` ⭐ | 判题结果模型：`JudgeStatus`（passed / wrongAnswer / runtimeError / timeout / **compileError**）+ 逐用例结果。`allPassed` = 输出全对 **且** 语法要求都满足；只想问输出时用 `outputAllPassed` |
 | `test_record.dart` | 测试记录模型：一次测试的逐题作答项（带 language，历史可按语言过滤） |
 | `achievement.dart` | 成就状态模型（锁定/解锁） |
 
@@ -47,6 +47,7 @@
 | `python_runtime.dart` ⭐ | **找 Python 解释器**：macOS / Windows 捆绑路径、PATH 回退、`-X utf8` 加固、安装指引 |
 | `c_runtime.dart` ⭐ | **找 C / C++ 编译器**：按平台给候选路径（Windows 含 w64devkit 的安装位置）、`-B` 参数、安装指引 |
 | `temp_workspace.dart` ⭐ | **判题工作目录**。Windows 上刻意避开用户目录（中文用户名会让 `as`/`ld` 找不到文件） |
+| `source_check.dart` ⭐ | **源码语法要求检查**：判题只比对输出，「用不用指针」在输出上完全看不出来 —— 这里到源码里核对（启发式，不是语义分析） |
 | `runtime_installer.dart` | 一键安装编译器：找随包的 `install_mingw.ps1`、跑它、给退路（下载页/安装命令） |
 | `interactive_runner.dart` ⭐ | 运行面板的进程管理：**按语言**决定编译与否，流式 I/O + 逐步喂 stdin |
 
@@ -56,7 +57,7 @@
 |------|------|
 | `progress_service.dart` | 进度存储：键是 `{前缀}{语言}_{题号}`，含旧数据迁移 |
 | `language_service.dart` | 当前语言（`ValueNotifier`，顶栏切换器与各页都监听它） |
-| `settings_service.dart` | 全局设置单例：主题、强调色、字号、超时、各语言的运行时路径 |
+| `settings_service.dart` | 全局设置单例：主题、强调色、字号、超时、各语言的运行时路径、源码语法要求检查开关 |
 | `achievement_service.dart` | 成就系统：判题通过解锁成就/称号 |
 | `export_service.dart` / `import_service.dart` | 进度导出 / 导入 |
 | `error_log_service.dart` | 全局错误收集 + 日志中心的数据源（环境信息含三门语言的运行时路径） |
@@ -156,6 +157,7 @@
 想知道题目长啥样？        → assets/problems/<语言>/01_xxx.json + lib/models/problem.dart
 想知道怎么判对错？        → lib/services/judge_engine.dart      ← 心脏！
 想知道某门语言怎么跑？    → lib/services/language_runtime.dart  ← 语言差异都收在这
+想知道「用了没用上指针」怎么判？→ lib/services/source_check.dart（判题只比输出时分不出，得看源码）
 想知道编译器/解释器怎么找？→ python_runtime.dart / c_runtime.dart
 判题临时目录放哪？        → lib/services/temp_workspace.dart（Windows 中文路径的防御在这）
 想知道界面在哪儿？        → lib/pages/*.dart（按板块找）

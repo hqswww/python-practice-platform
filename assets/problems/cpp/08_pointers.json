@@ -14,6 +14,13 @@
       { "input": "-3\n", "output": "-6" },
       { "input": "21\n", "output": "42" }
     ],
+    "source_requirements": [
+      {
+        "check": "pointer.use",
+        "label": "通过指针把 n 翻倍（*p）",
+        "hint": "`int* p = &n;` 之后要写 `*p = *p * 2;` —— 通过 p 去读写 n。直接写 `n = n * 2;` 结果一样，但指针就没被用上，这题练的就是它。"
+      }
+    ],
     "hints": [
       "指针存的是「地址」：int* p = &n; 这一句里，&n 就是 n 的地址。",
       "要改 n 的值，改的不是 p，而是 *p：写成 *p = *p * 2;",
@@ -49,6 +56,13 @@
       { "input": "0\n", "output": "0\n-1" },
       { "input": "-2\n", "output": "-6\n-7" },
       { "input": "7\n", "output": "21\n20" }
+    ],
+    "source_requirements": [
+      {
+        "check": "reference.use",
+        "label": "声明引用并真的通过它操作 n（int& r = n;）",
+        "hint": "先写 `int& r = n;`，然后用 **r** 去改 n：`r = r * 3;`。引用是 n 的别名，改 r 就是改 n —— 如果直接写 `n = n * 3;`，引用只在声明处出现一次，等于没用到，也就没验证到这个知识点。"
+      }
     ],
     "hints": [
       "引用必须在声明时就写清它是谁的别名：int& r = n;（这个 & 不是取地址）。",
@@ -86,6 +100,13 @@
       { "input": "0 0\n", "output": "0\n0" },
       { "input": "100 250\n", "output": "250\n100" }
     ],
+    "source_requirements": [
+      {
+        "check": "pointer.use",
+        "label": "在 swapByPtr 里通过指针交换（*x / *y）",
+        "hint": "交换要发生在 `swapByPtr` 内部、通过 `*x`、`*y` 读写外部的 a、b。在 `main` 里自己换一遍，输出虽然对，但没练到「指针参数改外部变量」。"
+      }
+    ],
     "hints": [
       "函数要改调用者的变量，就必须先拿到它们的地址，所以参数写成指针。",
       "在函数里用 *x 访问 x 指向的那个变量，先存到临时变量里再交换。",
@@ -121,6 +142,13 @@
       { "input": "-1 5\n", "output": "5\n-1" },
       { "input": "0 0\n", "output": "0\n0" },
       { "input": "42 -42\n", "output": "-42\n42" }
+    ],
+    "source_requirements": [
+      {
+        "check": "reference.use",
+        "label": "在 swapByRef 里通过引用交换（x / y）",
+        "hint": "`swapByRef` 里要直接读写 `x`、`y`（它们是外部变量的别名），并且 `main` 里按题目要求**不带 &** 地调用 `swapByRef(a, b)`。自己用临时变量在 main 里换，输出一样，但引用参数这个知识点没练到。"
+      }
     ],
     "hints": [
       "引用参数在函数里用起来和普通变量一样，不需要写 *。",
@@ -158,6 +186,13 @@
       { "input": "4\n10 -20 30 -40\n", "output": "10 -20 30 -40\n-40 30 -20 10" },
       { "input": "3\n0 0 0\n", "output": "0 0 0\n0 0 0" }
     ],
+    "source_requirements": [
+      {
+        "check": "pointer.walk",
+        "label": "用指针 p 逐个取元素（*(p + i) / p[i]）",
+        "hint": "`int* p = arr;` 之后，两层循环都应当**通过 p** 取元素：正序 `*(p + i)`，倒序 `*(p + n - 1 - i)`。绕过指针直接用 `arr[i]` 虽然输出一样，但这题练的就是指针访问。"
+      }
+    ],
     "hints": [
       "数组名本身就是第一个元素的地址，可以写 int* p = arr;（等价于 int* p = &arr[0];）。",
       "*(p + i) 等价于 p[i]，也等价于 arr[i]：指针加 i 表示往后跳过 i 个元素。",
@@ -193,6 +228,18 @@
       { "input": "1\n-7\n", "output": "-7\n-7\n-7\n-7.00" },
       { "input": "4\n0 -3 9 -3\n", "output": "3\n-3\n9\n0.75" },
       { "input": "2\n5 5\n", "output": "10\n5\n5\n5.00" }
+    ],
+    "source_requirements": [
+      {
+        "check": "pointer.use",
+        "label": "在 analyze 里用指针 p 遍历数组（*(p + i) / p[i]）",
+        "hint": "`analyze` 的第一个参数是指针，函数里要**通过 p** 取数组元素：`int v = *(p + i);`。绕开 p 去用别的变量拿不到数组内容，注意别把结果预先算在 main 里。"
+      },
+      {
+        "check": "reference.use",
+        "label": "通过引用参数 sum / mn / mx 带回结果",
+        "hint": "`sum`、`mn`、`mx` 三个引用参数是函数**带回结果**的通道，函数里必须真的写 `sum += v;`、`mn = ...`。在 `main` 里自己算一遍再打印，输出虽然对，但引用参数这个知识点没练到。"
+      }
     ],
     "hints": [
       "函数要带回三个结果，而 return 只能带一个值回去 —— 用引用参数把结果写回调用者的变量里。",

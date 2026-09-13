@@ -254,5 +254,94 @@ int main() {
         }
       }, timeout: const Timeout(Duration(minutes: 3)));
     }
+
+    group('源码语法要求：不用指针/引用不许过关', () {
+      Future<Problem> find(int id) async {
+        final cats = await allCats();
+        return cats
+            .firstWhere((c) => c.key == '08_pointers')
+            .problems
+            .firstWhere((p) => p.id == id);
+      }
+
+      test('801：直接 n = n * 2 必须判不过（没用到指针）', () async {
+        if (!compilerReady) return;
+        final p = await find(801);
+
+        // 输出与指针版本一字不差，但一个指针都没有
+        const withoutPointer = '''
+#include <iostream>
+using namespace std;
+int main() {
+    int n;
+    cin >> n;
+    n = n * 2;
+    cout << n << endl;
+    return 0;
+}
+''';
+        final r = await JudgeEngine(timeoutMs: 5000).judge(p, withoutPointer);
+
+        expect(r.outputAllPassed, isTrue, reason: '前提：输出确实全对');
+        expect(r.allPassed, isFalse, reason: '没用指针却判过了');
+        expect(r.unmetRequirements.map((e) => e.check), contains('pointer.use'));
+      }, timeout: const Timeout(Duration(minutes: 2)));
+
+      test('802：直接 n = n * 3 必须判不过（没用到引用）', () async {
+        if (!compilerReady) return;
+        final p = await find(802);
+
+        // 注意 `int copy = n; copy = copy - 1;` 是题目本来就要的，
+        // 这里只是把「用引用改 n」换成了「直接改 n」
+        const withoutReference = '''
+#include <iostream>
+using namespace std;
+int main() {
+    int n;
+    cin >> n;
+    n = n * 3;
+    int copy = n;
+    copy = copy - 1;
+    cout << n << endl;
+    cout << copy << endl;
+    return 0;
+}
+''';
+        final r = await JudgeEngine(timeoutMs: 5000).judge(p, withoutReference);
+
+        expect(r.outputAllPassed, isTrue, reason: '前提：输出确实全对');
+        expect(r.allPassed, isFalse, reason: '没用引用却判过了');
+        expect(r.unmetRequirements.map((e) => e.check),
+            contains('reference.use'));
+      }, timeout: const Timeout(Duration(minutes: 2)));
+
+      test('804：在 main 里自己换、不碰引用参数 → 判不过', () async {
+        if (!compilerReady) return;
+        final p = await find(804);
+
+        // 函数签名照题目写（判不了签名的真假），但函数体里一次都没碰 x、y
+        const withoutReference = '''
+#include <iostream>
+using namespace std;
+void swapByRef(int& x, int& y) {
+    return;
+}
+int main() {
+    int a, b;
+    cin >> a >> b;
+    int t = a;
+    a = b;
+    b = t;
+    cout << a << endl;
+    cout << b << endl;
+    return 0;
+}
+''';
+        final r = await JudgeEngine(timeoutMs: 5000).judge(p, withoutReference);
+
+        expect(r.outputAllPassed, isTrue, reason: '前提：输出确实全对');
+        expect(r.allPassed, isFalse, reason: '引用参数从没被用到却判过了');
+      }, timeout: const Timeout(Duration(minutes: 2)));
+    });
   });
 }

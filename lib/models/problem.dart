@@ -54,6 +54,53 @@ class TestCase {
   }
 }
 
+/// 一道题对**源码本身**的要求（不是对输出的要求）。
+///
+/// ## 为什么需要它
+///
+/// 判题只看 stdout。可有些题目的输出**用不用那个语法都长得一样** —— 最典型的是
+/// 指针入门题「用指针读取变量的值」：期望输出是同一个数打两遍，
+/// 那么 `printf("%d\n%d", a, b)`（b 是 a 的普通拷贝）跟 `printf("%d\n%d", n, *p)`
+/// 输出完全一致。学生在练什么，判题一点都看不出来。
+///
+/// 这不是判题引擎的 bug，是「只比对输出」这种判题方式的固有边界：
+/// 输出层面无法分辨，就只能去源码层面看。
+///
+/// ## 它是什么、不是什么
+///
+/// 这是**启发式检查**（关键字级别的文本分析），不是编译器级的语义分析：
+/// 它挡得住「压根没用指针」，挡不住蓄意伪装（声明一个指针然后不用它 ——
+/// 这种由检查里的「必须真的用上」那一半来挡）。
+/// 每道题的要求都必须在题库的参考答案上自证成立（有测试盯着），
+/// 否则就会出现「照抄参考答案都判不过」这种最坏的情况。
+///
+/// [check] 是检查名（见 `lib/services/source_check.dart` 的 `kSourceChecks`），
+/// [label] 和 [hint] 是给学生看的：前者说明要求什么，后者说明怎么改。
+class SourceRequirement {
+  /// 检查名，必须存在于 `kSourceChecks` 里（写错会被题库自检测试抓住）
+  final String check;
+
+  /// 人话版要求，如「用 *p 解引用指针」
+  final String label;
+
+  /// 没做到时给出的具体改法（会显示在判题结果里）
+  final String hint;
+
+  const SourceRequirement({
+    required this.check,
+    required this.label,
+    required this.hint,
+  });
+
+  factory SourceRequirement.fromJson(Map<String, dynamic> json) {
+    return SourceRequirement(
+      check: (json['check'] ?? '') as String,
+      label: (json['label'] ?? '') as String,
+      hint: (json['hint'] ?? '') as String,
+    );
+  }
+}
+
 /// 教程分节：一段讲解（runoob 风格），可含代码与运行结果
 class TutorialSection {
   final String title; // 小节标题，如 "print() 是什么"
@@ -99,6 +146,12 @@ class Problem {
   /// 详细教程（runoob 风格分节）；未提供时为空列表
   final List<TutorialSection> tutorial;
 
+  /// 对源码的语法要求（如「必须真的解引用指针」）；未声明时为空列表。
+  ///
+  /// 见 [SourceRequirement] 的说明：只比对输出时，有些题目用不用某个语法
+  /// 输出完全一样，必须在源码层面补一道检查。
+  final List<SourceRequirement> sourceRequirements;
+
   /// 这道题属于哪门语言。
   ///
   /// **必填**，刻意不给默认值：给默认值的话，将来新加的 C 题忘了传
@@ -127,6 +180,7 @@ class Problem {
     required this.language,
     this.solution = '',
     this.tutorial = const [],
+    this.sourceRequirements = const [],
   });
 
   factory Problem.fromJson(
@@ -152,6 +206,9 @@ class Problem {
       solution: (json['solution'] ?? '') as String,
       tutorial: (json['tutorial'] as List<dynamic>? ?? [])
           .map((e) => TutorialSection.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      sourceRequirements: (json['source_requirements'] as List<dynamic>? ?? [])
+          .map((e) => SourceRequirement.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
   }
