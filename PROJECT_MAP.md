@@ -146,7 +146,7 @@
 |------|------|
 | `test/` | Flutter 自动测试（判题链路、语言维度、响应式、题库结构守卫、深浅主题对比度等） |
 | `tools/` | 题库校验（`verify_bank.py`）、图标生成（`make_icons.py`）、三平台打包脚本、`install_mingw.ps1`、`windows_installer.iss`、`inno/`（安装包中文语言包） |
-| `docs/` | `WINDOWS_MIGRATION.md` / `MACOS_MIGRATION.md` / `LINUX_MIGRATION.md` |
+| `docs/` | `WINDOWS_MIGRATION.md` / `MACOS_MIGRATION.md` / `LINUX_MIGRATION.md`；`releases/` 里是每次发布的 Release 正文（＝应用更新弹窗里的「更新内容」） |
 | `windows/` `macos/` `linux/` | Flutter 三平台构建配置 |
 | `dist/` | 打包产物（dmg / zip / Setup.exe / tar.gz） |
 | `build/` | 编译中间产物（不用管，gitignore） |

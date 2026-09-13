@@ -101,6 +101,7 @@ bash tools/build_linux.sh
 - `docs/MACOS_MIGRATION.md` — macOS 手册（App Sandbox、签名、公证、dmg）
 - `docs/LINUX_MIGRATION.md` — Linux 手册（为什么用系统环境、`.desktop` 与图标）
 - `tools/BANK_SPEC.md` — 题库编写规格（分类、id 段、出题禁区）
+- `docs/releases/` — 每次发布的 Release 正文（也就是应用更新弹窗里显示的「更新内容」）
 - [PROJECT_MAP.md](PROJECT_MAP.md) — 项目结构地图（想改代码先看这个）
 - [DESIGN.md](DESIGN.md) — 设计文档
 - [PROJECT_BACKLOG.md](PROJECT_BACKLOG.md) — 待办 / 想法池
