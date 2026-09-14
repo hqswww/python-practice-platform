@@ -38,7 +38,9 @@ v1.4.0 与更早的内容见下方归档。
 这几处**代码写好了但没人真跑过**，属于发布前该补的验证：
 
 - [ ] **Windows 安装包**：Inno Setup 只能在 Windows 上跑，`.iss` 是静态核对过的
-- [ ] **Linux 打包**：`build_linux.sh` 从未在真 Linux 上跑过
+- [x] **Linux 打包**：已在真 Linux 上跑过一次（2026-09），当场发现并修掉了产物路径 bug
+      （见下方「踩过的坑 · 构建脚本」）。**改完还没复跑** —— 下次在 Linux 上
+      跑一遍 `bash tools/build_linux.sh` 确认到底，顺便看 tarball 能不能解压即用
 - [ ] **exe 属性页中文**：右键 `code_workbook.exe` → 属性 → 详细信息，
       「文件说明/产品名称」应显示「编程练习册」而不是问号
       （`llvm-rc` 编译验证通过，但 MSVC 的 `rc.exe` 行为可能不同）
@@ -286,6 +288,17 @@ v1.4.0 与更早的内容见下方归档。
   必须自己挡 —— 这两类要分开对待，一刀切会错一头
 - 顺带：用 `dart:io` 的 `HttpClient` 时 `findProxyFromEnvironment` 要显式设，
   否则国内直连 GitHub 常常不通
+
+### 构建脚本
+- **`uname -m` 的架构名 ≠ Flutter 的构建目录名**：脚本用 `uname -m` 得到 `x86_64`
+  去拼 `build/linux/${ARCH_TAG}/release/bundle`，而 Flutter 用的是**它自己的**
+  `x64` / `arm64`。路径永远不存在 → 被兜底 `find ... -name bundle` 接住 →
+  捞到几天前 `flutter run` 留下的 `build/linux/x64/**debug**/bundle`。
+  后面每一步都"成功"，只是打出来的是个 **debug 版的旧程序**，最后卡在
+  「可执行文件不在预期位置」——因为那个旧产物里的可执行文件还叫 `python_practice`。
+  **两个教训**：架构名只用来给分发包命名；兜底搜索必须限定在 `release` 里，
+  宁可报错也不能捞到近似的东西（"成功但发错"比"失败"贵得多）。
+  这条是**真机跑出来的**，静态审了两个月没发现。
 
 ### 测试与工具
 - **rootBundle 在同一个测试文件里只能成功加载一次**；每个语言的结构守卫要单独一个文件

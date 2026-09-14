@@ -12,6 +12,13 @@ import 'package:flutter_test/flutter_test.dart';
 /// 这些断言读的是 CMake / Xcode / GTK 的配置文件，编译期不会校验它们，
 /// 只能靠测试兜住。
 void main() {
+  /// 只看**生效的行**：注释里提到某个写法（比如解释它为什么被改掉）不该让测试挂掉。
+  /// 这个坑当场踩过一次 —— 一句「原来这里写的是 com.example」差点把测试弄挂。
+  String codeOnly(String text) => text
+      .split('\n')
+      .where((l) => !l.trimLeft().startsWith('#'))
+      .join('\n');
+
   String read(String path) {
     final f = File(path);
     expect(f.existsSync(), isTrue, reason: '找不到 $path（测试的工作目录应是项目根目录）');
@@ -232,6 +239,33 @@ void main() {
       final sh = read('tools/build_macos.sh');
       expect(sh, contains('PYTHONDONTWRITEBYTECODE=1'),
           reason: '构建期跑一次解释器就会把 .pyc 打进包并封存');
+    });
+  });
+
+  group('build_linux.sh 的产物路径（在真 Linux 上跑出来的 bug）', () {
+    // 实际发生的事：脚本用 `uname -m` 得到的 x86_64 去拼 Flutter 的构建目录
+    //   BUNDLE_DIR="build/linux/${ARCH_TAG}/release/bundle"
+    // 而 Flutter 用的是**它自己的**架构名 `x64` / `arm64` —— 两个写法不是一套。
+    // 于是路径永远不存在，接着被一个宽松的兜底 `find ... -name bundle` 接住，
+    // 捞到了几天前 `flutter run` 留下的 build/linux/x64/**debug**/bundle。
+    // 之后每一步都"成功"，只是打出来的是个旧 debug 程序；最后卡在
+    // 「可执行文件不在预期位置」，因为那个旧产物里还叫 python_practice。
+    test('不许用 uname 的架构名去拼 Flutter 的构建目录', () {
+      final code = codeOnly(read('tools/build_linux.sh'));
+      expect(code, isNot(contains('build/linux/\${ARCH_TAG}')),
+          reason: 'Flutter 的构建目录是 build/linux/x64/... 或 arm64/...，'
+              '跟 uname -m 的 x86_64 / aarch64 不是一套写法；'
+              'ARCH_TAG 只该用来给分发包命名');
+    });
+
+    test('只在 release 目录里找产物，不给 debug 产物兜底的机会', () {
+      final code = codeOnly(read('tools/build_linux.sh'));
+      expect(code, contains('build/linux/*/release/bundle'),
+          reason: '产物路径要从 release 目录里找');
+      expect(code, isNot(contains('-name bundle')),
+          reason: '`find -name bundle` 会把 build/linux/<arch>/debug/bundle 也捞进来 —— '
+              '那是 `flutter run` 留下的旧产物，而且后面每一步都会"成功"，'
+              '根本看不出打错了东西。宁可直接失败');
     });
   });
 

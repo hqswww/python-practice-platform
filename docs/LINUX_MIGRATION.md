@@ -144,6 +144,9 @@ bash tools/build_linux.sh
   - `APPLICATION_ID`：`com.sakiri.python_practice` → **`com.sakiri.python-practice`**（与 macOS 的 bundle id 一致）
   - 窗口标题：`python_practice` → **`编程练习册`**
 - ✅ `tools/build_linux.sh` 一键打包（含平台护栏：只能在 Linux 上跑）
+  - ⚠️ 2026-09 首次在真 Linux 上跑时暴露过一个产物路径 bug（架构名拼错 →
+    兜底搜索捞到旧的 debug 产物），已修：产物路径改为只在
+    `build/linux/*/release/bundle` 里找，且必须唯一。修完尚未复跑
 - ✅ `tools/linux/install.sh` 用户级安装 / 卸载（`--uninstall`）
 - ✅ `tools/make_icons.py` 增加 Linux PNG 输出（128/256/512）
 - ✅ 设置页运行时自检（`LanguageRuntime.checkStatus()`）：

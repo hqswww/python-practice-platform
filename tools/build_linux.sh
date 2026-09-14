@@ -85,8 +85,14 @@ case "$(uname -m)" in
   *) ARCH_TAG="$(uname -m)" ;;
 esac
 
+# ⚠️ ARCH_TAG 只用来给**分发包命名**（`x86_64` 是 Linux 圈的通用写法），
+#    不能拿去拼 Flutter 的构建目录 —— Flutter 用的是自己的架构名 `x64` / `arm64`，
+#    两套写法不一样。曾经这里写成 `build/linux/${ARCH_TAG}/release/bundle`，
+#    在 x86_64 机器上就是找一个根本不存在的 `build/linux/x86_64/...`，
+#    于是被下面的兜底 find 接住，捞起一个**旧的 debug 产物**继续往下走。
+#    产物路径统一在编译之后从 release 目录里找（见第 1 步末尾）。
+
 DIST_DIR="dist/${APP_DISPLAY_NAME}-linux-${ARCH_TAG}"
-BUNDLE_DIR="build/linux/${ARCH_TAG}/release/bundle"
 ICON_DIR="linux/resources"
 INSTALLER="tools/linux/install.sh"
 
@@ -102,12 +108,33 @@ fi
 
 flutter build linux --release
 
-# 不写死路径：Flutter 的构建目录名可能随版本/平台变化，直接找 bundle
-if [[ ! -d "$BUNDLE_DIR" ]]; then
-  BUNDLE_DIR="$(find build/linux -maxdepth 3 -type d -name bundle -print -quit || true)"
-fi
-[[ -n "${BUNDLE_DIR:-}" && -d "$BUNDLE_DIR" ]] || {
-  echo "❌ 没找到构建产物 bundle（找过 build/linux/*/release/bundle）"; exit 1;
+# 产物路径只从 **release** 目录里找，且必须唯一。
+#
+# 不写死架构目录名：Flutter 用的是 x64 / arm64，跟 `uname -m` 的
+# x86_64 / aarch64 不是一套写法（这就是上面注释里那个 bug 的来源）。
+#
+# ⚠️ 这里**刻意不做 `find ... -name bundle` 那种宽松兜底**。踩过一次：
+#    路径拼错 → 找不到 → 兜底 find 捞到了 build/linux/x64/**debug**/bundle ——
+#    一个几天前 `flutter run` 留下的旧产物。后面的步骤全都"成功"了，
+#    只是打出来的是一个 debug 版的旧程序。**宁可直接失败，也不能发错东西。**
+BUNDLE_DIR=""
+for d in build/linux/*/release/bundle; do
+  [[ -d "$d" ]] || continue
+  if [[ -n "$BUNDLE_DIR" ]]; then
+    echo "❌ 找到多个 release 产物，不知道该用哪个："
+    echo "     $BUNDLE_DIR"
+    echo "     $d"
+    echo "   先清掉再来一次：rm -rf build/linux"
+    exit 1
+  fi
+  BUNDLE_DIR="$d"
+done
+
+[[ -n "$BUNDLE_DIR" ]] || {
+  echo "❌ 没找到 release 产物（找过 build/linux/*/release/bundle）。"
+  echo "   上面 flutter build 的输出里应当有一行「✓ Built build/linux/<arch>/release/bundle/…」，"
+  echo "   对照一下它到底写在哪儿。"
+  exit 1
 }
 echo "产物: $BUNDLE_DIR"
 ls -1 "$BUNDLE_DIR"
