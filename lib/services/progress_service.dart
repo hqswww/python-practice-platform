@@ -29,6 +29,17 @@ class ProgressService {
   static const String _testPrefix = 'test_';
   static const String _solvedValue = 'solved';
 
+  /// 练习活动记录的键前缀：`activity_<语言>_<yyyy-MM-dd>` → 当天首次做对的题数。
+  ///
+  /// 为什么需要它：其它进度都只存「做没做过」（布尔）和错题次数，
+  /// **没有时间维度** —— 于是画不出练习趋势、活跃度、连续天数。
+  /// 记录点只有一个：`markSolved` 里「未解决 → 已解决」那一次。
+  static const String _activityPrefix = 'activity_';
+
+  /// 活动记录最多保留多少天。再久的历史对「最近怎么样」没有增量价值，
+  /// 而键是每天每语言一个，无限增长不合适。
+  static const int activityKeepDays = 365;
+
   /// 记录进度数据格式版本的键。
   /// 缺失或 0 = 旧格式（键里没有语言）；1 = 新格式。
   static const String _schemaKey = 'progress_schema_version';
@@ -132,12 +143,138 @@ class ProgressService {
   // ---------------- 已解决 ----------------
 
   /// 标记一道题已解决（同时从错题本移除）
+  ///
+  /// 只有「未解决 → 已解决」这一次会记进活动日志 —— 反复判同一道题
+  /// 不该让「今天做了多少题」灌水。
   Future<void> markSolved(ProgrammingLanguage language, int problemId) async {
+    final already = await isSolved(language, problemId);
     final prefs = await _ensure();
     await prefs.setString(_key(_prefix, language, problemId), _solvedValue);
     _cache[_ref(language, problemId)] = true;
     await clearWrong(language, problemId);
+    if (!already) await _bumpActivity(prefs, language, DateTime.now());
   }
+
+  // ---------------- 练习活动（按天） ----------------
+
+  /// 把某天某语言的计数 +1，并顺手清理过期的键
+  Future<void> _bumpActivity(
+    SharedPreferences prefs,
+    ProgrammingLanguage language,
+    DateTime day,
+  ) async {
+    final key = _activityKey(language, day);
+    await prefs.setInt(key, (prefs.getInt(key) ?? 0) + 1);
+    await _pruneActivity(prefs, day);
+  }
+
+  static String _activityKey(ProgrammingLanguage language, DateTime day) =>
+      '$_activityPrefix${language.id}_${dayTag(day)}';
+
+  /// 日期标签 `yyyy-MM-dd`（导出/导入用它当键，所以是公开的）
+  static String dayTag(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  /// 删掉太老的记录。只删自己这个前缀、且能解析出日期的键 ——
+  /// 万一有人手工塞了别的键，不动它。
+  Future<void> _pruneActivity(SharedPreferences prefs, DateTime today) async {
+    final cutoff = DateTime(today.year, today.month, today.day)
+        .subtract(const Duration(days: activityKeepDays));
+    final doomed = <String>[];
+    for (final key in prefs.getKeys()) {
+      if (!key.startsWith(_activityPrefix)) continue;
+      final tag = key.substring(_activityPrefix.length);
+      final i = tag.lastIndexOf('_');
+      if (i < 0) continue;
+      final day = DateTime.tryParse(tag.substring(i + 1));
+      if (day != null && day.isBefore(cutoff)) doomed.add(key);
+    }
+    for (final key in doomed) {
+      await prefs.remove(key);
+    }
+  }
+
+  /// 合并一批活动记录（导入用）。
+  ///
+  /// 同日取**较大值**而不是相加：同一个文件导入两次不该让计数翻倍，
+  /// 两台机器合并时也宁可保守（相加会凭空造出「那天做了 20 题」）。
+  /// 返回真正变大了的天数。
+  Future<int> mergeActivity(
+    ProgrammingLanguage language,
+    Map<DateTime, int> incoming,
+  ) async {
+    final prefs = await _ensure();
+    var changed = 0;
+    for (final e in incoming.entries) {
+      final key = _activityKey(language, e.key);
+      final now = prefs.getInt(key) ?? 0;
+      if (e.value > now) {
+        await prefs.setInt(key, e.value);
+        changed++;
+      }
+    }
+    if (changed > 0) await _pruneActivity(prefs, DateTime.now());
+    return changed;
+  }
+
+  /// 某语言的练习活动：日期（当天零点）→ 当天首次做对的题数。
+  ///
+  /// [days] 只取最近这些天（含今天）；不传则返回保留下来的全部。
+  Future<Map<DateTime, int>> activityByDay(
+    ProgrammingLanguage language, {
+    int? days,
+  }) async {
+    final prefs = await _ensure();
+    final tag = '${language.id}_';
+    final out = <DateTime, int>{};
+    for (final key in prefs.getKeys()) {
+      if (!key.startsWith(_activityPrefix)) continue;
+      final rest = key.substring(_activityPrefix.length);
+      if (!rest.startsWith(tag)) continue;
+      final day = DateTime.tryParse(rest.substring(tag.length));
+      if (day == null) continue;
+      final d = DateTime(day.year, day.month, day.day);
+      out[d] = (out[d] ?? 0) + (prefs.getInt(key) ?? 0);
+    }
+    if (days != null) {
+      final today = DateTime.now();
+      final from = DateTime(today.year, today.month, today.day)
+          .subtract(Duration(days: days - 1));
+      out.removeWhere((d, _) => d.isBefore(from));
+    }
+    return out;
+  }
+
+  /// 某语言的活动总天数（有记录就有一天，不看做了几道）
+  Future<int> activeDayCount(ProgrammingLanguage language) async =>
+      (await activityByDay(language)).length;
+
+  /// 连续练习天数：从今天（或昨天）往回数，中间断一天就停。
+  ///
+  /// 「今天还没做」不该判定为断签 —— 那样早上打开应用会看到 0，
+  /// 所以从今天往回数时允许第一天缺，从昨天起算。
+  Future<int> streakDays(ProgrammingLanguage language) async {
+    final days = await activityByDay(language);
+    if (days.isEmpty) return 0;
+    final now = DateTime.now();
+    var cursor = DateTime(now.year, now.month, now.day);
+    if (!days.containsKey(cursor)) {
+      cursor = cursor.subtract(const Duration(days: 1));
+      if (!days.containsKey(cursor)) return 0;
+    }
+    var n = 0;
+    while (days.containsKey(cursor)) {
+      n++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+    return n;
+  }
+
+  /// 读取某天的活动计数（测试与界面用）
+  Future<int> activityOn(ProgrammingLanguage language, DateTime day) async =>
+      (await _ensure()).getInt(_activityKey(language, day)) ?? 0;
 
   /// 查询一道题是否已解决
   Future<bool> isSolved(ProgrammingLanguage language, int problemId) async {

@@ -6,6 +6,7 @@ import '../services/stats_service.dart';
 import 'about_page.dart';
 import 'settings_page.dart';
 import 'widgets/language_switcher.dart';
+import 'widgets/stat_charts.dart';
 import 'widgets/responsive.dart';
 
 /// 「我的」页：三门语言的练习/测试数据 + 基于数据的结论 + 设置/关于入口。
@@ -150,7 +151,50 @@ class _MinePageState extends State<MinePage> {
                   const SizedBox(height: 12),
                   _LanguagesCard(stats: stats),
                   const SizedBox(height: 12),
-                  _CategoryCard(stats: stats),
+                  // 宽屏把「难度分布」和「测试趋势」并排 —— 两张图都矮，
+                  // 竖着堆会把页面拉得很长，横着看还能互相参照
+                  LayoutBuilder(
+                    builder: (context, c) {
+                      const gap = 12.0;
+                      final twoCol = c.maxWidth >= 720;
+                      final w = twoCol ? (c.maxWidth - gap) / 2 : c.maxWidth;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          SizedBox(
+                            width: w,
+                            child: _ChartCard(
+                              title: '难度分布',
+                              subtitle: '做对的题里，各难度占多少',
+                              child: DifficultyPieChart(stats: stats),
+                            ),
+                          ),
+                          SizedBox(
+                            width: w,
+                            child: _ChartCard(
+                              title: '测试正确率',
+                              subtitle: '最近 ${stats.allTestAccuracies.length} 次',
+                              child: TestTrendChart(stats: stats),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _ChartCard(
+                    title: '练习节奏',
+                    subtitle: stats.streakTextOn(DateTime.now()),
+                    child: DailyActivityChart(stats: stats),
+                  ),
+                  const SizedBox(height: 12),
+                  _ChartCard(
+                    title: '分类完成度',
+                    subtitle: '当前语言（${languageService.value.displayName}）的 12 个大类',
+                    child: CategoryBarChart(
+                      languageStats: stats.forLanguage(languageService.value)),
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -379,6 +423,8 @@ class _LanguagesCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 12),
+            LanguageProgressChart(stats: stats),
+            const SizedBox(height: 12),
             for (final l in stats.languages) _LanguageRow(stats: l),
           ],
         ),
@@ -413,20 +459,11 @@ class _LanguageRow extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: stats.ratio,
-              minHeight: 8,
-              backgroundColor: scheme.surfaceContainerHighest,
-            ),
-          ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             [
-              if (stats.testAccuracies.isNotEmpty)
-                '测试 ${stats.testAccuracies.length} 次'
+              if (stats.testPoints.isNotEmpty)
+                '测试 ${stats.testPoints.length} 次'
               else
                 '还没测过',
               if (stats.wrong > 0) '错题 ${stats.wrong} 道',
@@ -441,77 +478,37 @@ class _LanguageRow extends StatelessWidget {
   }
 }
 
-/// 当前语言的分类完成度（12 个大类）
-///
-/// 只显示当前语言：三门语言各 12 个分类一起铺出来太长，而且分类名还不一样。
-class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.stats});
+/// 图表卡片外壳：标题 + 副标题 + 图
+class _ChartCard extends StatelessWidget {
+  const _ChartCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
 
-  final OverallStats stats;
+  final String title;
+  final String subtitle;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final lang = languageService.value;
-    final data = stats.languages.firstWhere(
-      (l) => l.language == lang,
-      orElse: () => stats.languages.first,
-    );
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text('分类完成度',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(width: 8),
-                Text('（${data.language.displayName}）',
-                    style: TextStyle(
-                        fontSize: 12, color: scheme.onSurfaceVariant)),
-              ],
-            ),
+            Text(title,
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            Text(subtitle,
+                style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 12),
-            for (final c in data.categories)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 96,
-                      child: Text(c.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12)),
-                    ),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(5),
-                        child: LinearProgressIndicator(
-                          value: c.ratio,
-                          minHeight: 6,
-                          backgroundColor: scheme.surfaceContainerHighest,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width: 34,
-                      child: Text(
-                        '${c.solved}/${c.total}',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                            fontSize: 11, color: scheme.onSurfaceVariant),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            child,
           ],
         ),
       ),

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,13 +69,17 @@ void main() {
         await progress.markSolved(ProgrammingLanguage.python, id);
       }
       await progress.recordWrong(ProgrammingLanguage.python, 201);
-      // 一条测试记录，让「测试正确率」那条结论有话可说
-      await progress.addTestRecord(TestRecord(
-        timestamp: DateTime.now(),
-        correctCount: 3,
-        totalCount: 5,
-        items: const [],
-      ));
+      // 三次测试记录：两次以上折线图才画得出来（只做过 1 次时图区是占位文案），
+      // 三次以上「正确率趋势」那条结论才会出现
+      final now = DateTime.now();
+      for (var i = 2; i >= 0; i--) {
+        await progress.addTestRecord(TestRecord(
+          timestamp: now.subtract(Duration(days: i)),
+          correctCount: 2 + i,
+          totalCount: 5,
+          items: const [],
+        ));
+      }
 
       tester.view.physicalSize = const Size(900, 2400);
       tester.view.devicePixelRatio = 1.0;
@@ -111,6 +116,15 @@ void main() {
       expect(text, contains('分类完成度'));
       expect(text, contains('基础语法'));
       expect(text, contains('（Python）'));
+
+      // 图表：五块都在（C 段接的 fl_chart）
+      expect(find.text('难度分布'), findsOneWidget);
+      expect(find.text('测试正确率'), findsOneWidget);
+      expect(find.text('练习节奏'), findsOneWidget);
+      // 直接按类型找：fl_chart 的图表是公开类型
+      expect(find.byType(BarChart), findsWidgets, reason: '条形图没渲染出来');
+      expect(find.byType(PieChart), findsWidgets, reason: '环形图没渲染出来');
+      expect(find.byType(LineChart), findsWidgets, reason: '折线图没渲染出来');
 
       // 两个入口都在页面上
       expect(find.text('设置'), findsOneWidget);

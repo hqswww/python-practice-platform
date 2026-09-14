@@ -16,6 +16,18 @@ import '../models/test_record.dart';
 import 'achievement_service.dart';
 import 'progress_service.dart';
 
+/// 一次测试的结果点（带时间）
+///
+/// 时间戳是必须的：结论和趋势图都要「最近 N 次」，而跨语言合并时
+/// 只有带上时间才能正确排序。早先只存正确率序列时，合并后的「最近一半」
+/// 可能整段都是另一门语言的 —— 那是**静默算错**。
+class TestPoint {
+  final DateTime at;
+  final double accuracy;
+
+  const TestPoint(this.at, this.accuracy);
+}
+
 /// 一个分类的完成度
 class CategoryProgress {
   final String key;
@@ -52,8 +64,14 @@ class LanguageStats {
   /// 全部 12 个分类（按序号），界面画分类完成度用
   final List<CategoryProgress> categories;
 
-  /// 这门语言历次测试的正确率，**按时间正序**（最多保留最近 10 次）
-  final List<double> testAccuracies;
+  /// 这门语言历次测试的结果，**按时间正序**（最多保留最近 10 次）
+  final List<TestPoint> testPoints;
+
+  /// 练习活动：日期（当天零点）→ 当天首次做对的题数（最近 60 天）
+  final Map<DateTime, int> activity;
+
+  /// 这门语言的连续练习天数
+  final int streakDays;
 
   const LanguageStats({
     required this.language,
@@ -66,7 +84,9 @@ class LanguageStats {
     required this.solvedByDifficulty,
     required this.totalByDifficulty,
     required this.categories,
-    required this.testAccuracies,
+    required this.testPoints,
+    this.activity = const {},
+    this.streakDays = 0,
   });
 
   double get ratio => total == 0 ? 0 : solved / total;
@@ -97,14 +117,74 @@ class OverallStats {
   List<LanguageStats> get untouchedLanguages =>
       languages.where((l) => !l.started && l.total > 0).toList();
 
-  /// 全部测试正确率，按时间正序（跨语言合并 —— 用户看的是「我最近怎么样」）
-  List<double> get allTestAccuracies {
-    final all = <double>[];
+  /// 三门语言合并后的练习活动（同一天做了多少题）
+  Map<DateTime, int> get mergedActivity {
+    final out = <DateTime, int>{};
     for (final l in languages) {
-      all.addAll(l.testAccuracies);
+      l.activity.forEach((d, n) => out[d] = (out[d] ?? 0) + n);
     }
-    return all;
+    return out;
   }
+
+  /// 整体连续练习天数（任意一门有活动就算）。
+  ///
+  /// [today] 可传，测试靠它固定「今天」—— 否则结果随运行日期变。
+  /// 「今天还没做」不算断签：从昨天起算，免得早上打开就看到 0。
+  int streakOn(DateTime today) {
+    final days = mergedActivity;
+    if (days.isEmpty) return 0;
+    var cursor = DateTime(today.year, today.month, today.day);
+    if (!days.containsKey(cursor)) {
+      cursor = cursor.subtract(const Duration(days: 1));
+      if (!days.containsKey(cursor)) return 0;
+    }
+    var n = 0;
+    while (days.containsKey(cursor)) {
+      n++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+    return n;
+  }
+
+  int get streakDays => streakOn(DateTime.now());
+
+  /// 最近 [days] 天一共做了多少题（[today] 同上，测试可传）
+  int activityInLastDays(int days, DateTime today) {
+    final from = DateTime(today.year, today.month, today.day)
+        .subtract(Duration(days: days - 1));
+    var sum = 0;
+    mergedActivity.forEach((d, n) {
+      if (!d.isBefore(from)) sum += n;
+    });
+    return sum;
+  }
+
+  /// 全部测试结果，按**真实时间**正序（跨语言合并 —— 用户看的是「我最近怎么样」）
+  List<TestPoint> get allTestPoints {
+    final all = <TestPoint>[];
+    for (final l in languages) {
+      all.addAll(l.testPoints);
+    }
+    return all..sort((a, b) => a.at.compareTo(b.at));
+  }
+
+  /// 取某门语言的统计（找不到就给第一门，避免调用方到处判空）
+  LanguageStats forLanguage(ProgrammingLanguage language) => languages
+      .firstWhere((l) => l.language == language, orElse: () => languages.first);
+
+  /// 「练习节奏」卡片的副标题：连续天数 + 最近 7 天做了多少
+  String streakTextOn(DateTime today) {
+    final streak = streakOn(today);
+    final week = activityInLastDays(7, today);
+    final parts = <String>[];
+    if (streak >= 2) parts.add('已连续 $streak 天');
+    if (week > 0) parts.add('最近 7 天 $week 题');
+    return parts.isEmpty ? '按天记录做对的题数' : parts.join(' · ');
+  }
+
+  /// 全部测试的正确率，按时间正序
+  List<double> get allTestAccuracies =>
+      [for (final p in allTestPoints) p.accuracy];
 }
 
 /// 一条结论的「语气」—— 用图标/颜色区分，文案本身不带 emoji
@@ -188,17 +268,19 @@ class StatsService {
       solvedPerCategory[c.key] = catSolved;
     }
 
+    final activity = await _progress.activityByDay(lang, days: 60);
+    final streak = await _progress.streakDays(lang);
     final records = await _progress.testRecords(language: lang);
     // 按时间正序，只留最近 10 次：看趋势不需要更久的历史
     final sorted = List<TestRecord>.of(records)
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-    final accuracies = <double>[
+    final points = <TestPoint>[
       for (final r in sorted)
-        if (r.totalCount > 0) r.correctCount / r.totalCount,
+        if (r.totalCount > 0) TestPoint(r.timestamp, r.correctCount / r.totalCount),
     ];
-    final recent = accuracies.length <= 10
-        ? accuracies
-        : accuracies.sublist(accuracies.length - 10);
+    final recent = points.length <= 10
+        ? points
+        : points.sublist(points.length - 10);
 
     return LanguageStats(
       language: lang,
@@ -219,7 +301,9 @@ class StatsService {
             total: totalPerCategory[c.key] ?? c.total,
           ),
       ],
-      testAccuracies: recent,
+      testPoints: recent,
+      activity: activity,
+      streakDays: streak,
     );
   }
 }
@@ -313,7 +397,40 @@ List<Conclusion> buildConclusions(OverallStats stats) {
     ));
   }
 
-  // ⑤ 还没开始的语言（最多提一门，免得像催作业）
+  // ⑤ 连续练习天数与本周节奏
+  //
+  // 「本周比上周多」需要至少两周都有记录才谈得上比较；只做过两三天就下
+  // 「变勤快了」的结论，和只有一次测试就谈趋势是同一类错话。
+  final streak = stats.streakOn(DateTime.now());
+  final thisWeek = stats.activityInLastDays(7, DateTime.now());
+  final lastWeek = stats.activityInLastDays(14, DateTime.now()) - thisWeek;
+  if (out.length < 4 && streak >= 2) {
+    out.add(Conclusion(
+      '已经连续练习 $streak 天了。',
+      ConclusionTone.progress,
+    ));
+  }
+  if (out.length < 4 && thisWeek > 0 && lastWeek > 0) {
+    final diff = thisWeek - lastWeek;
+    if (diff >= 5) {
+      out.add(Conclusion(
+        '最近 7 天做了 $thisWeek 题，比上一个 7 天多 $diff 题。',
+        ConclusionTone.progress,
+      ));
+    } else if (diff <= -5) {
+      out.add(Conclusion(
+        '最近 7 天做了 $thisWeek 题，比上一个 7 天少 ${-diff} 题。',
+        ConclusionTone.attention,
+      ));
+    } else {
+      out.add(Conclusion(
+        '最近 7 天做了 $thisWeek 题，和上一个 7 天差不多。',
+        ConclusionTone.progress,
+      ));
+    }
+  }
+
+  // ⑥ 还没开始的语言（最多提一门，免得像催作业）
   if (out.length < 4) {
     final untouched = stats.untouchedLanguages;
     if (untouched.isNotEmpty && started.isNotEmpty) {
@@ -328,7 +445,7 @@ List<Conclusion> buildConclusions(OverallStats stats) {
     }
   }
 
-  // ⑥ 困难题进度（做得动才提，一道没做的时候提它没意义）
+  // ⑦ 困难题进度（做得动才提，一道没做的时候提它没意义）
   if (out.length < 4) {
     var hardSolved = 0, hardTotal = 0;
     for (final l in stats.languages) {

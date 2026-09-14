@@ -124,9 +124,28 @@ class ImportService {
       }
     }
 
+    // 练习活动：同日取较大值（见 ProgressService.mergeActivity）。
+    // 老导出文件没有这个字段 → 当成空，不影响导入。
+    var activityDays = 0;
+    final rawActivity = data['activity'];
+    if (rawActivity is Map) {
+      final incoming = <DateTime, int>{};
+      rawActivity.forEach((k, v) {
+        final day = DateTime.tryParse(k.toString());
+        final n = (v as num?)?.toInt() ?? 0;
+        if (day != null && n > 0) {
+          incoming[DateTime(day.year, day.month, day.day)] = n;
+        }
+      });
+      if (incoming.isNotEmpty) {
+        activityDays = await _progress.mergeActivity(lang, incoming);
+      }
+    }
+
     final message =
         '已导入：解决 $solvedMarked 题 · 收藏 +$favoritesAdded · '
-        '测试历史 +$testAdded 条${testSkipped > 0 ? '（跳过重复 $testSkipped）' : ''}';
+        '测试历史 +$testAdded 条${testSkipped > 0 ? '（跳过重复 $testSkipped）' : ''}'
+        '${activityDays > 0 ? ' · 练习记录 +$activityDays 天' : ''}';
 
     return ProgressImportSummary(
       problemsTotal: problems.length,

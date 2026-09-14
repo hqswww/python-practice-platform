@@ -20,6 +20,8 @@ void main() {
     int hardSolved = 0,
     int hardTotal = 12,
     List<double> accuracies = const [],
+    Map<DateTime, int> activity = const {},
+    int streak = 0,
   }) =>
       LanguageStats(
         language: l,
@@ -40,7 +42,16 @@ void main() {
           Difficulty.hard: hardTotal,
         },
         categories: const [],
-        testAccuracies: accuracies,
+        // 依次往后排时间，保证顺序稳定（跨语言合并时会按时间排）
+        testPoints: [
+          for (var i = 0; i < accuracies.length; i++)
+            TestPoint(
+              DateTime(2026, 1, 1).add(Duration(days: i)),
+              accuracies[i],
+            ),
+        ],
+        activity: activity,
+        streakDays: streak,
       );
 
   OverallStats stats(List<LanguageStats> ls) => OverallStats(languages: ls);
@@ -211,6 +222,61 @@ void main() {
       ]));
       // 3 次了，可以谈趋势
       expect(t, isNot(contains('再做')));
+    });
+  });
+
+  group('练习节奏（活动记录）', () {
+    /// 造「从今天往前 n 天，每天做 k 题」的活动记录
+    Map<DateTime, int> recent(int days, int perDay) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      return {
+        for (var i = 0; i < days; i++)
+          today.subtract(Duration(days: i)): perDay,
+      };
+    }
+
+    test('连续两天以上会明说', () {
+      final t = textOf(stats([
+        lang(ProgrammingLanguage.python, solved: 10, activity: recent(3, 1)),
+      ]));
+      expect(t, contains('连续练习 3 天'));
+    });
+
+    test('只做过今天一天 → 不提「连续」，一天谈不上连续', () {
+      final t = textOf(stats([
+        lang(ProgrammingLanguage.python, solved: 10, activity: recent(1, 3)),
+      ]));
+      expect(t, isNot(contains('连续练习')));
+    });
+
+    test('两周都有记录才比较节奏', () {
+      // 前 7 天各 1 题、再前 7 天各 1 题 → 差不多
+      final t = textOf(stats([
+        lang(ProgrammingLanguage.python, solved: 10, activity: recent(14, 1)),
+      ]));
+      expect(t, contains('最近 7 天做了 7 题'));
+      expect(t, contains('差不多'));
+    });
+
+    test('本周明显变多会说多', () {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final activity = <DateTime, int>{
+        for (var i = 0; i < 7; i++) today.subtract(Duration(days: i)): 3,
+        for (var i = 7; i < 14; i++) today.subtract(Duration(days: i)): 1,
+      };
+      final t = textOf(stats([
+        lang(ProgrammingLanguage.python, solved: 10, activity: activity),
+      ]));
+      expect(t, contains('多 14 题'));
+    });
+
+    test('只做过两三天就不比较节奏（那是过度解读）', () {
+      final t = textOf(stats([
+        lang(ProgrammingLanguage.python, solved: 10, activity: recent(3, 5)),
+      ]));
+      expect(t, isNot(contains('上一个 7 天')));
     });
   });
 

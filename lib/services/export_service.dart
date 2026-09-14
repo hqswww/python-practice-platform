@@ -66,6 +66,12 @@ class ExportService {
           'favorite': favs.contains(p.id),
         };
       }).toList(),
+      // 练习活动（按天）。**JSON 才有**：CSV 是逐题一张表，装不下「按天」的维度。
+      // 不带它的话，换台机器导入就丢了练习趋势与连续天数。
+      'activity': {
+        for (final e in (await _progress.activityByDay(lang)).entries)
+          ProgressService.dayTag(e.key): e.value,
+      },
       'testHistory': records.map((r) {
         return {
           'timestamp': r.timestamp.toIso8601String(),
