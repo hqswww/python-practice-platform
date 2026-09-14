@@ -13,7 +13,7 @@ import '../services/settings_service.dart';
 import '../models/programming_language.dart';
 import '../services/language_service.dart';
 import '../services/language_runtime.dart';
-import '../services/update_service.dart';
+import 'about_page.dart';
 import 'achievements_page.dart';
 import 'log_center_page.dart';
 import 'setup_wizard_page.dart';
@@ -21,7 +21,7 @@ import 'widgets/accent_color_picker.dart';
 import 'widgets/language_switcher.dart';
 import 'widgets/responsive.dart';
 import 'widgets/runtime_status_row.dart';
-import 'widgets/update_dialog.dart';
+import 'widgets/update_panel.dart';
 
 /// 设置分类：宽屏时作为左栏条目，窄屏时作为「点进去看详情」的入口
 class _CategoryMeta {
@@ -115,9 +115,6 @@ class _SettingsPageState extends State<SettingsPage> {
   final ProgressService _progress = ProgressService();
   final ExportService _export = ExportService();
   final ImportService _import = ImportService();
-
-  /// 「立即检查更新」是否正在进行（防连点、按钮转圈）
-  bool _checkingUpdate = false;
 
   // 动画控制
   int _hoveredCard = -1;
@@ -760,81 +757,18 @@ class _SettingsPageState extends State<SettingsPage> {
 
   /// 「检查更新」卡片：开关 + 立即检查 + 当前版本
   ///
+  /// 内容本体是共用的 [UpdatePanel] —— 新的「关于」页也用它。
   /// 开关默认**开**：这是个纯离线应用，用户没有任何别的途径知道有新版本，
   /// 不主动提示就等于永远停在装的那一版。
   Widget _updateCard(BuildContext context) {
-    final theme = Theme.of(context);
     return _settingsCard(
       index: 15,
       icon: Icons.system_update_alt,
       color: Colors.teal,
       title: '检查更新',
       subtitle: '当前版本 v$appVersion',
-      child: ListenableBuilder(
-        listenable: settings,
-        builder: (context, _) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: settings.autoCheckUpdate,
-              onChanged: (v) => settings.setAutoCheckUpdate(v),
-              title: const Text('启动时自动检查更新'),
-              subtitle: const Text('发现新版本时弹窗提示更新内容，可一键跳到下载页'),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.tonalIcon(
-                onPressed: _checkingUpdate ? null : _checkUpdateNow,
-                icon: _checkingUpdate
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.refresh, size: 18),
-                label: Text(_checkingUpdate ? '检查中…' : '立即检查更新'),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '更新只会跳到 GitHub 的下载页，由你决定什么时候装；'
-              '覆盖安装不会丢失做题进度。',
-              style: TextStyle(
-                  fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
+      child: const UpdatePanel(),
     );
-  }
-
-  /// 手动检查一次更新。三种结果都要有明确反馈 —— 用户是主动来问的，
-  /// 不能像启动时那样静默。
-  Future<void> _checkUpdateNow() async {
-    // 用 State 自己的 context：下面的 mounted 检查才是「对得上号」的那个。
-    // 传进来的 BuildContext 会被 lint 拦（它是别的 widget 的 context）。
-    final messenger = ScaffoldMessenger.of(context);
-    setState(() => _checkingUpdate = true);
-    final result = await updateService.check();
-    if (!mounted) return;
-    setState(() => _checkingUpdate = false);
-
-    switch (result.status) {
-      case UpdateCheckStatus.updateAvailable:
-        final info = result.update!;
-        await showUpdateDialog(context, info, allowSkip: false);
-      case UpdateCheckStatus.upToDate:
-        messenger.showSnackBar(SnackBar(
-          content: Text('已是最新版本（v$appVersion）'),
-        ));
-      case UpdateCheckStatus.failed:
-        messenger.showSnackBar(SnackBar(
-          content: Text('检查更新失败：${result.error}。'
-              '可以直接去 GitHub 的 Releases 页面看看。'),
-          duration: const Duration(seconds: 5),
-        ));
-    }
   }
 
   /// 带悬浮/点击动画的设置卡片
@@ -996,6 +930,11 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  /// 「关于」入口 —— 指向完整的「关于」页。
+  ///
+  /// 这里原来是个 showAboutDialog 弹窗。升级成整页是因为弹窗塞不下更新日志和
+  /// 许可证，而且用户想回看「这个版本改了什么」时弹窗一关就没了。
+  /// 入口保留在设置里（用户找「关于」的直觉就在这儿），内容与「我的 → 关于」同一份。
   Widget _buildAbout(BuildContext context) {
     return Card(
       margin: EdgeInsets.zero,
@@ -1004,27 +943,14 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: const Icon(Icons.info_outline, color: Colors.blue),
         title: const Text('关于'),
         subtitle: Text(
-          'V$appVersion · Flutter (Material 3)\n'
-          '本地判题：Python / C / C++ 全部用本机环境，无需联网',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          'V$appVersion · 更新日志、项目主页、许可证',
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          showAboutDialog(
-            context: context,
-            applicationName: '编程练习册',
-            applicationVersion: 'V$appVersion',
-            applicationLegalese: '为学弟学妹准备的编程练习与判题工具',
-            children: const [
-              Text(
-                '技术栈：Flutter (Material 3)，判题全部在本机完成、离线可用\n'
-                '题库：Python / C / C++ 各 12 分类 72 道题，共 216 道\n\n'
-                'Python 用内置解释器（免装）；C / C++ 用系统编译器，\n'
-                '缺什么可以在「设置 → 代码编辑」里看到提示和一键安装。',
-              ),
-            ],
-          );
-        },
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const AboutPage()),
+        ),
       ),
     );
   }

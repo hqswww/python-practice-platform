@@ -50,6 +50,7 @@
 | `temp_workspace.dart` ⭐ | **判题工作目录**。Windows 上刻意避开用户目录（中文用户名会让 `as`/`ld` 找不到文件） |
 | `update_service.dart` | **自动检查更新**：查 GitHub Releases、比版本号、挑本平台安装包。失败静默不抛异常 |
 | `url_opener.dart` | 用系统默认程序打开链接（`open`/`cmd start`/`xdg-open`，零依赖）+ URL 安全校验 |
+| `about_page.dart` | **「关于」页**：名称/版本/更新日志/检查更新/项目链接/许可证。更新日志读 `assets/CHANGELOG.md`（生成物） |
 | `test_scope_resolver.dart` | **测试出题范围**：按序号挑大类 → 算哪几档难度有意义 → 按难度比例分层抽样（纯函数，好测） |
 | `source_check.dart` ⭐ | **源码语法要求检查**：判题只比对输出，「用不用指针」在输出上完全看不出来 —— 这里到源码里核对（启发式，不是语义分析） |
 | `runtime_installer.dart` | 一键安装编译器：找随包的 `install_mingw.ps1`、跑它、给退路（下载页/安装命令） |
@@ -148,6 +149,7 @@
 |------|------|
 | `test/` | Flutter 自动测试（判题链路、语言维度、响应式、题库结构守卫、深浅主题对比度等） |
 | `tools/` | 题库校验（`verify_bank.py`）、图标生成（`make_icons.py`）、三平台打包脚本、`install_mingw.ps1`、`windows_installer.iss`、`inno/`（安装包中文语言包） |
+| `LICENSE` / `assets/CHANGELOG.md` | MIT 许可证 / 更新日志（生成物）。两个都打包进应用，「关于」页用 |
 | `docs/` | `WINDOWS_MIGRATION.md` / `MACOS_MIGRATION.md` / `LINUX_MIGRATION.md`；`releases/` 里是每次发布的 Release 正文（＝应用更新弹窗里的「更新内容」） |
 | `windows/` `macos/` `linux/` | Flutter 三平台构建配置 |
 | `dist/` | 打包产物（dmg / zip / Setup.exe / tar.gz） |

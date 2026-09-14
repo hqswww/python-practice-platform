@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show LicenseRegistry, LicenseEntryWithLineBreaks;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'data/problem_repository.dart';
 import 'models/problem_category.dart';
@@ -19,8 +21,21 @@ import 'theme.dart';
 /// 全局设置服务单例（供各页面读取/修改）
 // main.dart 顶部不再重复定义，统一用 services/settings_service.dart 里的全局 settings
 
+/// 把本应用自己的 MIT 许可证注册进 Flutter 的许可证登记表。
+///
+/// **不做这一步，「关于 → 第三方许可证」里就看不到本项目的许可证** ——
+/// 那个页面只列 pub 依赖的许可证，自己这份不在其中，用户会以为项目没有开源许可。
+/// 读的是打包进来的仓库根目录 LICENSE，和 GitHub 上那份是同一个文件。
+void _registerOwnLicense() {
+  LicenseRegistry.addLicense(() async* {
+    final text = await rootBundle.loadString('LICENSE');
+    yield LicenseEntryWithLineBreaks(const ['编程练习册'], text.trim());
+  });
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _registerOwnLicense();
   // 先挂全局错误收集（越早越好，能捞到启动期异常）
   errorLog.installGlobalHandlers();
   await settings.load();

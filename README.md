@@ -52,6 +52,9 @@
 
 ### 工程
 
+- **「关于」页**：软件名称与版本、更新日志（离线可看，按版本展开）、检查更新、
+  项目主页、问题反馈、第三方许可证（Flutter 内置页，含所有 pub 依赖）、
+  本项目自己的 MIT 许可证
 - **自动检查更新**：启动时静默问一次 GitHub Releases，有新版本才弹窗 ——
   弹窗里写清「当前版本 → 最新版本」和更新内容，点「去下载」直接跳到对应平台的
   安装包。不想要可以在「设置 → 关于」关掉，也能只跳过某一个版本。
@@ -105,6 +108,8 @@ bash tools/build_linux.sh
 - `docs/MACOS_MIGRATION.md` — macOS 手册（App Sandbox、签名、公证、dmg）
 - `docs/LINUX_MIGRATION.md` — Linux 手册（为什么用系统环境、`.desktop` 与图标）
 - `tools/BANK_SPEC.md` — 题库编写规格（分类、id 段、出题禁区）
+- `LICENSE` — MIT（署名 hqswww）；`assets/CHANGELOG.md` — 更新日志（由
+  `tools/build_changelog.py` 从 `docs/releases/` 生成，**不要手改**）
 - `docs/releases/` — 每次发布的 Release 正文（也就是应用更新弹窗里显示的「更新内容」）
 - [PROJECT_MAP.md](PROJECT_MAP.md) — 项目结构地图（想改代码先看这个）
 - [DESIGN.md](DESIGN.md) — 设计文档

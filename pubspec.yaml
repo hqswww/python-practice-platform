@@ -64,6 +64,13 @@ flutter:
     - assets/problems/python/
     - assets/problems/c/
     - assets/problems/cpp/
+    # 更新日志：「关于」页里看。由 tools/build_changelog.py 从 docs/releases/ 生成
+    - assets/CHANGELOG.md
+    # 应用内图标（「关于」页顶部）。由 tools/make_icons.py 和平台图标同源生成
+    - assets/app_icon.png
+    # 自身许可证（MIT）：「关于」页里显示，同时注册进 LicenseRegistry，
+    # 否则 Flutter 内置的许可证页里只有第三方依赖、没有自己
+    - LICENSE
 
   fonts:
     - family: SarasaGothicSC

@@ -94,6 +94,18 @@ v1.4.0 与更早的内容见下方归档。
 
 ## ✅ 已完成（按主题归档）
 
+### ℹ️ 关于页与许可证（进行中：A 段已完成）
+- [x] 新增 `LICENSE`（MIT，署名 hqswww）并注册进 `LicenseRegistry`
+      —— 不注册的话「第三方许可证」页里只有 pub 依赖，看不到本项目自己的
+- [x] 「关于」从弹窗升级为正页：名称、版本、更新日志（离线、按版本展开）、
+      检查更新、项目主页、问题反馈、第三方许可证、MIT 许可证
+- [x] 更新日志 `assets/CHANGELOG.md` 由 `tools/build_changelog.py` 从
+      `docs/releases/` 生成；防漂移测试盯着，`--check` 给发布闸门用
+- [x] 应用内图标 `assets/app_icon.png` 纳入 `tools/make_icons.py` 同源生成
+- [x] 「检查更新」抽成共用组件 `UpdatePanel`（设置页与关于页同一份，避免两处开关显示不一致）
+- [ ] B 段：「我的」tab（底栏「设置」改名并降为子页面）+ 跨语言数据聚合 + 结论
+- [ ] C 段：fl_chart 图表 + 活动记录（练习趋势）
+
 ### 🎯 测试出题范围（v1.5.1）
 - [x] 每种测试模式**各自**设定：从哪些大类出题 + 出到哪个难度档
 - [x] 难度档位是**累计**的：难度一=绿、难度二=绿黄、难度三=绿黄红
@@ -399,6 +411,9 @@ git checkout -- lib/app_version.dart pubspec.yaml tools/windows_installer.iss
    - tag 用 `v1.5.0`（与 `appVersion` 一致，否则会提示一个不存在的版本）
    - **正文就是用户看到的「更新内容」**：先写进 `docs/releases/<版本>.md`（在 git 里
      留一份，下次照着改），发布时整篇复制过去。第一份见 `docs/releases/v1.5.0.md`
+   - 写完**跑一次 `python3 tools/build_changelog.py`** —— 应用内「关于 → 更新日志」
+     读的是生成物 `assets/CHANGELOG.md`，不跑的话新版本不会出现在里面
+     （有测试盯着，`--check` 模式给闸门用）
    - 正文写法：写给人看，分「新增 / 修复 / 变化」列要点。
      `#` 标题、``` 围栏、`- ` 列表会在弹窗里被收拾成纯文本，`**加粗**` 和
      `` `代码` `` 会被渲染 —— 写 Markdown 没问题，但**别用表格、图片、`>` 引用和

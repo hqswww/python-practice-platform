@@ -44,6 +44,9 @@ ICONSET = os.path.join(ROOT, 'macos/Runner/Assets.xcassets/AppIcon.appiconset')
 MASK = os.path.join(ROOT, 'tools/icon_mask_1024.png')
 ICO = os.path.join(ROOT, 'windows/runner/resources/app_icon.ico')
 LINUX_ICON_DIR = os.path.join(ROOT, 'linux/resources')
+# 应用内「关于」页顶部显示的图标（Flutter 资源，和平台图标同源生成）
+ASSET_ICON = os.path.join(ROOT, 'assets/app_icon.png')
+ASSET_ICON_SIZE = 256
 
 MAC_SIZES = (16, 32, 64, 128, 256, 512, 1024)
 ICO_SIZES = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
@@ -107,6 +110,11 @@ def main():
             os.path.join(LINUX_ICON_DIR, f'app_icon_{s}.png'))
     print(f'✅ Linux: 写入 {len(LINUX_SIZES)} 张 -> '
           f'{os.path.relpath(LINUX_ICON_DIR, ROOT)}')
+
+    os.makedirs(os.path.dirname(ASSET_ICON), exist_ok=True)
+    icon.resize((ASSET_ICON_SIZE, ASSET_ICON_SIZE), Image.LANCZOS).save(ASSET_ICON)
+    print(f'✅ 应用内: 写入 {os.path.relpath(ASSET_ICON, ROOT)} '
+          f'({ASSET_ICON_SIZE}px，给「关于」页用)')
 
     print('\n下一步：bash tools/build_macos.sh（会自动重打完整尺寸的 .icns）'
           '\n        bash tools/build_linux.sh（会自动带上 png 与 .desktop）')
