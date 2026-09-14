@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/problem.dart';
+import 'widgets/difficulty_style.dart';
 import '../models/problem_category.dart';
 import 'widgets/responsive.dart';
 import 'widgets/language_switcher.dart';
@@ -153,11 +154,7 @@ class _LearnPageState extends State<LearnPage> {
   Widget _buildProblemTile(ProblemCategory cat, Problem p,
       {VoidCallback? onSelect}) {
     final selected = _entries[_index].problem.id == p.id;
-    final color = switch (p.difficulty) {
-      Difficulty.easy => Colors.green,
-      Difficulty.medium => Colors.orange,
-      Difficulty.hard => Colors.red,
-    };
+    final color = difficultyColor(p.difficulty);
     return InkWell(
       onTap: () {
         final idx = _entries.indexWhere((e) => e.problem.id == p.id);
@@ -412,11 +409,7 @@ class _LearnPageState extends State<LearnPage> {
   }
 
   Widget _difficultyChip(Difficulty d) {
-    final color = switch (d) {
-      Difficulty.easy => Colors.green,
-      Difficulty.medium => Colors.orange,
-      Difficulty.hard => Colors.red,
-    };
+    final color = difficultyColor(d);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/programming_language.dart';
+import '../models/test_scope.dart';
 
 /// 全局设置服务单例（供各页面读取/修改）
 final settings = SettingsService();
@@ -64,6 +65,11 @@ class SettingsService extends ChangeNotifier {
   /// 各测试模式倒计时时长的存储键前缀（实际键为 `settings_test_time_<modeId>`）
   static const String _testTimePrefix = 'settings_test_time_';
 
+  /// 各测试模式出题范围的存储键前缀
+  /// （`settings_test_scope_cats_<模式 id>` / `settings_test_scope_tier_<模式 id>`）
+  static const String _testScopeCatsPrefix = 'settings_test_scope_cats_';
+  static const String _testScopeTierPrefix = 'settings_test_scope_tier_';
+
   /// 各测试模式的默认倒计时时长（秒），0 = 不限时。
   ///
   /// 之所以逐模式配置而不是一个全局值：题量差太多（5 题 vs 72 题），
@@ -104,6 +110,10 @@ class SettingsService extends ChangeNotifier {
   /// 各测试模式的倒计时时长（秒），0 = 不限时。键为模式 id。
   final Map<String, int> _testTimeLimits = Map.of(defaultTestTimeLimits);
 
+  /// 各测试模式的**出题范围**（大类序号 + 难度档位）。键为模式 id。
+  /// 没存过的模式用 [TestScope.defaults]（全部大类 + 不限难度）。
+  final Map<String, TestScope> _testScopes = {};
+
   ThemeMode get themeMode => _themeMode;
   int get timeoutMs => _timeoutMs;
 
@@ -128,6 +138,10 @@ class SettingsService extends ChangeNotifier {
   /// 某语言的自定义运行时路径（解释器 / 编译器）；空字符串表示自动解析
   String runtimePath(ProgrammingLanguage language) =>
       _runtimePaths[language] ?? '';
+
+  /// 某个测试模式的出题范围（没存过就是默认：全部大类 + 不限难度）
+  TestScope testScope(String modeId) =>
+      _testScopes[modeId] ?? TestScope.defaults;
 
   /// 某个测试模式的倒计时时长（秒）；0 = 不限时。
   /// 未知模式 id 返回 0（相当于不限时，安全默认）。
@@ -183,6 +197,17 @@ class SettingsService extends ChangeNotifier {
     for (final entry in defaultTestTimeLimits.entries) {
       _testTimeLimits[entry.key] =
           _prefs!.getInt('$_testTimePrefix${entry.key}') ?? entry.value;
+      // 出题范围：两个键（大类序号列表 + 难度档位）一起读。
+      // 缺任一个就当没存过 —— 半个范围比默认范围更难解释。
+      final rawCats = _prefs!.getStringList('$_testScopeCatsPrefix${entry.key}');
+      final rawTier = _prefs!.getInt('$_testScopeTierPrefix${entry.key}');
+      if (rawCats != null && rawTier != null) {
+        _testScopes[entry.key] = TestScope(
+          ordinals: TestScope.normalizeOrdinals(
+              rawCats.map(int.tryParse).whereType<int>()),
+          tier: DifficultyTier.fromLevel(rawTier),
+        );
+      }
     }
     notifyListeners();
   }
@@ -240,6 +265,22 @@ class SettingsService extends ChangeNotifier {
     _strictSourceCheck = value;
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setBool(_strictSourceKey, value);
+    notifyListeners();
+  }
+
+  /// 设置某个测试模式的出题范围并持久化。
+  ///
+  /// 两个键分开存（大类序号列表 / 难度档位），因为它们的变化互不相关 ——
+  /// 合成一个 JSON 字符串也能做，但 `setStringList` 是基础类型，
+  /// 出问题时在 SharedPreferences 里一眼能看懂。
+  Future<void> setTestScope(String modeId, TestScope scope) async {
+    final ordinals = TestScope.normalizeOrdinals(scope.ordinals);
+    _testScopes[modeId] =
+        TestScope(ordinals: ordinals, tier: scope.tier);
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setStringList(
+        '$_testScopeCatsPrefix$modeId', (ordinals.toList()..sort()).map((o) => '$o').toList());
+    await _prefs!.setInt('$_testScopeTierPrefix$modeId', scope.tier.level);
     notifyListeners();
   }
 

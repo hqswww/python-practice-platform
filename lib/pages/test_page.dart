@@ -6,12 +6,17 @@ import 'package:flutter/material.dart';
 import '../data/problem_repository.dart';
 import '../models/judge_result.dart';
 import '../models/problem.dart';
+import '../models/problem_category.dart';
 import '../models/test_record.dart';
 import '../services/judge_engine.dart';
+import '../services/language_service.dart';
 import '../services/progress_service.dart';
+import '../services/test_scope_resolver.dart';
 import '../services/settings_service.dart';
 import 'test_history_page.dart';
+import 'widgets/difficulty_style.dart';
 import 'widgets/rich_message_text.dart';
+import 'widgets/test_scope_dialog.dart';
 import 'widgets/interactive_terminal.dart';
 import 'widgets/python_code_field.dart';
 import 'widgets/responsive.dart';
@@ -96,6 +101,10 @@ class TestPage extends StatefulWidget {
 }
 
 class _TestPageState extends State<TestPage> {
+  /// 当前语言的分类（保留分类结构：出题范围要按大类选）
+  List<ProblemCategory>? _categories;
+
+  /// 当前语言的**全部**题目（分类拍平后的结果）
   List<Problem>? _allProblems;
   final ProgressService _progress = ProgressService();
   final Random _random = Random();
@@ -124,30 +133,70 @@ class _TestPageState extends State<TestPage> {
   void initState() {
     super.initState();
     _loadProblems();
+    languageService.addListener(_onLanguageChanged);
   }
 
   @override
   void dispose() {
+    languageService.removeListener(_onLanguageChanged);
     _stopTimer();
     super.dispose();
   }
 
+  /// 加载**当前语言**的题库。
+  ///
+  /// ⚠️ 这里曾经调的是不带参数的 `loadCategories()`，而它返回的是**全部语言**
+  /// 的题 —— 于是「全题库」显示的是 216 题（3 × 72），一次 Python 测验里会
+  /// 混进 C 和 C++ 的题。多语言重构时 practice_page 跟着改了，这一处漏了。
+  /// 出题范围要按「第几个大类」选，前提就是池子里只有一门语言，所以顺手修掉。
   Future<void> _loadProblems() async {
-    final cats = await ProblemRepository().loadCategories();
-    final problems = <Problem>[];
-    for (final c in cats) {
-      problems.addAll(c.problems);
-    }
+    final lang = languageService.value;
+    final cats = await ProblemRepository().loadCategories(language: lang);
     if (!mounted) return;
-    setState(() => _allProblems = problems);
+    // 语言可能在 await 期间又被切了一次：只有还是同一门语言才写回，
+    // 否则会用旧语言的结果覆盖新语言的加载
+    if (lang != languageService.value) return;
+    setState(() {
+      _categories = cats;
+      _allProblems = [for (final c in cats) ...c.problems];
+    });
   }
 
-  /// 开始测试：随机抽 [count] 道题，可选倒计时 [countdownSec]（>0 时启用压力模式）
-  void _startTest(int count, {int countdownSec = 0}) {
+  /// 切语言要重新加载题库（三个语言各有各的题）
+  void _onLanguageChanged() {
+    _loadProblems();
+  }
+
+  /// 某个模式当前的出题范围解析结果（UI 和抽题都用它，保证「显示几题」和
+  /// 「实际出几题」是同一份计算）
+  ResolvedScope _scopeOf(_TestModeDef mode) => resolveTestScope(
+        categories: _categories ?? const [],
+        scope: settings.testScope(mode.id),
+      );
+
+  /// 这个模式实际会出几题：模式题量与范围内题数取小。
+  /// 「全题库」模式（count = 0）就是范围内的全部题。
+  int _questionCountOf(_TestModeDef mode, ResolvedScope resolved) =>
+      mode.count == 0 ? resolved.total : min(mode.count, resolved.total);
+
+  /// 开始测试：按该模式的范围抽题，可选倒计时 [countdownSec]（>0 时启用压力模式）
+  void _startTest(_TestModeDef mode, {int countdownSec = 0}) {
+    final resolved = _scopeOf(mode);
+    final count = _questionCountOf(mode, resolved);
+    if (count <= 0) {
+      // 范围里一道题都没有（理论上按钮会禁用，这里兜底）
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('这个出题范围里没有题目，先调一下范围'),
+      ));
+      return;
+    }
     _stopTimer();
-    final pool = List.of(_allProblems!);
-    pool.shuffle(_random);
-    final selected = pool.take(count).toList();
+    // 按难度比例抽：直接洗牌取前 N 会让每次卷子的难度结构飘忽不定
+    final selected = pickQuestionsByDifficulty(
+      pool: resolved.pool,
+      count: count,
+      random: _random,
+    );
     setState(() {
       _questions = selected;
       _drafts.clear();
@@ -423,26 +472,102 @@ class _TestPageState extends State<TestPage> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  /// 一个测试模式：开始按钮 + 它自己的倒计时选择器
-  Widget _buildModeRow(_TestModeDef mode, int total) {
-    final count = mode.count == 0 ? total : mode.count;
+  /// 一个测试模式：开始按钮 + 两行设置（出题范围 / 倒计时）
+  ///
+  /// 布局说明：设置项从「一个」变「两个」之后，横着排一行在窄窗口下会挤爆
+  /// （应用允许拉到 420 宽）。所以开始按钮独占一行，两个设置项用 [Wrap]
+  /// 排在下面 —— 窄了就自动折行，不会溢出。
+  Widget _buildModeRow(_TestModeDef mode) {
+    final resolved = _scopeOf(mode);
+    final count = _questionCountOf(mode, resolved);
     final sec = settings.testTimeLimit(mode.id);
-    return Row(
+    final empty = count <= 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-            ),
-            onPressed: () => _startTest(count, countdownSec: sec),
-            child: Text('${mode.label}（$count 题）'),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
           ),
+          onPressed: empty ? null : () => _startTest(mode, countdownSec: sec),
+          child: Text(empty
+              ? '${mode.label}（范围内没有题目）'
+              : '${mode.label}（$count 题）'),
         ),
-        const SizedBox(width: 8),
-        _buildDurationPicker(mode.id, sec),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            _buildScopeButton(mode, resolved),
+            _buildDurationPicker(mode.id, sec),
+          ],
+        ),
       ],
     );
+  }
+
+  /// 出题范围入口：显示当前摘要（大类数 + 难度三色点），点开设置弹窗
+  Widget _buildScopeButton(_TestModeDef mode, ResolvedScope resolved) {
+    final scheme = Theme.of(context).colorScheme;
+    final scope = settings.testScope(mode.id);
+    final isDefault = scope.isDefault;
+    final fg = isDefault ? scheme.onSurfaceVariant : scheme.primary;
+
+    // 摘要写短一点：完整范围在弹窗里看
+    final label = isDefault
+        ? '全部大类'
+        : '${scope.ordinals.length} 个大类';
+
+    return Tooltip(
+      message: '设置「${mode.label}」的出题范围（大类与难度）',
+      child: InkWell(
+        onTap: () => _editScope(mode),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 40,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isDefault ? scheme.outlineVariant : scheme.primary,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.filter_alt_outlined, size: 16, color: fg),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: fg,
+                  fontWeight: isDefault ? FontWeight.normal : FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 实际生效的档位（可能在范围变化后被下调过）
+              DifficultyDots(maxLevel: resolved.tier.level, size: 9),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editScope(_TestModeDef mode) async {
+    final next = await showTestScopeDialog(
+      context: context,
+      modeLabel: mode.label,
+      categories: _categories ?? const [],
+      scope: settings.testScope(mode.id),
+    );
+    if (next == null || !mounted) return;
+    await settings.setTestScope(mode.id, next);
   }
 
   /// 单个模式的倒计时选择器：显示当前值，点击弹出候选时长
@@ -514,7 +639,6 @@ class _TestPageState extends State<TestPage> {
   /// 同一个时长对快速测验太松、对全题库又根本不够。现在各模式互不影响，
   /// 且时长里直接含「不限时」，少一层开关概念。
   Widget _buildSetup() {
-    final total = _allProblems!.length;
     return MaxWidthBody(
       maxWidth: ContentWidth.list,
       child: ListView(
@@ -538,11 +662,17 @@ class _TestPageState extends State<TestPage> {
                     style: TextStyle(height: 1.5),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    '右侧 ⏱ 是每个模式**各自**的倒计时，互不影响：选「不限时」就是普通练习；'
-                    '设了时间则进入测试即开始计时，时间到自动交卷。',
-                    style:
-                        TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4),
+                  // 用 RichMessageText 而不是 Text：下面写着 **各自**，普通 Text
+                  // 会把星号原样显示出来（判题提示踩过同一个坑）
+                  RichMessageText(
+                    '每个模式都能**各自**设置两件事，互不影响：\n'
+                    '· 📚 出题范围 —— 从哪些大类出题、出到哪个难度\n'
+                    '· ⏱ 倒计时 —— 选「不限时」就是普通练习，设了时间则进测试即开始计时\n'
+                    '抽题会按题库的难度比例来，不会一次抽出一堆难题。',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.5),
                   ),
                 ],
               ),
@@ -557,7 +687,7 @@ class _TestPageState extends State<TestPage> {
                 for (final mode in _kTestModes)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildModeRow(mode, total),
+                    child: _buildModeRow(mode),
                   ),
               ],
             ),

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:python_practice/pages/test_page.dart';
 import 'package:python_practice/services/settings_service.dart';
 import 'package:python_practice/models/programming_language.dart';
+import 'package:python_practice/models/test_scope.dart';
 
 /// 测试板块「各模式各自的倒计时时长」。
 ///
@@ -112,6 +113,41 @@ void main() {
       expect(b.strictSourceCheck, isFalse,
           reason: 'load() 漏读的话，学生关掉检查重启又会被打开，'
               '遇到误判就彻底没法做题了');
+    });
+
+    test('出题范围：默认是全选+不限难度，改完重启还在', () async {
+      // 默认必须等于「这个功能上线之前的行为」—— 老用户升级上来先什么都不变
+      final d = SettingsService().testScope('quick');
+      expect(d.ordinals, kAllOrdinals);
+      expect(d.tier, DifficultyTier.three);
+      expect(d.isDefault, isTrue);
+
+      final a = SettingsService();
+      await a.setTestScope('quick',
+          const TestScope(ordinals: {1, 3, 5}, tier: DifficultyTier.two));
+      await a.setTestScope('full',
+          const TestScope(ordinals: {12}, tier: DifficultyTier.one));
+
+      final b = SettingsService();
+      await b.load();
+      expect(b.testScope('quick').ordinals, {1, 3, 5});
+      expect(b.testScope('quick').tier, DifficultyTier.two);
+      // 各模式独立，互不影响
+      expect(b.testScope('full').ordinals, {12});
+      expect(b.testScope('full').tier, DifficultyTier.one);
+      // 没设过的模式还是默认
+      expect(b.testScope('standard').isDefault, isTrue);
+    });
+
+    test('出题范围：坏数据不能让范围变成空的', () async {
+      final a = SettingsService();
+      // 空列表存进去（理论上界面不让，但 SharedPreferences 可以被直接改）
+      await a.setTestScope(
+          'quick', const TestScope(ordinals: {}, tier: DifficultyTier.one));
+      final b = SettingsService();
+      await b.load();
+      expect(b.testScope('quick').ordinals, kAllOrdinals,
+          reason: '空范围 = 一道题都出不了，兜底成「全部」比让学生做不了题好');
     });
 
     test('自动检查更新：默认开，关掉之后重启仍然是关的', () async {

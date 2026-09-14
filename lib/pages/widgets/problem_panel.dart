@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/problem.dart';
+import 'difficulty_style.dart';
 
 /// 题目描述面板：题干、输入/输出格式、示例、提示
 class ProblemPanel extends StatefulWidget {
@@ -53,11 +54,7 @@ class _ProblemPanelState extends State<ProblemPanel> {
   }
 
   Widget _difficultyChip(Difficulty d) {
-    final color = switch (d) {
-      Difficulty.easy => Colors.green,
-      Difficulty.medium => Colors.orange,
-      Difficulty.hard => Colors.red,
-    };
+    final color = difficultyColor(d);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(

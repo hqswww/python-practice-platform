@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:python_practice/data/problem_repository.dart';
 import 'package:python_practice/models/programming_language.dart';
+import 'package:python_practice/models/test_scope.dart';
 import 'package:python_practice/services/language_runtime.dart';
 import 'package:python_practice/services/source_check.dart';
 
@@ -37,6 +38,22 @@ Future<void> verifyBankStructure(
   expect(cats.length, expectedCategories,
       reason: '${language.displayName} 应有 $expectedCategories 个分类，实际 ${cats.length} 个；'
           '少了多半是 problem_repository.dart 的 _categoryMeta 漏登记');
+
+  // 分类**序号**现在是测试出题范围的键（见 lib/models/test_scope.dart）：
+  // 范围按「第几个大类」存，切语言时靠序号对应同一教学阶段。
+  // 少一个或重一个，用户存下的范围就会静默指到别的大类上。
+  final ordinals = <int>[];
+  for (final c in cats) {
+    final o = categoryOrdinal(c.key);
+    expect(o, isNotNull, reason: '分类 ${c.key} 的 key 取不出序号');
+    ordinals.add(o!);
+  }
+  expect(ordinals.toSet(), hasLength(ordinals.length),
+      reason: '${language.displayName} 的分类序号有重复：$ordinals');
+  expect(ordinals..sort(),
+      [for (var i = 1; i <= expectedCategories; i++) i],
+      reason: '${language.displayName} 的分类序号必须是 1~$expectedCategories 不重不漏 —— '
+          '测试的「出题范围」按序号存，缺号/重号会让用户存的范围指到别的大类');
 
   final seenIds = <int, String>{}; // id -> 出处，用来查跨分类撞号
 

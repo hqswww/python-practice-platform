@@ -32,6 +32,7 @@
 | `programming_language.dart` ⭐⭐ | **语言的单一事实来源**：id / 显示名 / 扩展名 / 是否编译型 / 运行面板标题 / 起步代码。加语言从这里开始 |
 | `problem.dart` ⭐ | 题目模型。`language` 是**必填**（刻意不给默认值：漏传会静默变成 Python 题）；`sourceRequirements` 是「这题必须用上某个语法」的声明 |
 | `problem_category.dart` | 分类模型：对应 `assets/problems/<语言>/01_xxx.json` 一个文件 |
+| `test_scope.dart` | 测试出题范围模型：难度档位（累计的「最高允许难度」）+ 按**序号**记的大类集合 |
 | `judge_result.dart` ⭐ | 判题结果模型：`JudgeStatus`（passed / wrongAnswer / runtimeError / timeout / **compileError**）+ 逐用例结果。`allPassed` = 输出全对 **且** 语法要求都满足；只想问输出时用 `outputAllPassed` |
 | `test_record.dart` | 测试记录模型：一次测试的逐题作答项（带 language，历史可按语言过滤） |
 | `achievement.dart` | 成就状态模型（锁定/解锁） |
@@ -49,6 +50,7 @@
 | `temp_workspace.dart` ⭐ | **判题工作目录**。Windows 上刻意避开用户目录（中文用户名会让 `as`/`ld` 找不到文件） |
 | `update_service.dart` | **自动检查更新**：查 GitHub Releases、比版本号、挑本平台安装包。失败静默不抛异常 |
 | `url_opener.dart` | 用系统默认程序打开链接（`open`/`cmd start`/`xdg-open`，零依赖）+ URL 安全校验 |
+| `test_scope_resolver.dart` | **测试出题范围**：按序号挑大类 → 算哪几档难度有意义 → 按难度比例分层抽样（纯函数，好测） |
 | `source_check.dart` ⭐ | **源码语法要求检查**：判题只比对输出，「用不用指针」在输出上完全看不出来 —— 这里到源码里核对（启发式，不是语义分析） |
 | `runtime_installer.dart` | 一键安装编译器：找随包的 `install_mingw.ps1`、跑它、给退路（下载页/安装命令） |
 | `interactive_runner.dart` ⭐ | 运行面板的进程管理：**按语言**决定编译与否，流式 I/O + 逐步喂 stdin |
