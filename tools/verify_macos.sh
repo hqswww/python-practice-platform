@@ -203,14 +203,33 @@ head_ "5. 启动与运行时自检"
 LOG_DIR="$HOME/Library/Application Support/com.sakiri.python-practice/logs"
 OLD_LOG="$(cat "$LOG_DIR"/*.log 2>/dev/null | wc -l | tr -d ' ')"
 open "$APP" 2>/dev/null
-sleep 10
-# ⚠️ 这一项假设「没人动那个窗口」。验收期间手动关掉应用窗口，进程就会退出，
-#    于是这里报失败、下面两条日志检查也跟着跳过 —— 那是**误报不是 bug**
-#    （实际发生过：一度被当成间歇性签名问题去查）。所以提示里把这种可能写明。
-if pgrep -f "$(basename "$APP")" >/dev/null; then
-  ok "应用启动后进程存活（未崩溃）"
+
+# ⚠️ 轮询等它起来，**不要**固定 sleep 一个数字再看一眼。
+#    原来写的是 `sleep 10` + 单次 pgrep，于是紧跟一次完整构建之后跑本脚本
+#    （机器还忙着）就会误报「应用没能保持运行」，连带下面两条日志检查被跳过 ——
+#    实际观察到过一次「12 通过 / 1 失败 / 1 跳过」。
+#    这不是签名或崩溃问题，就是启动慢了几秒。
+#
+# 语义仍然严格：**起不来**算失败（轮询期间一次都没出现），
+# **起来了又死掉**也算失败（出现之后还会再确认一次仍存活）。
+APP_BIN="$(basename "$APP")"
+APPEARED=0
+for _ in $(seq 1 60); do   # 最多等 30 秒
+  if pgrep -f "$APP_BIN" >/dev/null; then APPEARED=1; break; fi
+  sleep 0.5
+done
+if [[ "$APPEARED" == "0" ]]; then
+  bad "应用启动 30 秒后进程仍未出现 —— 可能根本没起来"
 else
-  bad "应用没能保持运行 —— 可能是崩溃；**也可能是验收期间窗口被手动关掉了**"
+  sleep 2   # 再等一下，确认不是一起来就崩
+  # ⚠️ 这一项假设「没人动那个窗口」。验收期间手动关掉应用窗口，进程就会退出，
+  #    于是这里报失败、下面两条日志检查也跟着跳过 —— 那是**误报不是 bug**
+  #    （实际发生过：一度被当成间歇性签名问题去查）。所以提示里把这种可能写明。
+  if pgrep -f "$APP_BIN" >/dev/null; then
+    ok "应用启动后进程存活（未崩溃）"
+  else
+    bad "应用起来了又退出 —— 可能是崩溃；**也可能是验收期间窗口被手动关掉了**"
+  fi
 fi
 
 NEW_LOG="$(cat "$LOG_DIR"/*.log 2>/dev/null | tail -n +$((OLD_LOG + 1)))"
