@@ -32,13 +32,42 @@ void main() {
     }
 
     // ── 前提：题池只含当前语言（多语言重构时这一处漏过，池子里混了三门语言）
-    expect(find.textContaining('全题库（72 题）'), findsOneWidget,
+    expect(find.text('72 题'), findsOneWidget,
         reason: '「全题库」应当是当前语言的 72 题，不是三门语言混起来的 216 题');
+    expect(find.text('216 题'), findsNothing);
 
     // ── 默认范围：全部大类
     expect(find.text('全部大类'), findsNWidgets(4), reason: '四个模式默认都是全部大类');
 
     expect(tester.takeException(), isNull, reason: '窄窗口下不应有溢出');
+
+    // ── 排版：窄窗口单列，四个模式的卡片依次往下排
+    Rect cardOf(String label) => tester.getRect(find.ancestor(
+          of: find.text(label),
+          matching: find.byType(Card),
+        ));
+    expect(cardOf('标准测验').top, greaterThan(cardOf('快速测验').bottom),
+        reason: '窄窗口下应当是一列');
+    expect(cardOf('标准测验').left, closeTo(cardOf('快速测验').left, 0.5),
+        reason: '单列时左右边缘要对齐');
+
+    // ── 排版：宽窗口变 2×2（一行两个），一眼能扫完
+    tester.view.physicalSize = const Size(1000, 1400);
+    await tester.pumpAndSettle();
+    expect(cardOf('标准测验').top, closeTo(cardOf('快速测验').top, 0.5),
+        reason: '宽窗口下「快速」和「标准」应当并排');
+    expect(cardOf('标准测验').left, greaterThan(cardOf('快速测验').right),
+        reason: '并排时第二个应当在右边');
+    // 第三张在第二行，和第四张并排
+    expect(cardOf('强化测验').top, closeTo(cardOf('全题库').top, 0.5),
+        reason: '四个模式应当是 2×2：第三、第四张在第二行');
+    expect(cardOf('强化测验').top, greaterThan(cardOf('标准测验').bottom),
+        reason: '第二行要排在第一行下面');
+    expect(tester.takeException(), isNull, reason: '宽窗口下也不该有溢出');
+
+    // 回到窄窗口继续测后面的交互
+    tester.view.physicalSize = const Size(480, 1400);
+    await tester.pumpAndSettle();
 
     // ── 打开「快速测验」的范围设置
     final quickScope = find.text('全部大类').first;
@@ -94,8 +123,14 @@ void main() {
     expect(settings.testScope('quick').ordinals, {1});
     expect(settings.testScope('quick').tier, DifficultyTier.one);
 
-    // 快速测验的题量随范围收窄（基础语法只有 6 题，5 题模式仍出 5 题）
-    expect(find.textContaining('快速测验（5 题）'), findsOneWidget);
+    // 范围收窄后题量还够，快速测验仍然是 5 题
+    expect(
+        find.descendant(
+          of: find.ancestor(
+              of: find.text('快速测验'), matching: find.byType(Card)),
+          matching: find.text('5 题'),
+        ),
+        findsOneWidget);
 
     // ── 全题库模式在窄范围下只能出 6 题
     final scopeButtons = find.text('全部大类');
@@ -112,11 +147,21 @@ void main() {
 
     expect(settings.testScope('standard').ordinals, {1});
     // 只留简单题 → 池子 5 题，10 题的模式只能出 5 题（题量按题池夹紧）
-    expect(find.textContaining('标准测验（5 题）'), findsOneWidget,
+    expect(
+        find.descendant(
+          of: find.ancestor(
+              of: find.text('标准测验'), matching: find.byType(Card)),
+          matching: find.text('5 题'),
+        ),
+        findsOneWidget,
         reason: '题量要按范围里的题数夹紧，不能显示 10 题却出 5 题');
 
     // ── 真的开始一次测试，确认抽题用的是「范围里的池子」而不是整库
-    await tester.tap(find.textContaining('快速测验（5 题）'));
+    await tester.tap(find.descendant(
+      of: find.ancestor(
+          of: find.text('快速测验'), matching: find.byType(Card)),
+      matching: find.text('开始测试'),
+    ));
     await tester.pumpAndSettle();
 
     // 测试流程里的进度条写的是 `当前 / 总数`

@@ -472,40 +472,68 @@ class _TestPageState extends State<TestPage> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  /// 一个测试模式：开始按钮 + 两行设置（出题范围 / 倒计时）
+  /// 一个测试模式的卡片。
   ///
-  /// 布局说明：设置项从「一个」变「两个」之后，横着排一行在窄窗口下会挤爆
-  /// （应用允许拉到 420 宽）。所以开始按钮独占一行，两个设置项用 [Wrap]
-  /// 排在下面 —— 窄了就自动折行，不会溢出。
-  Widget _buildModeRow(_TestModeDef mode) {
+  /// 排版为什么这样：原来四个模式是「一个大按钮 + 下面挂两个控件」一路堆下来，
+  /// 控件宽窄不一、右边缘参差不齐，看着是八个散件而不是四组设置。现在一组一张
+  /// 卡片 —— 标题（模式名 + 题量）、两个设置控件、一个开始按钮，边界清楚，
+  /// 四个模式之间也就有了均匀的间距。
+  Widget _buildModeCard(_TestModeDef mode) {
     final resolved = _scopeOf(mode);
     final count = _questionCountOf(mode, resolved);
     final sec = settings.testTimeLimit(mode.id);
     final empty = count <= 0;
+    final scheme = Theme.of(context).colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        FilledButton(
-          style: FilledButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-          ),
-          onPressed: empty ? null : () => _startTest(mode, countdownSec: sec),
-          child: Text(empty
-              ? '${mode.label}（范围内没有题目）'
-              : '${mode.label}（$count 题）'),
-        ),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 8,
-          runSpacing: 6,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildScopeButton(mode, resolved),
-            _buildDurationPicker(mode.id, sec),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    mode.label,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                // 题量单独放，不塞进标题的括号里 —— 数字用强调色更醒目
+                Text(
+                  '$count 题',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: empty ? scheme.error : scheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildScopeButton(mode, resolved),
+                _buildDurationPicker(mode.id, sec),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed:
+                    empty ? null : () => _startTest(mode, countdownSec: sec),
+                icon: const Icon(Icons.play_arrow, size: 18),
+                label: Text(empty ? '这个范围里没有题目' : '开始测试'),
+              ),
+            ),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -527,7 +555,7 @@ class _TestPageState extends State<TestPage> {
         onTap: () => _editScope(mode),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          height: 40,
+          height: 36,
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
@@ -601,7 +629,7 @@ class _TestPageState extends State<TestPage> {
           ),
       ],
       child: Container(
-        height: 40,
+        height: 36,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
@@ -657,18 +685,18 @@ class _TestPageState extends State<TestPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    '随机从题库抽题，逐题编写代码并判题，结束后汇总得分。已做对过的题会正常计分。',
-                    style: TextStyle(height: 1.5),
+                  Text(
+                    '随机抽题、逐题编写代码并判题，结束后汇总得分。'
+                    '抽题按题库的难度比例来，不会一次抽出一堆难题。',
+                    style: TextStyle(
+                        height: 1.5,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 6),
                   // 用 RichMessageText 而不是 Text：下面写着 **各自**，普通 Text
                   // 会把星号原样显示出来（判题提示踩过同一个坑）
                   RichMessageText(
-                    '每个模式都能**各自**设置两件事，互不影响：\n'
-                    '· 📚 出题范围 —— 从哪些大类出题、出到哪个难度\n'
-                    '· ⏱ 倒计时 —— 选「不限时」就是普通练习，设了时间则进测试即开始计时\n'
-                    '抽题会按题库的难度比例来，不会一次抽出一堆难题。',
+                    '每个模式的 **出题范围**（📚）和 **倒计时**（⏱）都能各自设置，互不影响。',
                     style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -679,20 +707,37 @@ class _TestPageState extends State<TestPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // 用 ListenableBuilder 监听 settings：改完时长后选择器要立刻显示新值
+          // 用 ListenableBuilder 监听 settings：改完范围/时长后要立刻显示新值。
+          //
+          // 宽屏摆成 2×2：四个模式一路竖着堆下来要占掉整屏，两列一眼能扫完。
+          // 用 Wrap（而不是 GridView）是因为外层已经是 ListView ——
+          // 嵌套一个可滚动组件会打架；Wrap 按算好的宽度换行，不会滚。
           ListenableBuilder(
             listenable: settings,
-            builder: (context, _) => Column(
-              children: [
-                for (final mode in _kTestModes)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildModeRow(mode),
-                  ),
-              ],
+            builder: (context, _) => LayoutBuilder(
+              builder: (context, constraints) {
+                const spacing = 12.0;
+                // 阈值 720：两张卡片各 350 出头，正好放得下两个设置控件；
+                // 再窄就会频繁折行，不如单列
+                final twoColumns = constraints.maxWidth >= 720;
+                final cardWidth = twoColumns
+                    ? (constraints.maxWidth - spacing) / 2
+                    : constraints.maxWidth;
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: [
+                    for (final mode in _kTestModes)
+                      SizedBox(
+                        width: cardWidth,
+                        child: _buildModeCard(mode),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 16),
           // 回顾测试入口
           OutlinedButton.icon(
             onPressed: () async {
