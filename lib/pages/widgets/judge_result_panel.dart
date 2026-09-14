@@ -254,7 +254,7 @@ class JudgeResultPanel extends StatelessWidget {
               ),
             ],
             Text(
-              '如果确认自己的写法没问题，可以在「设置 → 判题」里关掉'
+              '如果确认自己的写法没问题，可以在「我的 → 设置 → 判题」里关掉'
               '「源码语法要求检查」—— 那样就只比对输出。',
               style: TextStyle(
                   fontSize: 12,

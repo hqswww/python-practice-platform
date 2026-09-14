@@ -10,7 +10,7 @@ import 'pages/learn_page.dart';
 import 'pages/practice_page.dart';
 import 'pages/setup_wizard_page.dart';
 import 'pages/test_page.dart';
-import 'pages/settings_page.dart';
+import 'pages/mine_page.dart';
 import 'services/error_log_service.dart';
 import 'services/settings_service.dart';
 import 'services/language_service.dart';
@@ -241,7 +241,11 @@ class _HomePageState extends State<HomePage> {
             // 测试
             const TestPage(),
             // 设置
-            SettingsPage(onResetProgress: _reload),
+            MinePage(
+              onResetProgress: _reload,
+              // 从别的 tab 切回来要重算：用户可能刚做完题
+              isActive: _currentIndex == 3,
+            ),
           ],
         ),
       ),
@@ -265,9 +269,9 @@ class _HomePageState extends State<HomePage> {
             label: '测试',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: '设置',
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: '我的',
           ),
         ],
       ),

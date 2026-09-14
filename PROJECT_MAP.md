@@ -50,6 +50,8 @@
 | `temp_workspace.dart` ⭐ | **判题工作目录**。Windows 上刻意避开用户目录（中文用户名会让 `as`/`ld` 找不到文件） |
 | `update_service.dart` | **自动检查更新**：查 GitHub Releases、比版本号、挑本平台安装包。失败静默不抛异常 |
 | `url_opener.dart` | 用系统默认程序打开链接（`open`/`cmd start`/`xdg-open`，零依赖）+ URL 安全校验 |
+| `mine_page.dart` | **「我的」页**（底栏第 4 个）：跨语言数据总览 + 结论 + 设置/关于入口 |
+| `stats_service.dart` ⭐ | **数据聚合与结论**：collect() 干 IO、buildConclusions() 是纯函数（结论规则全靠它可测） |
 | `about_page.dart` | **「关于」页**：名称/版本/更新日志/检查更新/项目链接/许可证。更新日志读 `assets/CHANGELOG.md`（生成物） |
 | `test_scope_resolver.dart` | **测试出题范围**：按序号挑大类 → 算哪几档难度有意义 → 按难度比例分层抽样（纯函数，好测） |
 | `source_check.dart` ⭐ | **源码语法要求检查**：判题只比对输出，「用不用指针」在输出上完全看不出来 —— 这里到源码里核对（启发式，不是语义分析） |
