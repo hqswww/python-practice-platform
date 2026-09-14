@@ -314,6 +314,16 @@ final x = 1;
       expect(out, contains('`as.exe`'));
     });
 
+    test('分隔线整行去掉（--- 在纯文本里就是三个减号）', () {
+      final out = cleanReleaseNotes('上面\n\n---\n\n下面');
+      expect(out, isNot(contains('---')));
+      expect(out, contains('上面'));
+      expect(out, contains('下面'));
+      // `***` / `___` 也是分隔线
+      expect(cleanReleaseNotes('a\n***\nb'), isNot(contains('***')));
+      expect(cleanReleaseNotes('a\n___\nb'), isNot(contains('___')));
+    });
+
     test('多余空行压成一个', () {
       expect(cleanReleaseNotes('a\n\n\n\n\nb'), 'a\n\nb');
     });

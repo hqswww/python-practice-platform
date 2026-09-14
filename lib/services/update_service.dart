@@ -276,6 +276,8 @@ UpdateInfo? parseLatestRelease(
 /// - 行首的 `#`（标题标记）去掉，只留文字
 /// - 代码围栏 ``` 整行去掉，里面的内容保留
 /// - 行首的 `- ` / `* ` 换成 `· `（`*` 会和加粗标记打架）
+/// - 分隔线（`---` / `***` / `___` 单独成行）整行去掉 —— 它在纯文本里就是
+///   三个减号，看着像笔误
 /// - 连续空行压成一个
 ///
 /// 真实数据验证过：pandoc 的 Release 正文开头就是三个反引号，
@@ -286,6 +288,8 @@ String cleanReleaseNotes(String raw) {
     final t = line.trimRight();
     // 代码围栏整行丢掉（``` 或 ```dart）
     if (RegExp(r'^\s*```').hasMatch(t)) continue;
+    // 分隔线：整行只有三个以上的 - * _
+    if (RegExp(r'^\s*([-*_])\1{2,}\s*$').hasMatch(t)) continue;
     // 标题：去掉行首的 #，文字留着
     final heading = RegExp(r'^\s*#{1,6}\s+(.*)$').firstMatch(t);
     if (heading != null) {
